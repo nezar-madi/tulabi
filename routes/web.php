@@ -22,7 +22,11 @@ Route::get('/', HomeController::class)->name('home');
 
 Route::middleware('guest:web')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:register');
+    Route::post('/register', [RegisterController::class, 'sendCode'])->middleware('throttle:register');
+    Route::post('/register/resend', [RegisterController::class, 'resend'])->middleware('throttle:register')->name('register.resend');
+    Route::post('/register/verify', [RegisterController::class, 'verify'])->middleware('throttle:register-verify')->name('register.verify');
+    Route::post('/register/restart', [RegisterController::class, 'restart'])->name('register.restart');
+    Route::post('/register/password', [RegisterController::class, 'store'])->middleware('throttle:register-verify')->name('register.password');
 
     Route::get('/login', [SessionController::class, 'create'])->name('login');
     Route::post('/login', [SessionController::class, 'store']);
@@ -41,9 +45,9 @@ Route::post('/reset/{token}', [PasswordResetController::class, 'update'])
     ->middleware('throttle:reset-password')
     ->name('password.update');
 
-// «انضم كمدرّس»: visitors make an account in the same form; signed-in users just apply.
+// «انضم كمدرّس»: a visitor is sent to sign up by phone first, then comes back here to apply.
 Route::get('/join', [InstructorApplicationController::class, 'create'])->name('join');
-Route::post('/join', [InstructorApplicationController::class, 'store'])->middleware('throttle:join');
+Route::post('/join', [InstructorApplicationController::class, 'store'])->middleware(['auth:web', 'throttle:join']);
 
 Route::middleware(['auth:web', AuthenticateSession::class])->group(function () {
     Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Support\LibyanPhone;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -35,6 +37,24 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * An account starts with only a phone. Until the person fills in their name, the phone stands
+     * in for it wherever a name is shown (lists, menus); use hasName() for the real value.
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::get(fn (?string $value) => $value !== null && trim($value) !== ''
+            ? $value
+            : (string) LibyanPhone::display($this->phone));
+    }
+
+    public function hasName(): bool
+    {
+        return trim((string) $this->getRawOriginal('name')) !== '';
     }
 
     /** @return HasOne<Instructor, $this> */

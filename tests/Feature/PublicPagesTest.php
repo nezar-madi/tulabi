@@ -112,7 +112,8 @@ class PublicPagesTest extends TestCase
     public function test_the_site_paths_still_work_and_are_reserved(): void
     {
         $this->get('/login')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Auth/Login'));
-        $this->get('/join')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Join/Create'));
+        $this->get('/register')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Auth/Register'));
+        $this->get('/join')->assertRedirect('/register?for=instructor');
         $this->get('/admin')->assertRedirect('/admin/login');
 
         // Every first path segment of every route must be reserved, or a slug could shadow it.

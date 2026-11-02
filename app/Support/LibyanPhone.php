@@ -89,7 +89,7 @@ class LibyanPhone
     }
 
     /** Arabic-Indic and Persian digits typed on Arabic keyboards become 0-9. */
-    private static function westernDigits(string $value): string
+    public static function westernDigits(string $value): string
     {
         return strtr($value, [
             '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',

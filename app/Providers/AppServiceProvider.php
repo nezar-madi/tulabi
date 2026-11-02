@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Support\LibyanPhone;
+use App\Support\Sms\LogSmsSender;
+use App\Support\Sms\SmsSender;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -12,7 +14,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Map a real gateway here when there is one; "log" is for local work only.
+        $this->app->bind(SmsSender::class, fn () => match (config('tulabi.sms.driver')) {
+            default => new LogSmsSender,
+        });
     }
 
     public function boot(): void
@@ -21,12 +26,21 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Without SMS there is no phone check, so sign-ups and reset requests are limited per IP
-     * (and per phone where one is typed). Login has its own limits in the SessionControllers.
+     * Sign-ups, codes and reset requests are limited per IP (and per phone where one is typed). Login has its own limits in the SessionControllers.
      */
     private function configureRateLimits(): void
     {
-        RateLimiter::for('register', fn (Request $request) => Limit::perHour(10)->by('register:'.$request->ip()));
+        // Each code is a message that costs money: limit by IP and by phone.
+        RateLimiter::for('register', function (Request $request) {
+            $phone = LibyanPhone::normalize((string) $request->input('phone')) ?? 'invalid';
+
+            return [
+                Limit::perHour(10)->by('register:'.$request->ip()),
+                Limit::perHour(5)->by('register-phone:'.$phone),
+            ];
+        });
+
+        RateLimiter::for('register-verify', fn (Request $request) => Limit::perHour(30)->by('register-verify:'.$request->ip()));
 
         RateLimiter::for('join', fn (Request $request) => Limit::perHour(10)->by('join:'.$request->ip()));
 

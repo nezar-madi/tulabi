@@ -25,7 +25,7 @@ class AccountController extends Controller
 
         return Inertia::render('Account/Show', [
             'profile' => [
-                'name' => $user->name,
+                'name' => $user->hasName() ? $user->name : '',
                 'phone' => LibyanPhone::display($user->phone),
                 'email' => $user->email,
             ],

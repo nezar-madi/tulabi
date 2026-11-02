@@ -67,7 +67,8 @@
 
         <div class="account__forms">
             <section class="rq-card account__form">
-                <h2 class="account__card-title mb-4">{{ $t('account.profile') }}</h2>
+                <h2 class="account__card-title mb-2">{{ $t('account.profile') }}</h2>
+                <p v-if="!profile.name" class="account__note mb-3">{{ $t('account.profile_hint') }}</p>
                 <form @submit.prevent="saveProfile">
                     <FormPlainTextField
                         v-model="profileForm.name"

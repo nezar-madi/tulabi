@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            // Empty until the person fills in their profile; User::name falls back to the phone.
+            $table->string('name')->nullable();
             // E.164 (+2189XXXXXXXX), from App\Support\LibyanPhone: one account per phone.
             $table->string('phone', 20)->unique();
             $table->string('email')->nullable()->unique();

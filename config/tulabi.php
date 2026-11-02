@@ -26,4 +26,19 @@ return [
 
     'phone_region' => 'LY',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Text messages (phone check at sign-up)
+    |--------------------------------------------------------------------------
+    |
+    | "log" only writes the message to the log, for local work. Production needs a real
+    | gateway: add a class implementing App\Support\Sms\SmsSender and map it in
+    | AppServiceProvider.
+    |
+    */
+
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'log'),
+    ],
+
 ];

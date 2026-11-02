@@ -13,31 +13,51 @@ use Tests\TestCase;
 
 class InstructorApplicationTest extends TestCase
 {
-    public function test_a_visitor_makes_an_account_and_applies_in_one_form(): void
+    public function test_a_visitor_is_sent_to_sign_up_first(): void
     {
+        $this->get('/join')->assertRedirect('/register?for=instructor');
+
+        $this->get('/register?for=instructor')->assertInertia(fn (Assert $page) => $page
+            ->component('Auth/Register')
+            ->where('forInstructor', true));
+
+        $this->post('/join', ['specialty' => 'فيزياء', 'city' => 'بنغازي'])->assertRedirect('/login');
+        $this->assertSame(0, InstructorApplication::query()->count());
+    }
+
+    public function test_after_sign_up_the_new_instructor_lands_on_the_application_form(): void
+    {
+        $this->withSession([
+            'register.for' => 'instructor',
+            'register.verified' => ['phone' => '+218941234567', 'at' => now()->timestamp],
+        ]);
+
+        $this->post('/register/password', ['password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
+            ->assertRedirect('/join');
+
+        $user = User::query()->sole();
+        $this->assertFalse($user->hasName());
+
         $this->get('/join')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Join/Create')
-            ->where('signedIn', false));
+            ->where('needsName', true));
+
+        // The name is asked for here because the instructor page uses it.
+        $this->post('/join', ['specialty' => 'فيزياء', 'city' => 'بنغازي'])->assertSessionHasErrors('name');
 
         $this->post('/join', [
             'name' => 'أحمد المدرّس',
-            'phone' => '0941234567',
-            'password' => 'secret-pass',
-            'password_confirmation' => 'secret-pass',
             'specialty' => 'فيزياء',
             'city' => 'بنغازي',
             'bio' => 'خبرة عشر سنوات.',
         ])->assertRedirect('/account');
 
-        $user = User::query()->sole();
-        $this->assertSame('+218941234567', $user->phone);
-        $this->assertAuthenticatedAs($user);
-
+        $this->assertSame('أحمد المدرّس', $user->fresh()->name);
         $application = InstructorApplication::query()->sole();
         $this->assertSame($user->id, $application->user_id);
         $this->assertSame(InstructorApplication::STATUS_PENDING, $application->status);
         $this->assertSame('فيزياء', $application->specialty);
-        $this->assertFalse($user->isInstructor());
+        $this->assertFalse($user->fresh()->isInstructor());
 
         $this->get('/account')->assertInertia(fn (Assert $page) => $page
             ->where('application.status', InstructorApplication::STATUS_PENDING));
@@ -47,28 +67,12 @@ class InstructorApplicationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/join')->assertInertia(fn (Assert $page) => $page->where('signedIn', true));
+        $this->actingAs($user)->get('/join')->assertInertia(fn (Assert $page) => $page->where('needsName', false));
 
         $this->post('/join', ['specialty' => 'رياضيات', 'city' => 'طرابلس'])->assertRedirect('/account');
 
         $this->assertSame($user->id, InstructorApplication::query()->sole()->user_id);
         $this->assertSame(1, User::query()->count());
-    }
-
-    public function test_a_visitor_cannot_apply_with_a_phone_that_has_an_account(): void
-    {
-        User::factory()->create(['phone' => '+218941234567']);
-
-        $this->post('/join', [
-            'name' => 'أحمد',
-            'phone' => '0941234567',
-            'password' => 'secret-pass',
-            'password_confirmation' => 'secret-pass',
-            'specialty' => 'فيزياء',
-            'city' => 'بنغازي',
-        ])->assertSessionHasErrors(['phone' => __('accounts.phone_taken')]);
-
-        $this->assertSame(0, InstructorApplication::query()->count());
     }
 
     public function test_one_pending_application_at_a_time_and_none_for_instructors(): void
