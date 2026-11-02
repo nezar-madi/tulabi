@@ -1,0 +1,108 @@
+/* Checkbox (from rqmana): 18px box, 4px corners, navy hairline; checked = solid brand green with a
+   crisp drawn check. Hover tints the empty box; keyboard focus shows the focus ring. */
+.form-plain-checkbox .v-selection-control {
+    --v-selection-control-size: 18px;
+    min-height: 40px;
+}
+
+.form-plain-checkbox .v-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--rq-text-body);
+    opacity: 1;
+    padding-inline-start: 10px;
+}
+
+.form-plain-checkbox .v-selection-control__wrapper,
+.form-plain-checkbox .v-selection-control__input {
+    width: 18px;
+    height: 18px;
+}
+
+/* Disable Vuetify ripple overlay; we render our own box */
+.form-plain-checkbox .v-selection-control__input::before {
+    display: none;
+}
+
+.form-plain-checkbox__input {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    flex: none;
+}
+
+.form-plain-checkbox__box {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--rq-radius-sm);
+    background: var(--rq-surface);
+    border: 1.5px solid var(--rq-line-strong);
+    transition:
+        background-color var(--rq-dur) var(--rq-ease),
+        border-color var(--rq-dur) var(--rq-ease),
+        box-shadow var(--rq-dur) var(--rq-ease);
+}
+
+.form-plain-checkbox__input--checked .form-plain-checkbox__box {
+    background: var(--rq-action-primary);
+    border-color: var(--rq-action-primary);
+}
+
+/* The check is drawn (stroke-dash) so it appears with a short stroke animation */
+.form-plain-checkbox__check {
+    position: absolute;
+    inset: 3px;
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: var(--rq-text-on-primary);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 22;
+    stroke-dashoffset: 22;
+    transition: stroke-dashoffset var(--rq-dur) var(--rq-ease);
+    pointer-events: none;
+}
+
+.form-plain-checkbox__input--checked .form-plain-checkbox__check {
+    stroke-dashoffset: 0;
+}
+
+.form-plain-checkbox__input input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.form-plain-checkbox .v-selection-control:hover .form-plain-checkbox__input:not(.form-plain-checkbox__input--checked) .form-plain-checkbox__box {
+    border-color: var(--rq-action-primary);
+    background: var(--rq-surface-hover);
+}
+
+.form-plain-checkbox .v-selection-control:hover .form-plain-checkbox__input--checked .form-plain-checkbox__box {
+    background: var(--rq-action-primary-hover);
+    border-color: var(--rq-action-primary-hover);
+}
+
+.form-plain-checkbox .v-selection-control--focus-visible .form-plain-checkbox__box {
+    border-color: var(--rq-action-primary);
+    box-shadow: var(--rq-focus-ring);
+}
+
+.form-plain-checkbox .v-selection-control--disabled .form-plain-checkbox__box {
+    background: var(--rq-surface-chrome);
+    border-color: var(--rq-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .form-plain-checkbox__box,
+    .form-plain-checkbox__check {
+        transition: none;
+    }
+}

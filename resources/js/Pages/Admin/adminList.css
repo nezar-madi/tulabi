@@ -1,0 +1,104 @@
+/* Shared look of the admin list pages (applications, instructors, students). */
+.admin-title {
+    margin: 0 0 20px;
+    font-size: var(--rq-text-h2);
+    font-weight: 700;
+    color: var(--rq-text-heading);
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--rq-line-soft);
+    overflow-x: auto;
+}
+
+.admin-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 2px solid transparent;
+    color: var(--rq-text-muted);
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.admin-tabs__tab--active {
+    border-bottom-color: var(--rq-line-emphasis);
+    color: var(--rq-text-heading);
+}
+
+.admin-tabs__count {
+    padding: 0 8px;
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-surface-hover);
+    font-size: 12px;
+}
+
+.admin-empty {
+    padding: 32px;
+    border-radius: var(--rq-radius-card);
+    color: var(--rq-text-muted);
+    text-align: center;
+}
+
+.admin-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: space-between;
+    padding: 20px;
+    margin-bottom: 10px;
+    border-radius: var(--rq-radius-card);
+}
+
+.admin-item__main {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.admin-item__name {
+    margin: 0 0 4px;
+    font-family: var(--rq-font-display);
+    font-size: var(--rq-text-card-title);
+    font-weight: 600;
+    color: var(--rq-text-heading);
+}
+
+.admin-item__meta,
+.admin-item__bio,
+.admin-item__date,
+.admin-item__reason {
+    margin: 2px 0 0;
+    font-size: 14px;
+    line-height: var(--rq-lh-body);
+    color: var(--rq-text-muted);
+}
+
+.admin-item__bio {
+    color: var(--rq-text-body);
+    white-space: pre-line;
+}
+
+.admin-item__date {
+    font-size: var(--rq-text-caption);
+    color: var(--rq-text-subtle);
+}
+
+.admin-item__reason {
+    padding: 8px 10px;
+    margin-top: 8px;
+    border-radius: var(--rq-radius-sm);
+    background: var(--rq-danger-tint);
+    color: var(--rq-danger);
+}
+
+.admin-item__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+}

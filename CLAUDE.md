@@ -8,7 +8,7 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 
 - **Sister product of rqmana** (`C:\laragon\www\center-saas`, multi-center SaaS for training centers). Same stack and design system, but **one database and no tenancy**: no `TenantManager`, `IdentifyTenant`, per-center databases or panel host. Copy pieces from rqmana when needed, never its tenancy.
 - **Stack:** Laravel 13, Inertia v2, Vue 3 `<script setup>`, Vuetify 4, vue-i18n, Ziggy, `giggsey/libphonenumber-for-php`. PHPUnit (not Pest), sqlite in memory for tests.
-- **Phase:** 0 (foundation) is done: theme, RTL, fonts, home page, clock and phone helpers, tests, CI. Phase 1 (accounts) waits for the owner. The phases are listed in `docs/spec.md` §8.
+- **Phase:** 0 (foundation) and 1 (accounts) are done. Phase 2 (instructor page and classes) waits for the owner. The phases are listed in `docs/spec.md` §8.
 - **Work is local only** for now: no server, no staging, no GitHub remote. Commit locally; never push without asking.
 
 ## Decisions from the spec (don't undo without asking)
@@ -27,6 +27,18 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 - Activity log kept 14 days (as rqmana). Certificates, e-payment, a marketplace, attendance, SMS and a mobile app are out of scope (spec §7).
 - Open: the logo (placeholder text logo «طلابي» in `resources/js/Components/BrandMark.vue`), the list of Libyan cities.
 
+## Accounts (phase 1)
+
+- **Guards:** `web` = `User` (phone + password), `admin` = `Admin` (email + password + TOTP, routes in `routes/admin.php` under `/admin`, names `admin.*`). User routes use `auth:web` / `guest:web` explicitly and code reads `$request->user('web')`; an admin session never counts on the user side. Logging out of the admin invalidates the whole session (the user side too).
+- **Sign-up** (`/register`): name, phone, password, optional email; signs in at once. **«انضم كمدرّس»** (`/join`): a visitor makes the account and the application in one form; someone signed in only adds specialty, city, bio. One pending application at a time; after a rejection they may apply again. reCAPTCHA on both visitor forms (`App\Support\Recaptcha`, skipped when no keys are set outside production).
+- **Instructor = a row in `instructors`** (`User::isInstructor()`), made by `App\Support\InstructorApplications::accept()`; `slug` stays null until phase 2. Accepting shows the admin a WhatsApp button with a welcome message (`App\Support\WhatsApp`, wa.me links only; tulabi sends nothing itself).
+- **Suspending** is on the account (`users.status`); `EnsureAccountIsActive` signs a suspended account out on its next request, and login says it is suspended only after the right password. `instructors.status` exists for later (switching teaching off) and is not set from the admin yet.
+- **Password reset links** (`App\Support\PasswordResetLinks`, table `password_reset_links`): only the token's sha256 is stored, one hour, single use, a new link cancels older unused ones, and a suspended account's link does not work. Made by the admin (students and instructors lists), by email from «نسيت كلمة المرور» (only when the account has an email; the answer is the same for every phone), and later by instructors for their students (`ISSUER_INSTRUCTOR`). Laravel's own password broker and `password_reset_tokens` table are not used.
+- **Rate limits** (`AppServiceProvider`): login 5 per phone+IP and 30 per IP per 10 minutes (in the SessionControllers), sign-up and join 10 per IP per hour, forgot-password 3 per phone and 10 per IP per hour.
+- **Admins:** `php artisan admin:create {email}` (asks the password, 12+ characters); the authenticator is set up at first login (`EnsureAdminTwoFactor`). `php artisan admin:two-factor-reset {email}` for a lost phone. The admin 2FA code and its Vue pages (`Pages/Admin/TwoFactor`) are rqmana's panel code with names changed; their Arabic text is still written in the pages, as in rqmana. `Setting::APPLICATIONS_NOTIFY_EMAIL` (admin «الإعدادات») gets an email per new application.
+- Local data: `php artisan migrate:fresh --seed` makes sample accounts (password `password`) and, locally only, `admin@tulabi.test` (sets up its authenticator at first login).
+- The skeleton's users migration was edited in place (phone, status; no `password_reset_tokens`) because nothing has been deployed yet. From the first deploy on, never edit an old migration.
+
 ## Conventions carried over from rqmana
 
 - **Dates:** timestamps are stored in UTC; `config('app.timezone')` stays `UTC`. For "today", "this month" or a date a person typed, use `App\Support\TulabiClock` (Africa/Tripoli, from `config/tulabi.php`), never `now()->toDateString()`. A typed `Y-m-d` means local midnight (`TulabiClock::storeDate()`). Filter by date with `startOfDayUtc()`/`endOfDayUtc()`, not `whereDate`.
@@ -37,7 +49,7 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 - **Text:** all UI text is Arabic, in `resources/js/locales/ar.json` (frontend, checked by `messages.spec.js`: write `@ { } |` as `{'@'}` etc.) and `lang/ar/*.php` (backend). Keep it short and plain.
 - **Icons:** Tabler icons (`icon="tabler:name"`) must be registered in `resources/js/icons/tablerChrome.js`, or they render blank; `tablerChrome.spec.js` fails on an unregistered name.
 - **Design system:** rqmana's, recoloured green. Primary `#0A7D4F`, hover/dark `#075C3A`, yellow accent `#FFC24A` (marks and underlines only, never text on white). Tokens in `resources/css/tokens.css` keep the `--rq-` prefix and classes keep `rq-` (`rq-btn`, `rq-card`, `rq-eyebrow`, `rq-badge`, `rq-icon-tile`, ...) so rqmana components can be copied as they are; brand shades are `--rq-brand-*` (`--rq-green-*` is the success colour). Vuetify themes in `resources/js/config/vuetifyTheme.js` (light and dark). Fonts: Alexandria (display) and Tajawal (body) from fonts.bunny.net. Square-ish 4px buttons, flat, hairlines instead of shadows.
-- Pages use `PublicLayout.vue` unless they set their own `layout`.
+- Pages use `PublicLayout.vue` (pages under `Admin/` use `AdminLayout.vue`) unless they set their own `layout` (`layout: null` for full-page screens). Forms use rqmana's `Components/formFields` (FormPlainTextField etc.) with Inertia `useForm` errors; the server's one-time message is the shared `flash.status` (`FlashStatus.vue`).
 - Formatting: `vendor/bin/pint` on changed PHP files.
 
 ## Running locally
@@ -54,6 +66,6 @@ php artisan serve --port=8010      # http://127.0.0.1:8010
 
 ## Tests
 
-- `php artisan test` (sqlite in memory, `phpunit.xml` forces it). `tests/TestCase.php` calls `withoutVite()` so pages render without a build.
+- `php artisan test` (sqlite in memory, `phpunit.xml` forces it): 78 tests. `tests/TestCase.php` uses `RefreshDatabase` and calls `withoutVite()` so pages render without a build. Admin test accounts need a confirmed second factor: `Admin::factory()->withTwoFactor()`; `actingAs($admin, 'admin')`.
 - `npm run test:js` (vitest): translation strings compile, every Tabler icon used is registered.
 - CI (`.github/workflows/ci.yml`, mirrors rqmana): PHP tests on 8.3 and 8.5, then `npm ci`, `test:js` and the build on 8.5. It runs once a GitHub remote exists.

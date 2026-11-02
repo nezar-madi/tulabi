@@ -1,0 +1,84 @@
+.auth-page__brand {
+    text-align: center;
+}
+
+/* Large blue title in the display face, muted lead */
+.auth-page__hero {
+    margin-bottom: 24px;
+}
+
+.auth-page__hero h1 {
+    margin: 0 0 8px;
+    font-family: var(--rq-font-display);
+    font-size: clamp(22px, 1.8vw, 28px);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--rq-text-heading);
+}
+
+.auth-page__hero p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--rq-text-muted);
+}
+
+.auth-page__link {
+    font-size: 13px;
+    color: var(--rq-text-link);
+}
+
+.auth-page__link:hover {
+    color: var(--rq-text-link-hover);
+}
+
+.auth-page__hero-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--rq-radius-lg);
+    background: var(--rq-icon-tile);
+    color: var(--rq-action-primary);
+}
+
+.auth-page__actions {
+    border-top: 1px solid var(--rq-line-soft);
+}
+
+/* Primary sign-in: one full-width large button, no divider above */
+.auth-page__actions--full {
+    border-top: 0;
+}
+
+.auth-page__actions--full .v-btn {
+    --v-btn-height: 46px;
+    min-height: 46px;
+    font-size: 15px;
+}
+
+/* A center's own sign-in: its name above the title */
+.auth-page__hero .auth-page__center {
+    margin: 0 0 6px;
+    font-family: var(--rq-font-display);
+    font-size: clamp(16px, 1.3vw, 20px);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--rq-action-primary);
+}
+
+/* Login: the larger title beside the brand side */
+.auth-page--login .auth-page__hero h1 {
+    font-size: clamp(30px, 2.8vw, 44px);
+}
+
+/* Owner sign-in on the main site: who this page is not for */
+.auth-page__hint {
+    padding-top: 18px;
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(var(--v-theme-on-surface), 0.6);
+}

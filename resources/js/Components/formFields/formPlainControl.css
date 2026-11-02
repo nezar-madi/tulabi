@@ -1,0 +1,134 @@
+/* Raqmana form field (spec Input): label on top, white field, navy hairline, 4px corners;
+   focus is a border-colour change to primary only (no ring).
+   Uses the design tokens, so dark mode follows automatically. */
+
+.form-plain-field .form-plain-field__label {
+    padding-bottom: 8px !important;
+    font-family: var(--rq-font-display);
+    font-size: 12px;
+    font-weight: 500 !important;
+    color: var(--rq-text-body);
+}
+
+.form-plain-field .form-plain-field__label .text-error {
+    color: var(--rq-danger) !important;
+}
+
+.form-plain-field .v-field--variant-plain {
+    height: 42px;
+    padding-inline: 14px;
+    border: 1px solid var(--rq-line-strong);
+    border-radius: var(--rq-radius-sm);
+    background-color: var(--rq-surface);
+    color: var(--rq-text-body);
+    font-size: 14px;
+    transition:
+        border-color var(--rq-dur) var(--rq-ease),
+        box-shadow var(--rq-dur) var(--rq-ease);
+}
+
+.form-plain-field .v-field--variant-plain:hover {
+    border-color: var(--rq-text-subtle);
+}
+
+.form-plain-field .v-field--variant-plain.v-field--focused {
+    border-color: var(--rq-action-primary);
+    box-shadow: none;
+}
+
+.form-plain-field .v-field--error.v-field--variant-plain,
+.form-plain-field .v-field--error.v-field--variant-plain.v-field--focused {
+    border-color: var(--rq-danger);
+    box-shadow: none;
+}
+
+.form-plain-field .v-field--disabled.v-field--variant-plain {
+    background-color: var(--rq-surface-chrome);
+    opacity: .6;
+}
+
+.form-plain-field .v-field--variant-plain .v-field__input {
+    padding-top: 0px;
+}
+
+.form-plain-field .v-field--variant-plain .v-field__input::placeholder,
+.form-plain-field .v-field--variant-plain input::placeholder,
+.form-plain-field .v-field--variant-plain textarea::placeholder {
+    color: var(--rq-text-subtle);
+    opacity: 1;
+}
+
+.form-plain-field .v-field--variant-plain .v-field__append-inner {
+    padding-top: 0;
+    align-items: center;
+}
+
+/* Leading icon sits on the field's 14px edge, 8px before the text (Vuetify adds 10px/4px) */
+.form-plain-field .v-field--variant-plain .v-field__prepend-inner {
+    padding-top: 10px;
+    padding-inline: 0 8px;
+}
+
+.form-plain-field .v-field--variant-plain :is(.v-field__prepend-inner, .v-field__append-inner, .v-field__clearable) .v-icon {
+    color: var(--rq-text-subtle);
+    opacity: 1;
+}
+
+.form-plain-field .v-field--focus-visible .v-field__overlay {
+    opacity: 0 !important;
+}
+
+/* Hint and error text under the field */
+.form-plain-field .v-input__details {
+    padding-inline: 2px;
+}
+
+.form-plain-field .v-messages__message {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Hints in the subtle ink (spec Input), errors in the danger red */
+.form-plain-field .v-messages {
+    color: var(--rq-text-subtle);
+    opacity: 1;
+}
+
+.form-plain-field .v-input--error .v-messages {
+    color: var(--rq-danger);
+}
+
+/* Select / picker chevron: 18px, subtle (spec Select) */
+.form-plain-field .v-field--variant-plain .v-field__append-inner .v-icon {
+    font-size: 18px;
+}
+
+.form-plain-field .v-textarea .v-field--variant-plain {
+    height: auto;
+    min-height: 8.5rem;
+    align-items: flex-start;
+}
+
+.form-plain-field .v-textarea .v-field--variant-plain .v-field__input {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    min-height: 8.5rem;
+    line-height: 1.7;
+}
+
+.form-plain-field__reveal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--rq-text-subtle);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.form-plain-field__reveal:hover {
+    color: var(--rq-text-heading);
+}

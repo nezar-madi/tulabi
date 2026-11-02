@@ -10,6 +10,7 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import ar from './locales/ar.json';
 import { vuetify } from './config/vuetify';
 import { resolveInitialTheme } from './config/themePreference';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'طلابي';
@@ -59,8 +60,9 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         );
 
+        // A page that sets its own layout (or layout: null) keeps it.
         if (page.default.layout === undefined) {
-            page.default.layout = PublicLayout;
+            page.default.layout = name.startsWith('Admin/') ? AdminLayout : PublicLayout;
         }
 
         return page;

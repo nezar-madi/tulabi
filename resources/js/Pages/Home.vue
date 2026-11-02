@@ -10,15 +10,18 @@
             <p class="home-hero__lead">{{ $t('home.lead') }}</p>
 
             <div class="d-flex flex-wrap align-center ga-3 mt-8">
-                <v-btn class="rq-btn rq-btn--primary" size="large" disabled>
-                    <v-icon icon="tabler:school" start />
-                    {{ $t('home.cta_instructor') }}
-                </v-btn>
-                <v-btn class="rq-btn" variant="outlined" color="primary" size="large" disabled>
-                    <v-icon icon="tabler:user-plus" start />
-                    {{ $t('home.cta_student') }}
-                </v-btn>
-                <span class="rq-badge rq-badge--warning">{{ $t('home.soon') }}</span>
+                <Link :href="route('join')" class="text-decoration-none">
+                    <v-btn class="rq-btn rq-btn--primary" size="large">
+                        <v-icon icon="tabler:school" start />
+                        {{ $t('home.cta_instructor') }}
+                    </v-btn>
+                </Link>
+                <Link v-if="!$page.props.auth?.user" :href="route('register')" class="text-decoration-none">
+                    <v-btn class="rq-btn" variant="outlined" color="primary" size="large">
+                        <v-icon icon="tabler:user-plus" start />
+                        {{ $t('home.cta_student') }}
+                    </v-btn>
+                </Link>
             </div>
 
             <p class="home-hero__today mt-6">
@@ -39,7 +42,7 @@
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
     today: { type: String, required: true },

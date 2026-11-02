@@ -1,4 +1,5 @@
 import { createVuetify } from 'vuetify';
+import { VTextField } from 'vuetify/components/VTextField';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
 import { ar } from 'vuetify/locale';
 import { tablerChrome } from '@/icons/tablerChrome';
@@ -20,6 +21,10 @@ export const vuetifyOptions = {
         },
     },
     theme,
+    aliases: {
+        // rqmana's form fields (Components/formFields) render through this alias.
+        MyTextField: VTextField,
+    },
     icons: {
         defaultSet: 'mdi',
         aliases,
@@ -39,6 +44,11 @@ export const vuetifyOptions = {
         VTabs: { color: 'primary', sliderColor: 'primary', height: 44 },
         VProgressLinear: { bgOpacity: 0.1 },
         VTooltip: { openOnFocus: false },
+        MyTextField: {
+            variant: 'plain',
+            density: 'comfortable',
+            class: 'form-plain-field__control',
+        },
     },
 };
 

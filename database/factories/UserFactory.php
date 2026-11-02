@@ -18,28 +18,38 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'phone' => '+2189'.fake()->randomElement(['1', '2', '4']).fake()->unique()->numerify('#######'),
+            'email' => null,
             'password' => static::$password ??= Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function withEmail(?string $email = null): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+        return $this->state(fn () => [
+            'email' => $email ?? fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
         ]);
+    }
+
+    public function suspended(): static
+    {
+        return $this->state(fn () => ['status' => User::STATUS_SUSPENDED]);
+    }
+
+    /** An account the admin already accepted as an instructor. */
+    public function instructor(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            InstructorFactory::new()->for($user)->create(['display_name' => $user->name]);
+        });
     }
 }
