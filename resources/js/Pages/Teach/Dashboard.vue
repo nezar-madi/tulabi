@@ -24,6 +24,15 @@
         </Link>
     </section>
 
+    <Link :href="route('teach.requests.index')" class="rq-card pending text-decoration-none" :class="{ 'pending--on': pending > 0 }">
+        <span class="rq-icon-tile rq-icon-tile--amber"><v-icon icon="tabler:inbox" /></span>
+        <span class="flex-grow-1">
+            <strong class="pending__title">{{ $t('teach.dashboard.pending_title') }}</strong>
+            <span class="pending__text">{{ pending > 0 ? $t('teach.dashboard.pending_open') : $t('teach.dashboard.pending_none') }}</span>
+        </span>
+        <span class="pending__number rq-number">{{ pending }}</span>
+    </Link>
+
     <div class="teach-stats">
         <Link
             v-for="item in statItems"
@@ -41,8 +50,11 @@
     <div class="class-grid">
         <ClassCard v-for="cls in upcoming" :key="cls.id" :cls="cls" show-status>
             <template #actions>
-                <Link :href="route('teach.classes.edit', cls.id)" class="text-decoration-none">
-                    <v-btn class="rq-btn" variant="text" color="primary">{{ $t('teach.classes.edit') }}</v-btn>
+                <Link :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
+                    <v-btn class="rq-btn" variant="text" color="primary">
+                        <v-icon icon="tabler:users" start />
+                        {{ $t('teach.dashboard.students_count', { count: cls.students_count }) }}
+                    </v-btn>
                 </Link>
             </template>
         </ClassCard>
@@ -51,7 +63,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import ClassCard from '@/Components/ClassCard.vue';
 
 const props = defineProps({
@@ -59,6 +71,9 @@ const props = defineProps({
     counts: { type: Object, default: () => ({}) },
     upcoming: { type: Array, default: () => [] },
 });
+
+const page = usePage();
+const pending = computed(() => page.props.auth?.user?.pendingRequests || 0);
 
 const steps = computed(() => [
     { key: 'step_slug', done: Boolean(props.profile.slug) },
@@ -114,6 +129,38 @@ const statItems = [
 
 .setup__step--done .v-icon {
     color: var(--rq-success);
+}
+
+.pending {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    border-radius: var(--rq-radius-card);
+    color: inherit;
+}
+
+.pending--on {
+    border-inline-start: 3px solid var(--rq-brand-accent);
+}
+
+.pending__title {
+    display: block;
+    font-family: var(--rq-font-display);
+    color: var(--rq-text-heading);
+}
+
+.pending__text {
+    font-size: 14px;
+    color: var(--rq-text-muted);
+}
+
+.pending__number {
+    font-family: var(--rq-font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--rq-text-number);
 }
 
 .teach-stats {

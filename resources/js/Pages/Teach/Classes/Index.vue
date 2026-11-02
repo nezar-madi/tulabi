@@ -45,6 +45,9 @@
                     >
                         {{ $t('teach.classes.view') }}
                     </v-btn>
+                    <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
+                        <v-btn class="rq-btn" variant="text" color="primary">{{ $t('teach.students.open') }}</v-btn>
+                    </Link>
                     <Link :href="route('teach.classes.edit', cls.id)" class="text-decoration-none">
                         <v-btn class="rq-btn" variant="tonal" color="primary">{{ $t('teach.classes.edit') }}</v-btn>
                     </Link>

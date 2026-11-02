@@ -11,6 +11,7 @@
                 >
                     <v-icon :icon="item.icon" size="18" />
                     {{ $t(item.label) }}
+                    <span v-if="item.badge && pending > 0" class="teach-nav__badge rq-number">{{ pending }}</span>
                 </Link>
                 <a
                     v-if="publicUrl"
@@ -27,15 +28,18 @@
 
         <div class="teach-main">
             <FlashStatus />
+            <!-- Errors of actions without a form field (publish, accept twice...). -->
             <v-alert
-                v-if="$page.props.errors?.class"
+                v-for="key in ['class', 'enrollment']"
+                v-show="$page.props.errors?.[key]"
+                :key="key"
                 type="error"
                 variant="tonal"
                 density="comfortable"
                 class="mb-5"
                 rounded="lg"
             >
-                {{ $page.props.errors.class }}
+                {{ $page.props.errors?.[key] }}
             </v-alert>
             <slot />
         </div>
@@ -50,9 +54,11 @@ import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 const page = usePage();
 const publicUrl = computed(() => page.props.auth?.user?.instructorUrl || null);
+const pending = computed(() => page.props.auth?.user?.pendingRequests || 0);
 
 const items = [
     { route: 'teach.dashboard', match: 'teach.dashboard', label: 'teach.nav.dashboard', icon: 'tabler:layout-dashboard' },
+    { route: 'teach.requests.index', match: 'teach.requests.*', label: 'teach.nav.requests', icon: 'tabler:inbox', badge: true },
     { route: 'teach.classes.index', match: 'teach.classes.*', label: 'teach.nav.classes', icon: 'tabler:chalkboard' },
     { route: 'teach.profile.edit', match: 'teach.profile.*', label: 'teach.nav.profile', icon: 'tabler:user' },
 ];
@@ -85,6 +91,18 @@ const items = [
 
 .teach-nav__item:hover {
     color: var(--rq-text-heading);
+}
+
+.teach-nav__badge {
+    min-width: 20px;
+    padding: 0 6px;
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-brand-accent);
+    color: var(--rq-ink-900);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
 }
 
 .teach-nav__item--active {

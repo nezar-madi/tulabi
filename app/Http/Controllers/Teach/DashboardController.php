@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Teach;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Teach\Concerns\FindsOwnClass;
+use App\Models\Enrollment;
 use App\Models\TeachingClass;
 use App\Support\ClassPresenter;
 use App\Support\TulabiClock;
@@ -32,8 +33,12 @@ class DashboardController extends Controller
             ->orderBy('starts_on')
             ->orderBy('id')
             ->limit(5)
+            ->withCount(['enrollments as students_count' => fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED)])
             ->get()
-            ->map(fn (TeachingClass $class) => ClassPresenter::forOwner($class));
+            ->map(fn (TeachingClass $class) => [
+                ...ClassPresenter::forOwner($class),
+                'students_count' => $class->students_count,
+            ]);
 
         return Inertia::render('Teach/Dashboard', [
             'profile' => [

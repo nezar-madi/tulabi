@@ -14,7 +14,8 @@
         "logout": "خروج",
         "join": "انضم كمدرّس",
         "teach": "واجهة المدرّس",
-        "student_view": "واجهة الطالب"
+        "student_view": "واجهة الطالب",
+        "my_classes": "فصولي"
     },
     "common": {
         "save": "حفظ",
@@ -114,7 +115,7 @@
         "password": "كلمة المرور",
         "change_password": "تغيير كلمة المرور",
         "student_title": "فصولي",
-        "student_text": "الفصول التي تطلب الانضمام إليها ستظهر هنا.",
+        "student_text": "الفصول التي طلبت الانضمام إليها.",
         "instructor_title": "أنت مدرّس",
         "instructor_text": "صفحتك وفصولك تأتي قريبًا.",
         "join_title": "تدرّس؟",
@@ -125,7 +126,10 @@
             "rejected_title": "رُفض طلب الانضمام",
             "rejected_reason": "السبب: {reason}",
             "apply_again": "قدّم من جديد"
-        }
+        },
+        "student_empty": "لم تطلب الانضمام إلى أي فصل بعد.",
+        "student_open": "عرض فصولي",
+        "student_counts": "{accepted} مقبول · {requested} بانتظار الموافقة"
     },
     "admin": {
         "title": "الإدارة",
@@ -238,7 +242,8 @@
             "dashboard": "الرئيسية",
             "classes": "فصولي",
             "profile": "صفحتي",
-            "view_page": "عرض صفحتي"
+            "view_page": "عرض صفحتي",
+            "requests": "طلبات الانضمام"
         },
         "dashboard": {
             "title": "أهلًا {name}",
@@ -255,7 +260,11 @@
             },
             "upcoming": "الفصول القادمة",
             "no_upcoming": "لا فصول منشورة قادمة.",
-            "new_class": "فصل جديد"
+            "new_class": "فصل جديد",
+            "pending_title": "طلبات بانتظار ردّك",
+            "pending_none": "لا طلبات جديدة.",
+            "pending_open": "عرض الطلبات",
+            "students_count": "{count} طالب مقبول"
         },
         "profile": {
             "title": "صفحتي",
@@ -324,6 +333,35 @@
             "save": "حفظ",
             "create": "إنشاء المسودة",
             "public_link": "رابط الفصل"
+        },
+        "requests": {
+            "title": "طلبات الانضمام",
+            "empty": "لا طلبات بانتظار ردّك.",
+            "note": "ملاحظة الطالب",
+            "accept": "قبول",
+            "reject": "رفض",
+            "reject_title": "رفض طلب {name}",
+            "reason": "السبب (اختياري)",
+            "reason_hint": "يراه الطالب في «فصولي»",
+            "seats_full": "الفصل ممتلئ: {accepted} من {seats} مقعدًا. يمكنك القبول رغم ذلك.",
+            "requested_on": "طلب في {date}"
+        },
+        "students": {
+            "title": "طلاب «{title}»",
+            "back": "إلى الفصل",
+            "open": "الطلاب",
+            "empty": "لا طلاب في هذا الفصل بعد.",
+            "accepted_count": "{accepted} مقبول",
+            "of_seats": "{accepted} من {seats} مقعدًا",
+            "fee": "الرسم: {fee}",
+            "accepted_on": "قُبل في {date}",
+            "remove": "إخراج من الفصل",
+            "remove_title": "إخراج {name} من الفصل",
+            "remove_text": "لن يرى الطالب رابط الحصة بعد الآن، ويمكنه طلب الانضمام من جديد.",
+            "reset_link": "رابط تعيين كلمة المرور",
+            "reset_title": "رابط لـ {name}",
+            "reset_text": "صالح ساعة واحدة ومرة واحدة. أرسله لطالبك على واتساب.",
+            "send_whatsapp": "إرسال على واتساب"
         }
     },
     "public": {
@@ -345,6 +383,56 @@
         "closed": "التسجيل في هذا الفصل مغلق.",
         "ended": "انتهى هذا الفصل.",
         "back": "كل فصول {name}",
-        "view_class": "التفاصيل"
+        "view_class": "التفاصيل",
+        "request_title": "طلب الانضمام إلى «{title}»",
+        "request_text": "يصل طلبك إلى المدرّس، وتجد الرد في «فصولي».",
+        "request_note": "ملاحظة للمدرّس (اختياري)",
+        "request_note_hint": "مثل: مستواك أو سؤال عن الفصل",
+        "request_send": "أرسل الطلب",
+        "login_to_request": "ادخل أو أنشئ حسابًا لتطلب الانضمام.",
+        "your_status": "طلبك: {status}",
+        "see_my_classes": "إلى فصولي",
+        "request_again": "اطلب من جديد",
+        "owner_no_request": "هذا فصلك. الطلبات تصلك في «طلبات الانضمام»."
+    },
+    "enrollment": {
+        "status": {
+            "requested": "بانتظار الموافقة",
+            "accepted": "مقبول",
+            "rejected": "مرفوض",
+            "canceled": "ملغى",
+            "withdrawn": "انسحبت"
+        },
+        "status_instructor": {
+            "requested": "بانتظار ردّك",
+            "accepted": "مقبول",
+            "rejected": "مرفوض",
+            "canceled": "ملغى",
+            "withdrawn": "انسحب"
+        }
+    },
+    "student": {
+        "classes": {
+            "title": "فصولي",
+            "empty": "لم تطلب الانضمام إلى أي فصل بعد. ابحث عن صفحة مدرّسك واطلب الانضمام من صفحة الفصل.",
+            "open": "التفاصيل",
+            "instructor": "المدرّس",
+            "fee": "الرسم",
+            "paid_later": "المدفوع والإيصالات تظهر هنا قريبًا.",
+            "meeting": "رابط الحصة",
+            "join_meeting": "دخول الحصة",
+            "meeting_missing": "لم يضع المدرّس رابط الحصة بعد.",
+            "your_note": "ملاحظتك",
+            "reason": "السبب: {reason}",
+            "class_canceled": "أُلغي هذا الفصل ولا يُستحق عليه شيء.",
+            "withdraw": "سحب الطلب",
+            "leave": "الانسحاب من الفصل",
+            "withdraw_confirm": "سحب طلبك لهذا الفصل؟",
+            "leave_confirm": "الانسحاب من هذا الفصل؟ تحتاج طلبًا جديدًا وموافقة المدرّس للعودة.",
+            "contact": "تواصل مع المدرّس",
+            "class_page": "صفحة الفصل",
+            "back": "كل فصولي",
+            "requested_on": "طلبت في {date}"
+        }
     }
 }

@@ -9,6 +9,12 @@
 
         <!-- Status actions -->
         <div v-if="cls" class="d-flex flex-wrap ga-2">
+            <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
+                <v-btn class="rq-btn" variant="tonal" color="primary">
+                    <v-icon icon="tabler:users" start />
+                    {{ $t('teach.students.open') }}
+                </v-btn>
+            </Link>
             <v-btn
                 v-if="publicUrl"
                 class="rq-btn"
@@ -214,7 +220,7 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
 import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';

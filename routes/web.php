@@ -6,8 +6,11 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstructorApplicationController;
+use App\Http\Controllers\Student\JoinClassController;
+use App\Http\Controllers\Student\StudentClassController;
 use App\Http\Controllers\Teach\ClassController;
 use App\Http\Controllers\Teach\DashboardController as TeachDashboardController;
+use App\Http\Controllers\Teach\EnrollmentController;
 use App\Http\Controllers\Teach\ProfileController;
 use App\Http\Middleware\EnsureInstructor;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -48,6 +51,18 @@ Route::middleware(['auth:web', AuthenticateSession::class])->group(function () {
     Route::put('/account/password', [AccountController::class, 'updatePassword'])
         ->middleware('throttle:account-password')
         ->name('account.password');
+
+    // «فصولي» for students. Every {enrollment} must be the user's own (StudentEnrollmentRequest).
+    Route::get('/account/classes', [StudentClassController::class, 'index'])->name('student.classes.index');
+    Route::get('/account/classes/{enrollment}', [StudentClassController::class, 'show'])->name('student.classes.show');
+    Route::post('/account/classes/{enrollment}/withdraw', [StudentClassController::class, 'withdraw'])
+        ->name('student.classes.withdraw');
+
+    // «اطلب الانضمام» (the GET brings a visitor back to the class page after signing in).
+    Route::get('/classes/{class}/request', [JoinClassController::class, 'create'])->name('classes.request.create');
+    Route::post('/classes/{class}/request', [JoinClassController::class, 'store'])
+        ->middleware('throttle:join-class')
+        ->name('classes.request');
 });
 
 // The instructor area. Every {class} is checked to belong to the signed-in instructor.
@@ -71,6 +86,16 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
         Route::post('/classes/{class}/close', [ClassController::class, 'close'])->name('classes.close');
         Route::post('/classes/{class}/cancel', [ClassController::class, 'cancel'])->name('classes.cancel');
         Route::delete('/classes/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
+        Route::get('/classes/{class}/students', [EnrollmentController::class, 'students'])->name('classes.students');
+
+        // Every {enrollment} must be in one of the instructor's classes (EnrollmentActionRequest).
+        Route::get('/requests', [EnrollmentController::class, 'requests'])->name('requests.index');
+        Route::post('/enrollments/{enrollment}/accept', [EnrollmentController::class, 'accept'])->name('enrollments.accept');
+        Route::post('/enrollments/{enrollment}/reject', [EnrollmentController::class, 'reject'])->name('enrollments.reject');
+        Route::post('/enrollments/{enrollment}/remove', [EnrollmentController::class, 'remove'])->name('enrollments.remove');
+        Route::post('/enrollments/{enrollment}/reset-link', [EnrollmentController::class, 'resetLink'])
+            ->middleware('throttle:instructor-reset-link')
+            ->name('enrollments.reset-link');
     });
 
 // The public instructor pages (tulabi.ly/{slug}) are in routes/pages.php, loaded last.

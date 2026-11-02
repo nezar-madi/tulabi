@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Admin;
+use App\Models\Enrollment;
 use App\Models\InstructorApplication;
 use App\Models\TeachingClass;
 use App\Models\User;
@@ -34,13 +35,21 @@ class DatabaseSeeder extends Seeder
             'links' => ['https://facebook.com/demo', 'https://youtube.com/@demo'],
         ])->save();
 
-        TeachingClass::factory()->published()->for($teacher->instructor)->create();
+        $math = TeachingClass::factory()->published()->for($teacher->instructor)->create();
         TeachingClass::factory()->published()->online()->for($teacher->instructor)->create([
             'title' => 'لغة إنجليزية للمبتدئين',
             'price' => '150',
             'days' => [0, 2],
         ]);
         TeachingClass::factory()->for($teacher->instructor)->create(['title' => 'فيزياء (مسودة)']);
+
+        // Two more students: one accepted in the math class, one waiting for an answer.
+        Enrollment::factory()->for($math, 'teachingClass')->accepted()
+            ->for(User::factory()->create(['name' => 'طالبة مقبولة', 'phone' => '+218910000004']))
+            ->create();
+        Enrollment::factory()->for($math, 'teachingClass')
+            ->for(User::factory()->create(['name' => 'طالب ينتظر', 'phone' => '+218910000005']))
+            ->create(['note' => 'هل يناسب الفصل طلاب الثاني الثانوي؟']);
 
         InstructorApplication::factory()
             ->for(User::factory()->create(['name' => 'متقدّم تجريبي', 'phone' => '+218940000003']))

@@ -8,7 +8,7 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 
 - **Sister product of rqmana** (`C:\laragon\www\center-saas`, multi-center SaaS for training centers). Same stack and design system, but **one database and no tenancy**: no `TenantManager`, `IdentifyTenant`, per-center databases or panel host. Copy pieces from rqmana when needed, never its tenancy.
 - **Stack:** Laravel 13, Inertia v2, Vue 3 `<script setup>`, Vuetify 4, vue-i18n, Ziggy, `giggsey/libphonenumber-for-php`. PHPUnit (not Pest), sqlite in memory for tests.
-- **Phase:** 0 (foundation), 1 (accounts) and 2 (instructor page and classes) are done. Phase 3 (join requests, student side) waits for the owner. The phases are listed in `docs/spec.md` §8.
+- **Phase:** 0 (foundation), 1 (accounts), 2 (instructor page and classes) and 3 (join requests, student side) are done. Phase 4 (money: payments, receipts) waits for the owner. The phases are listed in `docs/spec.md` §8.
 - **Work is local only** for now: no server, no staging, no GitHub remote. Commit locally; never push without asking.
 
 ## Decisions from the spec (don't undo without asking)
@@ -49,6 +49,17 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 - **Photo** (`App\Support\InstructorPhoto`): decoded with GD and saved again as a 512px square JPEG on the `public` disk (`instructors/{id}/`), the old file deleted; served as `/storage/...` (run `php artisan storage:link`). Links (`App\Support\ProfileLinks`): up to 5 http(s) URLs, icon chosen from the host.
 - The «اطلب الانضمام» button on a class page is shown disabled until phase 3.
 
+## Join requests and the student side (phase 3)
+
+- **Enrollments** (`Enrollment`, table `enrollments`): **one row per student and class** (unique), changed only by `App\Support\Enrollments` with conditional updates: requested → accepted | rejected; accepted → canceled (the instructor removes the student, optional reason); requested | accepted → withdrawn (the student); rejected / withdrawn / canceled → requested again on the same row. Nothing on the model is mass-assignable.
+- **Fee:** copied from the class price at the first acceptance and never changed by a later price edit; a student accepted again keeps the first fee (rqmana's "re-enrolling continues the original fee"). Payments arrive in phase 4.
+- **A canceled class** shows its open places as «ملغى» without changing the rows (`Enrollment::displayStatus()`, like rqmana's `billingStopped()`), so it owes nothing; its requests cannot be accepted and leave the instructor's list.
+- **Requests** only for a class that is published and not ended, of a public instructor, and not the student's own class (`TeachingClass::acceptsRequests()`). A visitor pressing «اطلب الانضمام» goes through `GET /classes/{id}/request` (auth), so after signing in they land back on the class page with `?request=1` and the box open.
+- **Meeting link** reaches the student only in `EnrollmentPresenter::forStudent()` and only when `isActiveMember()` (accepted, class not canceled). Public pages never have it.
+- **Student pages** `/account/classes` and `/account/classes/{enrollment}` (`StudentEnrollmentRequest`: own enrollments only). **Instructor pages** `/teach/requests` (badge = shared `auth.user.pendingRequests`) and `/teach/classes/{id}/students`; every `{enrollment}` action goes through `Teach\EnrollmentActionRequest` (enrollment in one of the instructor's classes). Isolation tests in `tests/Feature/Teach/EnrollmentTest.php` and `tests/Feature/Student/JoinClassTest.php`.
+- **Instructor reset links:** only for students accepted in that class, active, and not instructors themselves (those go to the admin). The instructor sees the URL; this follows the spec (students ask their instructor). Limited to 20 per hour.
+- **Email** (only to people who gave one): the instructor on a new request, the student on accept or reject. Failures are reported, never block the change.
+
 ## Conventions carried over from rqmana
 
 - **Dates:** timestamps are stored in UTC; `config('app.timezone')` stays `UTC`. For "today", "this month" or a date a person typed, use `App\Support\TulabiClock` (Africa/Tripoli, from `config/tulabi.php`), never `now()->toDateString()`. A typed `Y-m-d` means local midnight (`TulabiClock::storeDate()`). Filter by date with `startOfDayUtc()`/`endOfDayUtc()`, not `whereDate`.
@@ -77,6 +88,6 @@ php artisan serve --port=8010      # http://127.0.0.1:8010
 
 ## Tests
 
-- `php artisan test` (sqlite in memory, `phpunit.xml` forces it): 125 tests. `tests/TestCase.php` uses `RefreshDatabase` and calls `withoutVite()` so pages render without a build. Admin test accounts need a confirmed second factor: `Admin::factory()->withTwoFactor()`; `actingAs($admin, 'admin')`.
+- `php artisan test` (sqlite in memory, `phpunit.xml` forces it): 140 tests. `tests/TestCase.php` uses `RefreshDatabase` and calls `withoutVite()` so pages render without a build. Admin test accounts need a confirmed second factor: `Admin::factory()->withTwoFactor()`; `actingAs($admin, 'admin')`.
 - `npm run test:js` (vitest): translation strings compile, every Tabler icon used is registered.
 - CI (`.github/workflows/ci.yml`, mirrors rqmana): PHP tests on 8.3 and 8.5, then `npm ci`, `test:js` and the build on 8.5. It runs once a GitHub remote exists.

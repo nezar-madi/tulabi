@@ -41,6 +41,12 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('reset-password', fn (Request $request) => Limit::perHour(30)->by('reset:'.$request->ip()));
 
+        RateLimiter::for('join-class', fn (Request $request) => Limit::perHour(20)
+            ->by('join-class:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        RateLimiter::for('instructor-reset-link', fn (Request $request) => Limit::perHour(20)
+            ->by('instructor-reset-link:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         RateLimiter::for('account-password', fn (Request $request) => Limit::perMinutes(10, 10)
             ->by('account-password:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }

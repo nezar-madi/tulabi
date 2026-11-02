@@ -1,0 +1,26 @@
+/* The student's own pages («فصولي»). */
+.student-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+}
+
+.student-page__title {
+    margin: 0 0 20px;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--rq-text-heading);
+}
+
+.student-page__empty {
+    padding: 28px;
+    border-radius: var(--rq-radius-card);
+    color: var(--rq-text-muted);
+    text-align: center;
+}
+
+.student-page__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}

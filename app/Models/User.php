@@ -49,6 +49,12 @@ class User extends Authenticatable
         return $this->hasMany(InstructorApplication::class);
     }
 
+    /** @return HasMany<Enrollment, $this> */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

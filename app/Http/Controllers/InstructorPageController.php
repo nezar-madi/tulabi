@@ -53,10 +53,21 @@ class InstructorPageController extends Controller
             ->when($isOwner, fn ($query) => $query->where('status', '!=', TeachingClass::STATUS_CANCELED))
             ->firstOrFail();
 
+        $user = $request->user('web');
+        $enrollment = $user instanceof User && ! $isOwner
+            ? $model->enrollments()->where('user_id', $user->getKey())->first()
+            : null;
+
         return Inertia::render('Public/Class', [
             'instructor' => $this->present($instructor),
             'item' => ClassPresenter::forPublic($model),
             'isOwner' => $isOwner,
+            'acceptsRequests' => $model->acceptsRequests(),
+            // The visitor's own place in this class, if any (status only).
+            'enrollment' => $enrollment === null ? null : [
+                'id' => $enrollment->id,
+                'status' => $enrollment->status,
+            ],
         ]);
     }
 

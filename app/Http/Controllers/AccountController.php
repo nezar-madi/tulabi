@@ -38,6 +38,10 @@ class AccountController extends Controller
                     ? $application->rejection_reason
                     : null,
             ],
+            'enrollmentCounts' => $user->enrollments()
+                ->selectRaw('status, count(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status'),
         ]);
     }
 

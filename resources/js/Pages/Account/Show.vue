@@ -50,9 +50,15 @@
 
         <section class="rq-card account__card">
             <span class="rq-icon-tile rq-icon-tile--teal"><v-icon icon="tabler:calendar-event" /></span>
-            <div>
+            <div class="flex-grow-1">
                 <h2 class="account__card-title">{{ $t('account.student_title') }}</h2>
-                <p class="account__text">{{ $t('account.student_text') }}</p>
+                <p v-if="hasEnrollments" class="account__text">
+                    {{ $t('account.student_counts', { accepted: enrollmentCounts.accepted || 0, requested: enrollmentCounts.requested || 0 }) }}
+                </p>
+                <p v-else class="account__text">{{ $t('account.student_empty') }}</p>
+                <Link v-if="hasEnrollments" :href="route('student.classes.index')" class="text-decoration-none">
+                    <v-btn class="rq-btn mt-3" variant="outlined" color="primary">{{ $t('account.student_open') }}</v-btn>
+                </Link>
             </div>
         </section>
 
@@ -130,6 +136,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import FlashStatus from '@/Components/FlashStatus.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
@@ -138,7 +145,10 @@ const props = defineProps({
     profile: { type: Object, required: true },
     instructor: { type: Object, default: null },
     application: { type: Object, default: null },
+    enrollmentCounts: { type: Object, default: () => ({}) },
 });
+
+const hasEnrollments = computed(() => Object.values(props.enrollmentCounts || {}).some((count) => count > 0));
 
 const profileForm = useForm({
     name: props.profile.name,
