@@ -1,14 +1,18 @@
 <template>
     <Head :title="cls ? cls.title : $t('teach.classes.create_title')" />
 
-    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-5">
-        <div class="d-flex flex-wrap align-center ga-3">
-            <h1 class="teach-title rq-display">{{ cls ? $t('teach.classes.edit_title') : $t('teach.classes.create_title') }}</h1>
-            <ClassStatusBadge v-if="cls" :status="cls.status" :ended="cls.ended" />
-        </div>
+    <PageIntro
+        :title="cls ? cls.title : $t('teach.classes.create_title')"
+        :eyebrow="cls ? $t('teach.classes.edit_title') : $t('teach.classes.create_title')"
+    >
+        <template #title>
+            {{ cls ? cls.title : $t('teach.classes.create_title') }}
+            <ClassStatusBadge v-if="cls" :status="cls.status" :ended="cls.ended" class="ms-2 align-middle" />
+        </template>
 
         <!-- Status actions -->
-        <div v-if="cls" class="d-flex flex-wrap ga-2">
+        <template v-if="cls" #actions>
+        <div class="d-flex flex-wrap ga-2">
             <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
                 <v-btn class="rq-btn" variant="tonal" color="primary">
                     <v-icon icon="tabler:users" start />
@@ -49,7 +53,8 @@
                 {{ $t('teach.classes.cancel') }}
             </v-btn>
         </div>
-    </div>
+        </template>
+    </PageIntro>
 
     <v-alert v-if="readOnly" type="warning" variant="tonal" class="mb-4" rounded="lg">
         {{ $t('teach.classes.canceled_note') }}
@@ -219,6 +224,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';

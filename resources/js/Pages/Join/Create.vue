@@ -51,9 +51,9 @@
             />
 
             <div class="auth-page__actions auth-page__actions--full mt-6">
-                <v-btn type="submit" class="rq-btn rq-btn--primary" block size="large" :loading="form.processing">
+                <CtaButton type="submit" block size="large" icon="" :loading="form.processing" :disabled="form.processing">
                     {{ $t('join.submit') }}
-                </v-btn>
+                </CtaButton>
             </div>
         </form>
 
@@ -68,6 +68,7 @@ import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AccountFields from '@/Components/AccountFields.vue';
 import AuthCard from '@/Components/AuthCard.vue';
+import CtaButton from '@/Components/CtaButton.vue';
 import RecaptchaBox from '@/Components/RecaptchaBox.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';

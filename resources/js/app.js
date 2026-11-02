@@ -5,14 +5,19 @@ import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
+import { createPinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import ar from './locales/ar.json';
 import { vuetify } from './config/vuetify';
 import { resolveInitialTheme } from './config/themePreference';
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AppShell from '@/Layouts/AppShell.vue';
+import AuthSplitLayout from '@/Layouts/AuthSplitLayout.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import TeachLayout from '@/Layouts/TeachLayout.vue';
+
+// rqmana's layouts: sign-in pages in the split layout, signed-in pages in the app shell.
+const usesAuthLayout = (name) => /^Auth\//.test(name) || /^Join\//.test(name) || name === 'Admin/Login';
+const usesAppShell = (name) => /^(Admin|Teach|Student|Account)\//.test(name);
 
 const appName = import.meta.env.VITE_APP_NAME || 'طلابي';
 const locale = 'ar';
@@ -63,10 +68,10 @@ createInertiaApp({
 
         // A page that sets its own layout (or layout: null) keeps it.
         if (page.default.layout === undefined) {
-            if (name.startsWith('Admin/')) {
-                page.default.layout = AdminLayout;
-            } else if (name.startsWith('Teach/')) {
-                page.default.layout = TeachLayout;
+            if (usesAuthLayout(name)) {
+                page.default.layout = AuthSplitLayout;
+            } else if (usesAppShell(name)) {
+                page.default.layout = AppShell;
             } else {
                 page.default.layout = PublicLayout;
             }
@@ -79,12 +84,13 @@ createInertiaApp({
 
         return createApp({ render: () => h(App, props) })
             .use(plugin)
+            .use(createPinia())
             .use(i18n)
             .use(vuetify)
             .use(ZiggyVue)
             .mount(el);
     },
     progress: {
-        color: '#0A7D4F',
+        color: '#4B5563',
     },
 });

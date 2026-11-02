@@ -1,15 +1,13 @@
 <template>
     <Head :title="$t('teach.classes.title')" />
 
-    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-5">
-        <h1 class="teach-title rq-display">{{ $t('teach.classes.title') }}</h1>
-        <Link :href="route('teach.classes.create')" class="text-decoration-none">
-            <v-btn class="rq-btn rq-btn--primary">
-                <v-icon icon="tabler:plus" start />
+    <PageIntro :title="$t('teach.classes.title')">
+        <template #actions>
+            <CtaButton icon="tabler:plus" @click="router.visit(route('teach.classes.create'))">
                 {{ $t('teach.classes.new') }}
-            </v-btn>
-        </Link>
-    </div>
+            </CtaButton>
+        </template>
+    </PageIntro>
 
     <v-alert v-if="!hasSlug" type="info" variant="tonal" density="comfortable" class="mb-4" rounded="lg">
         {{ $t('teach.classes.needs_slug') }}
@@ -60,7 +58,9 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import CtaButton from '@/Components/CtaButton.vue';
+import PageIntro from '@/Components/PageIntro.vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import ClassCard from '@/Components/ClassCard.vue';
 import Pager from '@/Components/Pager.vue';
 

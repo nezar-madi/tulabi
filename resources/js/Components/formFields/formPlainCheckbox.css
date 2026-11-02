@@ -1,4 +1,4 @@
-/* Checkbox (from rqmana): 18px box, 4px corners, navy hairline; checked = solid brand green with a
+/* Raqmana checkbox: 18px box, 4px corners, navy hairline; checked = solid brand blue with a
    crisp drawn check. Hover tints the empty box; keyboard focus shows the focus ring. */
 .form-plain-checkbox .v-selection-control {
     --v-selection-control-size: 18px;

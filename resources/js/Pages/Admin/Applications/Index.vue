@@ -1,7 +1,7 @@
 <template>
     <Head :title="$t('admin.nav.applications')" />
 
-    <h1 class="admin-title rq-display">{{ $t('admin.nav.applications') }}</h1>
+    <PageIntro :title="$t('admin.nav.applications')" />
 
     <v-alert v-if="welcome" type="success" variant="tonal" class="mb-5" rounded="lg">
         <div class="d-flex flex-wrap align-center justify-space-between ga-3">
@@ -109,6 +109,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import Pager from '@/Components/Pager.vue';

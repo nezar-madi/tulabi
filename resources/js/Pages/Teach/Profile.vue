@@ -1,12 +1,12 @@
 <template>
     <Head :title="$t('teach.profile.title')" />
 
-    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-2">
-        <h1 class="teach-title rq-display">{{ $t('teach.profile.title') }}</h1>
+    <PageIntro :title="$t('teach.profile.title')" :description="$t('teach.profile.subtitle')">
+        <template #actions>
         <v-btn
             v-if="profile.public_url"
             class="rq-btn"
-            variant="outlined"
+            variant="tonal"
             color="primary"
             :href="profile.public_url"
             target="_blank"
@@ -15,8 +15,8 @@
             <v-icon icon="tabler:external-link" start />
             {{ $t('teach.profile.preview') }}
         </v-btn>
-    </div>
-    <p class="profile__lead">{{ $t('teach.profile.subtitle') }}</p>
+        </template>
+    </PageIntro>
 
     <div class="profile">
         <section class="rq-card teach-section profile__photo">
@@ -138,6 +138,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';

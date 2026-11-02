@@ -1,7 +1,7 @@
 <template>
     <Head :title="$t('admin.settings.title')" />
 
-    <h1 class="admin-title rq-display">{{ $t('admin.settings.title') }}</h1>
+    <PageIntro :title="$t('admin.settings.title')" />
 
     <section class="rq-card settings-card">
         <form @submit.prevent="save">
@@ -21,6 +21,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 

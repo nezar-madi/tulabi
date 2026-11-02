@@ -2,7 +2,7 @@
     <Head :title="$t('student.payments.title')" />
 
     <div class="student-page">
-        <h1 class="student-page__title rq-display">{{ $t('student.payments.title') }}</h1>
+        <PageIntro :title="$t('student.payments.title')" />
 
         <section class="rq-card student-payments">
             <PaymentList
@@ -15,6 +15,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { Head } from '@inertiajs/vue3';
 import PaymentList from '@/Components/PaymentList.vue';
 

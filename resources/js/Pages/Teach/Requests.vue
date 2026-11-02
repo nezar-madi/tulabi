@@ -1,7 +1,7 @@
 <template>
     <Head :title="$t('teach.requests.title')" />
 
-    <h1 class="teach-title rq-display mb-5">{{ $t('teach.requests.title') }}</h1>
+    <PageIntro :title="$t('teach.requests.title')" />
 
     <p v-if="requests.length === 0" class="rq-card teach-empty">{{ $t('teach.requests.empty') }}</p>
 
@@ -45,6 +45,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import ReasonDialog from '@/Components/ReasonDialog.vue';

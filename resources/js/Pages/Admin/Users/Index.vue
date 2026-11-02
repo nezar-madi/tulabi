@@ -1,7 +1,7 @@
 <template>
     <Head :title="title" />
 
-    <h1 class="admin-title rq-display">{{ title }}</h1>
+    <PageIntro :title="title" />
 
     <form class="d-flex ga-2 mb-4" @submit.prevent="search">
         <FormPlainTextField
@@ -107,6 +107,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';

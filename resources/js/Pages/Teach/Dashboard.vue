@@ -1,15 +1,13 @@
 <template>
     <Head :title="$t('teach.nav.dashboard')" />
 
-    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-6">
-        <h1 class="teach-title rq-display">{{ $t('teach.dashboard.title', { name: profile.display_name }) }}</h1>
-        <Link :href="route('teach.classes.create')" class="text-decoration-none">
-            <v-btn class="rq-btn rq-btn--primary">
-                <v-icon icon="tabler:plus" start />
+    <PageIntro :title="$t('teach.dashboard.title', { name: profile.display_name })" :breadcrumbs="[]">
+        <template #actions>
+            <CtaButton icon="tabler:plus" @click="router.visit(route('teach.classes.create'))">
                 {{ $t('teach.dashboard.new_class') }}
-            </v-btn>
-        </Link>
-    </div>
+            </CtaButton>
+        </template>
+    </PageIntro>
 
     <section v-if="steps.some((step) => !step.done)" class="rq-card setup">
         <h2 class="setup__title">{{ $t('teach.dashboard.setup_title') }}</h2>
@@ -79,8 +77,10 @@
 </template>
 
 <script setup>
+import CtaButton from '@/Components/CtaButton.vue';
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import ClassCard from '@/Components/ClassCard.vue';
 
 const props = defineProps({

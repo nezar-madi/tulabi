@@ -1,62 +1,37 @@
 <template>
-    <div class="auth-card-wrap">
-        <div class="auth-card rq-card" :class="{ 'auth-card--wide': wide }">
-            <div class="auth-page__hero">
-                <h1>{{ title }}</h1>
-                <p v-if="subtitle">{{ subtitle }}</p>
-            </div>
-
-            <FlashStatus />
-
-            <slot />
+    <!-- rqmana's sign-in page body (Pages/Auth/Login.vue there): title, lead, status, form, hint. -->
+    <div class="auth-page" :class="{ 'auth-page--login': large }">
+        <div class="auth-page__hero">
+            <h1>{{ title }}</h1>
+            <p v-if="subtitle">{{ subtitle }}</p>
         </div>
 
-        <div v-if="$slots.footer" class="auth-card__footer">
+        <v-alert v-if="status" type="success" variant="tonal" class="mb-5" rounded="lg">
+            {{ status }}
+        </v-alert>
+
+        <slot />
+
+        <div v-if="$slots.footer" class="auth-page__hint mt-6 mb-0">
             <slot name="footer" />
         </div>
     </div>
 </template>
 
 <script setup>
-import FlashStatus from '@/Components/FlashStatus.vue';
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import '@/Pages/Auth/authShared.css';
 
 defineProps({
     title: { type: String, required: true },
     subtitle: { type: String, default: '' },
+    // The larger title of the sign-in page itself.
+    large: { type: Boolean, default: false },
+    // Kept for the pages that pass it; the split layout gives every form the same width.
     wide: { type: Boolean, default: false },
 });
+
+const page = usePage();
+const status = computed(() => page.props.flash?.status || '');
 </script>
-
-<style scoped>
-.auth-card-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 40px 16px 64px;
-}
-
-.auth-card {
-    width: 100%;
-    max-width: 460px;
-    padding: 32px 28px;
-    border-radius: var(--rq-radius-card);
-}
-
-.auth-card--wide {
-    max-width: 640px;
-}
-
-.auth-card__footer {
-    margin-top: 20px;
-    font-size: 14px;
-    color: var(--rq-text-muted);
-    text-align: center;
-}
-
-@media (max-width: 480px) {
-    .auth-card {
-        padding: 24px 18px;
-    }
-}
-</style>

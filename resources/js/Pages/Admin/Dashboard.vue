@@ -1,7 +1,7 @@
 <template>
     <Head :title="$t('admin.nav.dashboard')" />
 
-    <h1 class="admin-title rq-display">{{ $t('admin.nav.dashboard') }}</h1>
+    <PageIntro :title="$t('admin.nav.dashboard')" />
 
     <div class="admin-stats">
         <component
@@ -19,6 +19,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({

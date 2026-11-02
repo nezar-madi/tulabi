@@ -1,29 +1,27 @@
 /*
- * Design system tokens, carried over from rqmana (رقمنة) and recoloured green for tulabi.
- * Token names keep the rq- prefix so rqmana components can be copied without renaming.
+ * Raqmana design system tokens.
  * Source: Claude Design project "Raqmana design system specifications" (tokens/*.css, vuetify/).
  * Raw palette values are theme-independent; semantic tokens are redefined for dark mode below.
  */
 :root {
-  /* Brand greens (tulabi) */
-  --rq-brand-900: #03301F;
-  --rq-brand-800: #075C3A; /* primary hover / pressed */
-  --rq-brand-700: #0A7D4F; /* primary */
-  --rq-brand-600: #0E8C5A; /* accent: eyebrows, numbers */
-  --rq-brand-500: #16A06A; /* bright accent: rules, dots */
-  --rq-brand-300: #7FD3AE; /* light accent */
-  --rq-brand-200: #C3E3D3; /* text on solid green (secondary) */
-  --rq-brand-100: #D6F0E3; /* tint strong */
-  --rq-brand-50: #ECF7F1;  /* tint soft */
-  --rq-brand-accent: #FFC24A; /* yellow highlight: marks, underlines (never text on white) */
+  /* Brand blues */
+  --rq-brand-900: #002011;
+  --rq-brand-800: #003A23; /* primary hover / pressed */
+  --rq-brand-700: #00613E; /* primary */
+  --rq-brand-600: #008154; /* accent: eyebrows, numbers */
+  --rq-brand-500: #00A86E; /* bright accent: rules, dots */
+  --rq-brand-300: #7DD0A5; /* light accent */
+  --rq-brand-200: #C1DDCD; /* text on solid blue (secondary) */
+  --rq-brand-100: #D8EDE1; /* tint strong */
+  --rq-brand-50: #EDF6F0;  /* tint soft */
 
   /* Neutrals */
-  --rq-ink-900: #33393F;
-  --rq-ink-700: #5B6570;
-  --rq-ink-500: #78838C;
-  --rq-ink-300: #CFDCD5;
-  --rq-paper: #F3F8F5;
-  --rq-chrome: #F4F8F6;
+  --rq-ink-900: #333A36;
+  --rq-ink-700: #5A6860;
+  --rq-ink-500: #78857D;
+  --rq-ink-300: #CFDBD4;
+  --rq-paper: #F2F8F5;
+  --rq-chrome: #F3F8F5;
   --rq-white: #FFFFFF;
 
   /* Status (derived for the app) */
@@ -34,7 +32,7 @@
   --rq-red-700: #B42318;
   --rq-red-50: #FCEBEA;
 
-  /* Accent palette: calm companions to the brand green, for variety (step colours, department tiles).
+  /* Accent palette: calm companions to the brand blue, for variety (step colours, department tiles).
      Each has a strong tone (icons, numbers, small labels) and a soft tint (tiles, chips). */
   --rq-accent-teal: #0E7C86;
   --rq-accent-teal-tint: #E2F3F4;
@@ -46,16 +44,16 @@
   --rq-accent-rose-tint: #FCE8EF;
   --rq-accent-green: #1E7A45;
   --rq-accent-green-tint: #E6F4EC;
-  --rq-accent-sky: #0272B8;
-  --rq-accent-sky-tint: #E3F1FB;
+  --rq-accent-sky: #008254;
+  --rq-accent-sky-tint: #E4F3EA;
 
   /* Lines (navy alpha, never grey): .10 sections/chrome, .08 cards, .16 list rows, .22 chips/inputs */
-  --rq-line-soft: rgba(7, 92, 58, .10);
-  --rq-line: rgba(7, 92, 58, .08);   /* cards, frames (lightened from the spec's .12) */
-  --rq-line-row: rgba(7, 92, 58, .16);
-  --rq-line-strong: rgba(7, 92, 58, .22);
+  --rq-line-soft: rgba(0, 58, 35, .10);
+  --rq-line: rgba(0, 58, 35, .08);   /* cards, frames (lightened from the spec's .12) */
+  --rq-line-row: rgba(0, 58, 35, .16);
+  --rq-line-strong: rgba(0, 58, 35, .22);
   --rq-line-emphasis: var(--rq-brand-700); /* 2px rules: selected stat card, active tab */
-  --rq-focus-ring: 0 0 0 3px rgba(22, 160, 106, .35);
+  --rq-focus-ring: 0 0 0 3px rgba(0, 168, 110, .35);
   --rq-switch-off: var(--rq-ink-300); /* switch track when off (spec --rq-dot) */
 
   /* Semantic */
@@ -64,7 +62,7 @@
   --rq-surface-chrome: var(--rq-chrome);   /* table heads, dialog footers, read-only fields */
   --rq-surface-tint: var(--rq-brand-100);   /* tint strong: CTA bands, icon tiles */
   --rq-surface-hover: var(--rq-brand-50);   /* tint soft: hover rows, secondary buttons */
-  --rq-surface-overlay: rgba(7, 92, 58, .32);
+  --rq-surface-overlay: rgba(0, 58, 35, .32);
   --rq-icon-tile: var(--rq-brand-100);
   --rq-text-heading: var(--rq-brand-700);
   --rq-text-body: var(--rq-ink-900);
@@ -122,12 +120,12 @@
   --rq-radius-lg: 12px;   /* icon tiles */
   --rq-radius-pill: 999px;
 
-  /* Shadows: green-tinted, negative spread — frames, dialogs, sticky bars, the pill CTA. Cards have none. */
-  --rq-shadow-color: 7, 92, 58;
+  /* Shadows: blue-tinted, negative spread — frames, dialogs, sticky bars, the pill CTA. Cards have none. */
+  --rq-shadow-color: 0, 58, 35;
   --rq-shadow-frame-sm: 0 20px 40px -24px rgba(var(--rq-shadow-color), .35);
   --rq-shadow-frame-md: 0 30px 60px -28px rgba(var(--rq-shadow-color), .45);
   --rq-shadow-lifted: 0 30px 60px -24px rgba(var(--rq-shadow-color), .5);
-  --rq-shadow-cta: 0 18px 36px -18px rgba(10, 125, 79, .7);
+  --rq-shadow-cta: 0 18px 36px -18px rgba(0, 97, 62, .7);
 
   /* Layout */
   --rq-sidebar-width: 240px;
@@ -140,38 +138,38 @@
 }
 
 /*
- * Dark theme: deep green surfaces, raised primary, light-green hairlines (spec tokens/colors.css).
+ * Dark theme: deep navy surfaces, raised primary, light-blue hairlines (spec tokens/colors.css).
  * html[data-theme] (kept in sync by themePreference.js) covers elements teleported to <body>,
  * outside Vuetify's themed app element — e.g. floating save bars.
  */
 html[data-theme="dark"],
 .v-theme--dark {
-  --rq-bg-page: #0A1A13;
-  --rq-surface: #0F2A1E;
-  --rq-surface-chrome: #0D2219;
-  --rq-surface-tint: #1B4A33;
-  --rq-surface-hover: #143826;
-  --rq-surface-overlay: rgba(2, 8, 20, .6);
-  --rq-icon-tile: #1B4A33;
-  --rq-line-soft: rgba(127, 211, 174, .10);
-  --rq-line: rgba(127, 211, 174, .09);
-  --rq-line-row: rgba(127, 211, 174, .17);
-  --rq-line-strong: rgba(127, 211, 174, .26);
-  --rq-line-emphasis: #5CC995;
-  --rq-focus-ring: 0 0 0 3px rgba(92, 201, 149, .4);
-  --rq-switch-off: rgba(127, 211, 174, .26);
-  --rq-text-heading: #D6F0E3;
-  --rq-text-body: #E4EEE9;
-  --rq-text-muted: #A6B9AF;
-  --rq-text-subtle: #7F9188;
-  --rq-text-eyebrow: #5CC995;
-  --rq-text-number: #7FD3AE;
-  --rq-text-link: #7FD3AE;
-  --rq-text-link-hover: #A9E3C8;
-  --rq-rule-accent: #3FBF85;
-  --rq-action-primary: #239B66;
-  --rq-action-primary-hover: #3DB57E;
-  --rq-text-on-primary-muted: #D6F0E3;
+  --rq-bg-page: #031B0F;
+  --rq-surface: #012716;
+  --rq-surface-chrome: #022213;
+  --rq-surface-tint: #00432A;
+  --rq-surface-hover: #00341F;
+  --rq-surface-overlay: rgba(0, 11, 5, .6);
+  --rq-icon-tile: #00432A;
+  --rq-line-soft: rgba(125, 208, 165, .10);
+  --rq-line: rgba(125, 208, 165, .09);
+  --rq-line-row: rgba(125, 208, 165, .17);
+  --rq-line-strong: rgba(125, 208, 165, .26);
+  --rq-line-emphasis: #50C18C;
+  --rq-focus-ring: 0 0 0 3px rgba(80, 193, 140, .4);
+  --rq-switch-off: rgba(125, 208, 165, .26);
+  --rq-text-heading: #D8EDE1;
+  --rq-text-body: #E3ECE6;
+  --rq-text-muted: #A4B7AC;
+  --rq-text-subtle: #7C9285;
+  --rq-text-eyebrow: #50C18C;
+  --rq-text-number: #7DD0A5;
+  --rq-text-link: #7DD0A5;
+  --rq-text-link-hover: #ABE0C2;
+  --rq-rule-accent: #22BA7D;
+  --rq-action-primary: #008959;
+  --rq-action-primary-hover: #00A16A;
+  --rq-text-on-primary-muted: #D8EDE1;
 
   --rq-success: #5BCB8A;
   --rq-success-tint: rgba(91, 203, 138, .14);
@@ -179,8 +177,8 @@ html[data-theme="dark"],
   --rq-warning-tint: rgba(240, 181, 90, .14);
   --rq-danger: #F2837A;
   --rq-danger-tint: rgba(242, 131, 122, .14);
-  --rq-info: #5CC995;
-  --rq-info-tint: rgba(92, 201, 149, .14);
+  --rq-info: #50C18C;
+  --rq-info-tint: rgba(80, 193, 140, .14);
 
   --rq-accent-teal: #4FD1C5;
   --rq-accent-teal-tint: rgba(79, 209, 197, .14);
@@ -192,8 +190,8 @@ html[data-theme="dark"],
   --rq-accent-rose-tint: rgba(242, 139, 176, .14);
   --rq-accent-green: #5BCB8A;
   --rq-accent-green-tint: rgba(91, 203, 138, .14);
-  --rq-accent-sky: #5CC995;
-  --rq-accent-sky-tint: rgba(92, 201, 149, .14);
+  --rq-accent-sky: #50C18C;
+  --rq-accent-sky-tint: rgba(80, 193, 140, .14);
 
   --rq-shadow-color: 0, 0, 0;
   color-scheme: dark;

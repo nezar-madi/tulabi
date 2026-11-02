@@ -1,7 +1,7 @@
 /*
- * Tulabi themes for Vuetify: rqmana's themes recoloured green (spec: vuetify/vuetify.config.ts in the
+ * Raqmana themes for Vuetify (spec: vuetify/vuetify.config.ts in the
  * "Raqmana design system specifications" Claude Design project).
- * Hairlines come from border-color + border-opacity (dark green at 12% light, light green at 13% dark).
+ * Hairlines come from border-color + border-opacity (navy at 12% light, light blue at 13% dark).
  */
 const sharedVariables = {
     'border-radius-lg': '12px',
@@ -24,30 +24,28 @@ export const theme = {
         light: {
             dark: false,
             colors: {
-                background: '#F3F8F5', // page
+                background: '#F2F8F5', // page
                 surface: '#FFFFFF', // cards, sheets, drawers
                 'surface-bright': '#FFFFFF',
-                'surface-light': '#F4F8F6', // chrome: table heads, dialog footers
-                'surface-variant': '#ECF7F1', // tint soft
-                'on-surface-variant': '#0A7D4F',
-                'on-background': '#33393F',
-                'on-surface': '#33393F',
-                primary: '#0A7D4F',
+                'surface-light': '#F3F8F5', // chrome: table heads, dialog footers
+                'surface-variant': '#EDF6F0', // tint soft
+                'on-surface-variant': '#00613E',
+                'on-background': '#333A36',
+                'on-surface': '#333A36',
+                primary: '#00613E',
                 'on-primary': '#FFFFFF',
-                'primary-darken-1': '#075C3A', // hover / pressed
-                secondary: '#0E8C5A', // accent
+                'primary-darken-1': '#003A23', // hover / pressed
+                secondary: '#008154', // accent
                 'on-secondary': '#FFFFFF',
-                'secondary-darken-1': '#075C3A',
-                accent: '#16A06A',
-                'accent-light': '#7FD3AE',
-                highlight: '#FFC24A', // yellow marks and underlines
-                'on-highlight': '#33393F',
-                tint: '#ECF7F1',
-                'tint-strong': '#D6F0E3',
-                heading: '#0A7D4F', // headings are green
-                muted: '#5B6570',
-                subtle: '#78838C',
-                info: '#0E8C5A',
+                'secondary-darken-1': '#003A23',
+                accent: '#00A86E',
+                'accent-light': '#7DD0A5',
+                tint: '#EDF6F0',
+                'tint-strong': '#D8EDE1',
+                heading: '#00613E', // headings are blue
+                muted: '#5A6860',
+                subtle: '#78857D',
+                info: '#008154',
                 'on-info': '#FFFFFF',
                 success: '#1E7A45',
                 'on-success': '#FFFFFF',
@@ -58,8 +56,8 @@ export const theme = {
                 'success-tint': '#E6F4EC',
                 'warning-tint': '#FBF1E0',
                 'error-tint': '#FCEBEA',
-                toast: '#075C3A',
-                cyan: '#0891B2',
+                toast: '#003A23',
+                cyan: '#3A976C',
                 'on-cyan': '#FFFFFF',
                 emerald: '#1E7A45',
                 'on-emerald': '#FFFFFF',
@@ -67,7 +65,7 @@ export const theme = {
             },
             variables: {
                 ...sharedVariables,
-                'border-color': '#075C3A',
+                'border-color': '#003A23',
                 'border-opacity': 0.12,
                 'hover-opacity': 0.06,
                 'focus-opacity': 0.1,
@@ -76,56 +74,54 @@ export const theme = {
                 'card-shadow': 'none',
                 'btn-shadow': 'none',
                 'sidebar-shadow': 'none',
-                'input-border': 'rgba(7, 92, 58, .22)',
+                'input-border': 'rgba(0, 58, 35, .22)',
             },
         },
         dark: {
             dark: true,
             colors: {
-                background: '#0A1A13',
-                surface: '#0F2A1E',
-                'surface-bright': '#143826',
-                'surface-light': '#0D2219',
-                'surface-variant': '#143826',
-                'on-surface-variant': '#D6F0E3',
-                'on-background': '#E4EEE9',
-                'on-surface': '#E4EEE9',
-                primary: '#239B66',
+                background: '#031B0F',
+                surface: '#012716',
+                'surface-bright': '#00341F',
+                'surface-light': '#022213',
+                'surface-variant': '#00341F',
+                'on-surface-variant': '#D8EDE1',
+                'on-background': '#E3ECE6',
+                'on-surface': '#E3ECE6',
+                primary: '#008959',
                 'on-primary': '#FFFFFF',
-                'primary-darken-1': '#3DB57E', // hover goes lighter in dark
-                secondary: '#5CC995',
-                'on-secondary': '#0A1A13',
-                'secondary-darken-1': '#7FD3AE',
-                accent: '#3FBF85',
-                'accent-light': '#7FD3AE',
-                highlight: '#FFC24A', // yellow marks and underlines
-                'on-highlight': '#33393F',
-                tint: '#143826',
-                'tint-strong': '#1B4A33',
-                heading: '#D6F0E3',
-                muted: '#A6B9AF',
-                subtle: '#7F9188',
-                info: '#5CC995',
-                'on-info': '#0A1A13',
+                'primary-darken-1': '#00A16A', // hover goes lighter in dark
+                secondary: '#50C18C',
+                'on-secondary': '#031B0F',
+                'secondary-darken-1': '#7DD0A5',
+                accent: '#22BA7D',
+                'accent-light': '#7DD0A5',
+                tint: '#00341F',
+                'tint-strong': '#00432A',
+                heading: '#D8EDE1',
+                muted: '#A4B7AC',
+                subtle: '#7C9285',
+                info: '#50C18C',
+                'on-info': '#031B0F',
                 success: '#5BCB8A',
-                'on-success': '#0A1A13',
+                'on-success': '#031B0F',
                 warning: '#F0B55A',
-                'on-warning': '#0A1A13',
+                'on-warning': '#031B0F',
                 error: '#F2837A',
-                'on-error': '#0A1A13',
+                'on-error': '#031B0F',
                 'success-tint': '#173A2E',
                 'warning-tint': '#3A2F1C',
                 'error-tint': '#3D2226',
-                toast: '#075C3A',
-                cyan: '#22B8D6',
-                'on-cyan': '#0A1A13',
+                toast: '#003A23',
+                cyan: '#55BD8B',
+                'on-cyan': '#031B0F',
                 emerald: '#5BCB8A',
-                'on-emerald': '#0A1A13',
-                'app-bar': '#0F2A1E',
+                'on-emerald': '#031B0F',
+                'app-bar': '#012716',
             },
             variables: {
                 ...sharedVariables,
-                'border-color': '#7FD3AE',
+                'border-color': '#7DD0A5',
                 'border-opacity': 0.13,
                 'hover-opacity': 0.08,
                 'focus-opacity': 0.12,
@@ -134,7 +130,7 @@ export const theme = {
                 'card-shadow': 'none',
                 'btn-shadow': 'none',
                 'sidebar-shadow': 'none',
-                'input-border': 'rgba(127, 211, 174, .26)',
+                'input-border': 'rgba(125, 208, 165, .26)',
             },
         },
     },

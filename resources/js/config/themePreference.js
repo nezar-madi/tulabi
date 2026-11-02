@@ -56,7 +56,7 @@ export function applyDocumentTheme(name) {
     document.documentElement.dataset.theme = name;
     document.documentElement.style.colorScheme = name;
     document.documentElement.style.backgroundColor =
-        name === 'dark' ? '#0A1A13' : '#F3F8F5';
+        name === 'dark' ? '#121212' : '#F8FAFC';
 }
 
 /**

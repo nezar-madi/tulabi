@@ -1,15 +1,19 @@
 <template>
     <Head :title="$t('teach.payments.title', { name: enrollment.student?.name || '' })" />
 
-    <Link :href="route('teach.classes.students', enrollment.class.id)" class="payments__back">
-        <v-icon icon="tabler:arrow-right" size="18" />
-        {{ $t('teach.payments.back') }} · {{ enrollment.class.title }}
-    </Link>
-
-    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-5">
-        <h1 class="teach-title rq-display">{{ $t('teach.payments.title', { name: enrollment.student?.name || '' }) }}</h1>
-        <WhatsAppButton :href="enrollment.student?.whatsapp" />
-    </div>
+    <PageIntro
+        :title="$t('teach.payments.title', { name: enrollment.student?.name || '' })"
+        :breadcrumbs="[
+            { title: $t('nav.home'), href: route('teach.dashboard') },
+            { title: $t('teach.nav.classes'), href: route('teach.classes.index') },
+            { title: enrollment.class.title, href: route('teach.classes.students', enrollment.class.id) },
+            { title: $t('teach.students.payments') },
+        ]"
+    >
+        <template #actions>
+            <WhatsAppButton :href="enrollment.student?.whatsapp" />
+        </template>
+    </PageIntro>
 
     <MoneyTotals :totals="totals" class="mb-4" />
 
@@ -124,6 +128,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import MoneyTotals from '@/Components/MoneyTotals.vue';

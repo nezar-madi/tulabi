@@ -2,24 +2,18 @@
     <Head :title="cls.title" />
 
     <div class="student-page">
-        <Link :href="route('student.classes.index')" class="detail__back">
-            <v-icon icon="tabler:arrow-right" size="18" />
-            {{ $t('student.classes.back') }}
-        </Link>
-
-        <FlashStatus />
-        <v-alert v-if="$page.props.errors?.enrollment" type="error" variant="tonal" class="mb-5" rounded="lg">
-            {{ $page.props.errors.enrollment }}
-        </v-alert>
+        <PageIntro :title="cls.title" :description="$t('student.classes.requested_on', { date: formatDate(enrollment.requested_at) })">
+            <template #title>
+                {{ cls.title }}
+                <EnrollmentStatusBadge :status="enrollment.status" class="ms-2 align-middle" />
+            </template>
+        </PageIntro>
 
         <div class="detail">
             <article class="rq-card detail__main">
-                <div class="d-flex flex-wrap align-center ga-2 mb-3">
-                    <EnrollmentStatusBadge :status="enrollment.status" />
+                <div class="d-flex flex-wrap align-center ga-2">
                     <span class="rq-badge">{{ $t(`class.type.${cls.type}`) }}</span>
                 </div>
-                <h1 class="detail__title rq-display">{{ cls.title }}</h1>
-                <p class="detail__muted">{{ $t('student.classes.requested_on', { date: formatDate(enrollment.requested_at) }) }}</p>
 
                 <v-alert v-if="cls.status === 'canceled'" type="warning" variant="tonal" class="my-4" rounded="lg">
                     {{ $t('student.classes.class_canceled') }}
@@ -114,11 +108,11 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import EnrollmentStatusBadge from '@/Components/EnrollmentStatusBadge.vue';
-import FlashStatus from '@/Components/FlashStatus.vue';
 import MoneyTotals from '@/Components/MoneyTotals.vue';
 import PaymentList from '@/Components/PaymentList.vue';
 import WhatsAppButton from '@/Components/WhatsAppButton.vue';

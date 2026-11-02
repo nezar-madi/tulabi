@@ -1,19 +1,23 @@
 <template>
     <Head :title="$t('teach.students.title', { title: item.title })" />
 
-    <Link :href="route('teach.classes.edit', item.id)" class="students__back">
-        <v-icon icon="tabler:arrow-right" size="18" />
-        {{ $t('teach.students.back') }}
-    </Link>
-
-    <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-5">
-        <h1 class="teach-title rq-display">{{ $t('teach.students.title', { title: item.title }) }}</h1>
+    <PageIntro
+        :title="$t('teach.students.title', { title: item.title })"
+        :breadcrumbs="[
+            { title: $t('nav.home'), href: route('teach.dashboard') },
+            { title: $t('teach.nav.classes'), href: route('teach.classes.index') },
+            { title: item.title, href: route('teach.classes.edit', item.id) },
+            { title: $t('teach.students.open') },
+        ]"
+    >
+        <template #actions>
         <span class="rq-badge" :class="item.seats && accepted.length > item.seats ? 'rq-badge--warning' : 'rq-badge--success'">
             {{ item.seats
                 ? $t('teach.students.of_seats', { accepted: accepted.length, seats: item.seats })
                 : $t('teach.students.accepted_count', { accepted: accepted.length }) }}
         </span>
-    </div>
+        </template>
+    </PageIntro>
 
     <p v-if="enrollments.length === 0" class="rq-card teach-empty">{{ $t('teach.students.empty') }}</p>
 
@@ -84,6 +88,7 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';

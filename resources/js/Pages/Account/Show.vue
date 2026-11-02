@@ -2,9 +2,7 @@
     <Head :title="$t('account.title')" />
 
     <div class="account">
-        <h1 class="account__title rq-display">{{ $t('account.title') }}</h1>
-
-        <FlashStatus />
+        <PageIntro :title="$t('account.title')" />
 
         <!-- Where the instructor side stands -->
         <section v-if="instructor" class="rq-card account__card account__card--accent">
@@ -141,9 +139,9 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import FlashStatus from '@/Components/FlashStatus.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
 const props = defineProps({
@@ -180,9 +178,7 @@ function savePassword() {
 
 <style scoped>
 .account {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 32px 16px 64px;
+    min-width: 0;
 }
 
 .account__title {

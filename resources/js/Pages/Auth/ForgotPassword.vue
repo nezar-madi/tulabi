@@ -15,9 +15,9 @@
             <p class="auth-page__hint mt-2 mb-0">{{ $t('auth.forgot.no_email') }}</p>
 
             <div class="auth-page__actions auth-page__actions--full mt-6">
-                <v-btn type="submit" class="rq-btn rq-btn--primary" block size="large" :loading="form.processing">
+                <CtaButton type="submit" block size="large" icon="" :loading="form.processing" :disabled="form.processing">
                     {{ $t('auth.forgot.submit') }}
-                </v-btn>
+                </CtaButton>
             </div>
         </form>
 
@@ -30,6 +30,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthCard from '@/Components/AuthCard.vue';
+import CtaButton from '@/Components/CtaButton.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
 const form = useForm({ phone: '' });

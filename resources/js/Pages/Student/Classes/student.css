@@ -1,8 +1,6 @@
 /* The student's own pages («فصولي»). */
 .student-page {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 32px 16px 64px;
+    min-width: 0;
 }
 
 .student-page__title {

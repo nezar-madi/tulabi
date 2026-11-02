@@ -2,9 +2,7 @@
     <Head :title="$t('student.classes.title')" />
 
     <div class="student-page">
-        <h1 class="student-page__title rq-display">{{ $t('student.classes.title') }}</h1>
-
-        <FlashStatus />
+        <PageIntro :title="$t('student.classes.title')" />
 
         <p v-if="enrollments.length === 0" class="rq-card student-page__empty">{{ $t('student.classes.empty') }}</p>
 
@@ -24,10 +22,10 @@
 </template>
 
 <script setup>
+import PageIntro from '@/Components/PageIntro.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import ClassCard from '@/Components/ClassCard.vue';
 import EnrollmentStatusBadge from '@/Components/EnrollmentStatusBadge.vue';
-import FlashStatus from '@/Components/FlashStatus.vue';
 
 defineProps({
     enrollments: { type: Array, default: () => [] },

@@ -65,6 +65,7 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'name' => $user->name,
+            'email' => $user->email,
             'isInstructor' => $isInstructor,
             'instructorUrl' => $isInstructor ? $user->instructor->publicUrl() : null,
             // Join requests waiting for this instructor (badge in the instructor menu).
