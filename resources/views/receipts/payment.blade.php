@@ -1,10 +1,9 @@
 @php
-    // Tulabi green (resources/css/tokens.css).
-    $primary = '#0A7D4F';
-    $dark = '#075C3A';
-    $tint = '#ECF7F1';
-    $plate = '#D6F0E3';
-    $accent = '#FFC24A';
+    // Navy green (resources/css/tokens.css), as rqmana's receipt in its blue.
+    $primary = '#00613E';
+    $dark = '#003A23';
+    $tint = '#EDF6F0';
+    $plate = '#D8EDE1';
     $isVoided = $payment->isVoided();
 @endphp
 <!DOCTYPE html>
@@ -23,7 +22,7 @@
         .doc { text-align: left; }
         .doc-title { font-size: 14px; font-weight: bold; color: {{ $dark }}; }
         .doc-meta { font-size: 11px; color: #5B6570; }
-        .rule { height: 4px; background-color: {{ $primary }}; border-bottom: 2px solid {{ $accent }}; margin: 0 0 16px 0; }
+        .rule { height: 4px; background-color: {{ $primary }}; margin: 0 0 16px 0; }
 
         .amount { background-color: {{ $tint }}; border: 1px solid {{ $plate }}; margin: 0 0 16px 0; }
         .amount td { padding: 12px 14px; }

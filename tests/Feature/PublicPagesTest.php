@@ -43,15 +43,15 @@ class PublicPagesTest extends TestCase
         ]);
         TeachingClass::factory()->published()->for($this->instructor('other'))->create(['title' => 'لمدرّس آخر']);
 
-        $this->get('/ahmed')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->component('Public/Instructor')
-            ->where('instructor.slug', 'ahmed')
-            ->where('instructor.whatsapp', fn ($url) => str_starts_with($url, 'https://wa.me/218'))
-            ->where('isOwner', false)
-            ->has('classes', 2)
-            ->where('classes.0.id', $shown->id)
-            ->where('classes.1.id', $closed->id)
-            ->missing('classes.0.meeting_url'));
+        $response = $this->get('/ahmed')->assertOk()->assertViewIs('site.instructor');
+        $response->assertViewHas('site', fn ($site) => $site['slug'] === 'ahmed'
+            && str_starts_with($site['whatsapp_url'], 'https://wa.me/218')
+            && $site['is_owner'] === false);
+        $response->assertViewHas('courses', fn ($courses) => array_column($courses, 'id') === [$shown->id, $closed->id]
+            && ! array_key_exists('meeting_url', $courses[0]));
+        $response->assertSee('منشور')->assertSee('مغلق')
+            ->assertDontSee('مسودة</a>', false)->assertDontSee('ملغى</a>', false)
+            ->assertDontSee('منتهٍ')->assertDontSee('لمدرّس آخر');
     }
 
     public function test_the_class_page_never_shows_the_meeting_link(): void
@@ -59,12 +59,10 @@ class PublicPagesTest extends TestCase
         $instructor = $this->instructor('ahmed');
         $class = TeachingClass::factory()->online()->published()->for($instructor)->create();
 
-        $response = $this->get("/ahmed/classes/{$class->id}")->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('Public/Class')
-            ->where('item.id', $class->id)
-            ->where('item.type', 'online')
-            ->missing('item.meeting_url'));
+        $response = $this->get("/ahmed/classes/{$class->id}")->assertOk()->assertViewIs('site.class');
+        $response->assertViewHas('course', fn ($course) => $course['id'] === $class->id
+            && $course['type'] === 'online'
+            && ! array_key_exists('meeting_url', $course));
         $response->assertDontSee('meet.google.com', false);
     }
 
@@ -80,7 +78,9 @@ class PublicPagesTest extends TestCase
 
         $this->actingAs($instructor->user)->get("/ahmed/classes/{$draft->id}")
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->where('isOwner', true)->where('item.status', 'draft'));
+            ->assertViewHas('site', fn ($site) => $site['is_owner'] === true)
+            ->assertViewHas('course', fn ($course) => $course['status'] === 'draft')
+            ->assertSee(__('site.draft_bar'));
         $this->get("/ahmed/classes/{$canceled->id}")->assertNotFound();
     }
 

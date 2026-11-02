@@ -6,7 +6,7 @@
 
         <title inertia>{{ config('app.name', 'طلابي') }}</title>
 
-        <meta name="theme-color" content="#0A7D4F">
+        <meta name="theme-color" content="#00613E">
 
         {{-- Apply the stored theme before Vue boots to avoid a flash. --}}
         <script>
@@ -21,7 +21,7 @@
 
                     document.documentElement.dataset.theme = theme;
                     document.documentElement.style.colorScheme = theme;
-                    document.documentElement.style.backgroundColor = theme === 'dark' ? '#0A1A13' : '#F3F8F5';
+                    document.documentElement.style.backgroundColor = theme === 'dark' ? '#121212' : '#F2F8F5';
                 } catch (e) {}
             })();
         </script>

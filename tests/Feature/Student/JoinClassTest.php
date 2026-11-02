@@ -18,9 +18,9 @@ class JoinClassTest extends TestCase
         $class = $this->publishedClass();
         $student = User::factory()->create();
 
-        $this->actingAs($student)->get($this->classUrl($class))->assertInertia(fn (Assert $page) => $page
-            ->where('acceptsRequests', true)
-            ->where('enrollment', null));
+        $this->actingAs($student)->get($this->classUrl($class))
+            ->assertViewHas('course', fn ($course) => $course['is_open'] === true && $course['enrollment'] === null)
+            ->assertSee(route('classes.request', $class->id), false);
 
         $this->post("/classes/{$class->id}/request", [
             'note' => 'مستواي متوسط',
@@ -34,8 +34,9 @@ class JoinClassTest extends TestCase
         $this->assertSame('مستواي متوسط', $enrollment->note);
         $this->assertNull($enrollment->fee);
 
-        $this->get($this->classUrl($class))->assertInertia(fn (Assert $page) => $page
-            ->where('enrollment.status', Enrollment::STATUS_REQUESTED));
+        $this->get($this->classUrl($class))
+            ->assertViewHas('course', fn ($course) => $course['enrollment']['status'] === Enrollment::STATUS_REQUESTED)
+            ->assertSee(__('site.classes.see_my_classes'));
 
         $this->get('/account/classes')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Student/Classes/Index')

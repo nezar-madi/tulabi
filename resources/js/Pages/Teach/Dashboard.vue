@@ -114,7 +114,7 @@ const statItems = [
     padding: 20px;
     margin-bottom: 16px;
     border-radius: var(--rq-radius-card);
-    border-inline-start: 3px solid var(--rq-brand-accent);
+    border-color: var(--rq-line-emphasis);
 }
 
 .setup__title {
@@ -160,7 +160,7 @@ const statItems = [
 }
 
 .pending--on {
-    border-inline-start: 3px solid var(--rq-brand-accent);
+    border-color: var(--rq-line-emphasis);
 }
 
 .pending__title {

@@ -13,11 +13,9 @@ import { vuetify } from './config/vuetify';
 import { resolveInitialTheme } from './config/themePreference';
 import AppShell from '@/Layouts/AppShell.vue';
 import AuthSplitLayout from '@/Layouts/AuthSplitLayout.vue';
-import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 // rqmana's layouts: sign-in pages in the split layout, signed-in pages in the app shell.
 const usesAuthLayout = (name) => /^Auth\//.test(name) || /^Join\//.test(name) || name === 'Admin/Login';
-const usesAppShell = (name) => /^(Admin|Teach|Student|Account)\//.test(name);
 
 const appName = import.meta.env.VITE_APP_NAME || 'طلابي';
 const locale = 'ar';
@@ -70,10 +68,8 @@ createInertiaApp({
         if (page.default.layout === undefined) {
             if (usesAuthLayout(name)) {
                 page.default.layout = AuthSplitLayout;
-            } else if (usesAppShell(name)) {
-                page.default.layout = AppShell;
             } else {
-                page.default.layout = PublicLayout;
+                page.default.layout = AppShell;
             }
         }
 

@@ -198,7 +198,7 @@ function savePassword() {
 }
 
 .account__card--accent {
-    border-inline-start: 3px solid var(--rq-brand-accent);
+    border-color: var(--rq-line-emphasis);
 }
 
 .account__card-title {
