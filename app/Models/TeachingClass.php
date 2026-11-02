@@ -44,6 +44,12 @@ class TeachingClass extends Model
     /** Owes nothing and takes no payments (as in rqmana). */
     public const STATUS_CANCELED = 'canceled';
 
+    /**
+     * «معلّق»: reached its start date with fewer accepted students than min_seats (auto_suspend).
+     * Hidden from visitors and takes no requests until the instructor picks a new start date.
+     */
+    public const STATUS_SUSPENDED = 'suspended';
+
     /** Folder of the promotional images on the public disk (App\Support\ClassImage). */
     public const IMAGE_DIRECTORY = 'class-images';
 
@@ -53,6 +59,12 @@ class TeachingClass extends Model
         'program_id',
         'title',
         'description',
+        'learn',
+        'requirements',
+        'audience',
+        'promo_video_url',
+        'auto_suspend',
+        'min_seats',
         'type',
         'location',
         'map_url',
@@ -75,6 +87,12 @@ class TeachingClass extends Model
             'ends_on' => 'date:Y-m-d',
             'days' => 'array',
             'manual_dates' => 'array',
+            'learn' => 'array',
+            'requirements' => 'array',
+            'audience' => 'array',
+            'auto_suspend' => 'boolean',
+            'min_seats' => 'integer',
+            'suspended_at' => 'datetime',
             'price' => 'decimal:3',
             'seats' => 'integer',
             'published_at' => 'datetime',
@@ -113,18 +131,24 @@ class TeachingClass extends Model
     }
 
     /**
-     * Classes a visitor may see: published or closed, of an instructor whose page is public.
+     * Classes a visitor may see: published or closed, with their promotional image, of an
+     * instructor whose page is public.
      *
      * @param  Builder<TeachingClass>  $query
      */
     public function scopePubliclyVisible(Builder $query): void
     {
-        $query->whereIn('status', [self::STATUS_PUBLISHED, self::STATUS_CLOSED]);
+        $query->whereIn('status', [self::STATUS_PUBLISHED, self::STATUS_CLOSED])->whereNotNull('image_path');
     }
 
     public function isPubliclyVisible(): bool
     {
-        return in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true);
+        return in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true) && $this->image_path !== null;
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === self::STATUS_SUSPENDED;
     }
 
     public function isCanceled(): bool

@@ -15,7 +15,7 @@ export function accountSidebarItems(user) {
             { id: 'teach-classes', titleKey: 'teach.nav.classes', icon: 'tabler:chalkboard', routeName: 'teach.classes.index', sectionKey: 'sidebar.sections.teaching' },
             { id: 'teach-students', titleKey: 'teach.nav.students', icon: 'tabler:users', routeName: 'teach.students.index', sectionKey: 'sidebar.sections.teaching' },
             { id: 'teach-payments', titleKey: 'teach.nav.payments', icon: 'tabler:cash', routeName: 'teach.payments.index', sectionKey: 'sidebar.sections.teaching' },
-            { id: 'teach-profile', titleKey: 'teach.nav.profile', icon: 'tabler:id-badge-2', routeName: 'teach.profile.edit', sectionKey: 'sidebar.sections.teaching' },
+            { id: 'teach-profile', titleKey: 'teach.nav.profile', icon: 'tabler:at', routeName: 'teach.profile.edit', sectionKey: 'sidebar.sections.teaching' },
         );
     }
 

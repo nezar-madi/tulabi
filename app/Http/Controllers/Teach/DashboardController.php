@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\Instructor;
 use App\Models\Payment;
 use App\Models\TeachingClass;
+use App\Support\ClassLifecycle;
 use App\Support\ClassPresenter;
 use App\Support\Currency;
 use App\Support\TulabiClock;
@@ -26,6 +27,9 @@ class DashboardController extends Controller
     {
         $instructor = $this->instructor($request);
         $today = TulabiClock::today();
+
+        // Classes that reached their start date below their minimum are suspended before they are counted.
+        app(ClassLifecycle::class)->suspendUnderfilled($instructor->getKey());
 
         $upcoming = $instructor->classes()
             ->whereIn('status', [TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED])

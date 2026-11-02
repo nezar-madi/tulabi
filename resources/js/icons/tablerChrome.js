@@ -2,6 +2,7 @@ import { h } from 'vue';
 import {
     IconArrowLeft,
     IconArrowRight,
+    IconAt,
     IconBrandFacebook,
     IconBrandInstagram,
     IconBrandLinkedin,
@@ -75,6 +76,7 @@ import {
 export const tablerChromeIcons = {
     'arrow-left': IconArrowLeft,
     'arrow-right': IconArrowRight,
+    at: IconAt,
     'brand-facebook': IconBrandFacebook,
     'brand-instagram': IconBrandInstagram,
     'brand-linkedin': IconBrandLinkedin,

@@ -19,6 +19,16 @@
                     <v-icon icon="tabler:external-link" start />
                     {{ $t('teach.programs.view') }}
                 </v-btn>
+                <v-btn
+                    v-if="item.is_active"
+                    class="rq-btn"
+                    variant="tonal"
+                    color="primary"
+                    @click="router.visit(route('teach.classes.create', { program: item.id }))"
+                >
+                    <v-icon icon="tabler:plus" start />
+                    {{ $t('teach.programs.new_class') }}
+                </v-btn>
                 <v-btn class="rq-btn" variant="text" color="error" @click="destroy">{{ $t('teach.programs.delete') }}</v-btn>
             </div>
         </template>
@@ -38,18 +48,19 @@
                 :error-messages="form.errors.name"
                 class="mb-3"
             />
-            <FormPlainRichText
-                v-model="form.description"
-                :label="$t('teach.programs.fields.description')"
-                :placeholder="$t('teach.programs.fields.description_hint')"
-                required
-                :error-messages="form.errors.description"
-            />
+        </section>
+
+        <!-- The content, in fixed sections: description and the three bullet lists -->
+        <section class="rq-card teach-section">
+            <CourseContentFields :form="form" :description-label="$t('teach.programs.fields.description')" />
         </section>
 
         <!-- Poster -->
         <section class="rq-card teach-section">
             <p class="form-plain-field__label font-weight-medium mb-1">{{ $t('teach.programs.fields.image') }}</p>
+            <v-alert v-if="form.is_published && !imagePreview" type="warning" variant="tonal" density="comfortable" class="mb-3" rounded="lg">
+                {{ $t('teach.programs.fields.image_required') }}
+            </v-alert>
             <p class="teach-hint">{{ $t('teach.programs.fields.image_hint') }}</p>
             <div class="poster">
                 <div class="poster__frame" :class="{ 'poster__frame--empty': !imagePreview }">
@@ -75,6 +86,7 @@
             <FormPlainCheckbox v-model="form.is_active" :label="$t('teach.programs.fields.is_active')" hide-details />
             <p class="teach-hint toggles__hint">{{ $t('teach.programs.fields.is_active_hint') }}</p>
             <FormPlainCheckbox v-model="form.is_published" :label="$t('teach.programs.fields.is_published')" hide-details />
+            <p class="teach-hint toggles__hint">{{ $t('teach.programs.fields.is_published_hint') }}</p>
             <FormPlainCheckbox v-model="form.is_featured" :label="$t('teach.programs.fields.is_featured')" hide-details />
             <p class="teach-hint toggles__hint">{{ $t('teach.programs.fields.is_featured_hint') }}</p>
         </section>
@@ -91,7 +103,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PageIntro from '@/Components/PageIntro.vue';
 import FormPlainCheckbox from '@/Components/formFields/FormPlainCheckbox.vue';
-import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';
+import CourseContentFields from '@/Components/CourseContentFields.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
 const props = defineProps({
@@ -103,6 +115,10 @@ const { t } = useI18n();
 const form = useForm({
     name: props.item?.name || '',
     description: props.item?.description || '',
+    learn: [...(props.item?.learn || [])],
+    requirements: [...(props.item?.requirements || [])],
+    audience: [...(props.item?.audience || [])],
+    promo_video_url: props.item?.promo_video_url || '',
     is_active: props.item ? props.item.is_active : true,
     is_published: props.item ? props.item.is_published : false,
     is_featured: props.item ? props.item.is_featured : false,

@@ -31,8 +31,11 @@
                 <v-icon icon="tabler:external-link" start />
                 {{ $t('teach.classes.view') }}
             </v-btn>
-            <v-btn v-if="cls.status === 'draft'" class="rq-btn rq-btn--primary" @click="act('publish')">
+            <v-btn v-if="cls.status === 'draft'" class="rq-btn rq-btn--primary" :disabled="!cls.image_url" @click="act('publish')">
                 {{ $t('teach.classes.publish') }}
+            </v-btn>
+            <v-btn v-if="cls.status === 'suspended'" class="rq-btn rq-btn--primary" @click="openRestart">
+                {{ $t('teach.classes.restart') }}
             </v-btn>
             <v-btn v-if="cls.status === 'closed'" class="rq-btn rq-btn--primary" @click="act('publish')">
                 {{ $t('teach.classes.reopen') }}
@@ -56,6 +59,16 @@
         </template>
     </PageIntro>
 
+    <v-alert v-if="cls && cls.status === 'suspended'" type="warning" variant="tonal" class="mb-4" rounded="lg">
+        {{ $t('teach.classes.suspended_note', { min: cls.min_seats }) }}
+        <div class="mt-2">
+            <v-btn class="rq-btn" variant="flat" color="primary" size="small" @click="openRestart">{{ $t('teach.classes.restart') }}</v-btn>
+        </div>
+    </v-alert>
+    <v-alert v-if="cls && cls.status === 'draft' && !cls.image_url" type="info" variant="tonal" class="mb-4" rounded="lg">
+        {{ $t('teach.classes.image_needed_to_publish') }}
+    </v-alert>
+
     <v-alert v-if="readOnly" type="warning" variant="tonal" class="mb-4" rounded="lg">
         {{ $t('teach.classes.canceled_note') }}
         <div v-if="cls.cancel_reason" class="mt-1">{{ cls.cancel_reason }}</div>
@@ -64,15 +77,31 @@
     <form @submit.prevent="save">
         <fieldset :disabled="readOnly" class="class-form">
             <section class="rq-card teach-section">
+                <!-- As in rqmana: a new class, or one made from a training program (its template) -->
+                <p class="form-plain-field__label font-weight-medium mb-2">{{ $t('teach.classes.fields.how') }}</p>
+                <v-btn-toggle v-model="mode" mandatory class="mb-3" :disabled="readOnly">
+                    <v-btn value="new">
+                        <v-icon icon="tabler:plus" start />
+                        {{ $t('teach.classes.fields.mode_new') }}
+                    </v-btn>
+                    <v-btn value="program" :disabled="programs.length === 0">
+                        <v-icon icon="tabler:layout-grid" start />
+                        {{ $t('teach.classes.fields.mode_program') }}
+                    </v-btn>
+                </v-btn-toggle>
+                <p v-if="programs.length === 0" class="teach-hint mt-0">
+                    {{ $t('teach.classes.fields.no_programs') }}
+                    <Link :href="route('teach.programs.create')">{{ $t('teach.programs.new') }}</Link>
+                </p>
                 <FormPlainSelect
-                    v-if="programs.length"
+                    v-if="mode === 'program'"
                     v-model="form.program_id"
                     :label="$t('teach.classes.fields.program')"
                     :items="programItems"
                     item-title="name"
                     item-value="id"
-                    :placeholder="$t('teach.classes.fields.program_none')"
-                    clearable
+                    :placeholder="$t('teach.classes.fields.program_placeholder')"
+                    required
                     :hint="$t('teach.classes.fields.program_hint')"
                     persistent-hint
                     :error-messages="form.errors.program_id"
@@ -87,19 +116,18 @@
                     :error-messages="form.errors.title"
                     class="mb-3"
                 />
-                <FormPlainRichText
-                    v-model="form.description"
-                    :label="$t('teach.classes.fields.description')"
-                    :placeholder="$t('teach.classes.fields.description_hint')"
-                    required
-                    :error-messages="form.errors.description"
-                />
+            </section>
+
+            <!-- The content, in fixed sections: description and the three bullet lists -->
+            <section class="rq-card teach-section">
+                <CourseContentFields :form="form" :description-label="$t('teach.classes.fields.description')" />
             </section>
 
             <!-- Promotional image -->
             <section class="rq-card teach-section">
                 <p class="form-plain-field__label font-weight-medium mb-1">{{ $t('teach.classes.fields.image') }}</p>
                 <p class="teach-hint">{{ $t('teach.classes.fields.image_hint') }}</p>
+                <p class="teach-hint mt-0">{{ $t('teach.classes.fields.image_required') }}</p>
                 <div class="class-image">
                     <div class="class-image__frame" :class="{ 'class-image__frame--empty': !imagePreview }">
                         <img v-if="imagePreview" :src="imagePreview" alt="">
@@ -272,6 +300,29 @@
                         />
                     </div>
                 </div>
+
+                <!-- «تعليق البدء تلقائيًا»: suspend the class when it starts below the minimum -->
+                <v-switch
+                    v-model="form.auto_suspend"
+                    color="primary"
+                    density="comfortable"
+                    hide-details
+                    inset
+                    :label="$t('teach.classes.fields.auto_suspend')"
+                    class="mt-3"
+                    :disabled="readOnly"
+                />
+                <p class="teach-hint mt-0">{{ $t('teach.classes.fields.auto_suspend_hint') }}</p>
+                <FormPlainTextField
+                    v-if="form.auto_suspend"
+                    v-model="form.min_seats"
+                    :label="$t('teach.classes.fields.min_seats')"
+                    :placeholder="$t('teach.classes.fields.min_seats_hint')"
+                    required
+                    :field-attrs="{ name: 'min_seats', inputmode: 'numeric', dir: 'ltr' }"
+                    :error-messages="form.errors.min_seats"
+                    class="mt-1"
+                />
             </section>
 
             <div v-if="!readOnly">
@@ -281,6 +332,29 @@
             </div>
         </fieldset>
     </form>
+
+    <v-dialog v-model="restartOpen" max-width="480" scrollable>
+        <v-card v-if="cls" class="app-form-dialog">
+            <v-card-text class="app-form-dialog__body pt-6 pb-2">
+                <h2 class="rq-dialog__title mb-2">{{ $t('teach.classes.restart_title', { title: cls.title }) }}</h2>
+                <p class="rq-dialog__subtitle mb-4">{{ $t('teach.classes.restart_text') }}</p>
+                <FormPlainDatePicker
+                    v-model="restartForm.starts_on"
+                    :label="$t('teach.classes.fields.new_starts_on')"
+                    required
+                    :min="today"
+                    :error-messages="restartForm.errors.starts_on"
+                />
+            </v-card-text>
+            <v-card-actions class="pa-4">
+                <v-spacer />
+                <v-btn class="rq-btn" variant="text" @click="restartOpen = false">{{ $t('common.close') }}</v-btn>
+                <v-btn class="rq-btn rq-btn--primary" :loading="restartForm.processing" :disabled="!restartForm.starts_on" @click="restart">
+                    {{ $t('teach.classes.restart_confirm') }}
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 
     <v-dialog v-model="cancelDialog" max-width="480">
         <v-card v-if="cls" class="app-form-dialog">
@@ -312,9 +386,9 @@ import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
+import CourseContentFields from '@/Components/CourseContentFields.vue';
 import FormPlainDatePicker from '@/Components/formFields/FormPlainDatePicker.vue';
 import FormPlainDatesPicker from '@/Components/formFields/FormPlainDatesPicker.vue';
-import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';
 import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
@@ -327,6 +401,10 @@ const props = defineProps({
     // The programs (course templates) a course may be put in: [{ id, name, description, image_url }].
     programs: { type: Array, default: () => [] },
     publicUrl: { type: String, default: null },
+    // A program chosen on the way in (a new class from this program).
+    selectedProgram: { type: Number, default: null },
+    // Libya's today, the earliest date a suspended class may restart on.
+    today: { type: String, default: '' },
 });
 
 const { t } = useI18n();
@@ -336,9 +414,15 @@ const readOnly = computed(() => cls.value?.status === 'canceled');
 const programItems = computed(() => props.programs);
 
 const form = useForm({
-    program_id: cls.value?.program_id ?? null,
+    program_id: cls.value?.program_id ?? props.selectedProgram ?? null,
     title: cls.value?.title || '',
     description: cls.value?.description || '',
+    learn: [...(cls.value?.learn || [])],
+    requirements: [...(cls.value?.requirements || [])],
+    audience: [...(cls.value?.audience || [])],
+    promo_video_url: cls.value?.promo_video_url || '',
+    auto_suspend: cls.value?.auto_suspend || false,
+    min_seats: cls.value?.min_seats ?? '',
     type: cls.value?.type || 'in_person',
     location: cls.value?.location || '',
     map_url: cls.value?.map_url || '',
@@ -357,30 +441,75 @@ const form = useForm({
     seats: cls.value?.seats ?? '',
 });
 
-// A program is the template of a course: on a new course, choosing one fills in the title,
-// the description and the image, and the instructor edits them from there. A field the
-// instructor already changed is not overwritten.
+// How the class is made: new, or from a program (its template). Going back to «جديد» lets go of the program.
+const mode = ref(form.program_id ? 'program' : 'new');
+
+watch(mode, (value) => {
+    if (value === 'new') {
+        form.program_id = null;
+    }
+});
+
+// A program is the template of a class: on a new class, choosing one fills in the title, the
+// description, the three lists, the video and the image, and the instructor edits them from
+// there. A field the instructor already changed is not overwritten.
 const template = computed(() => props.programs.find((program) => program.id === form.program_id) || null);
-const emptyHtml = (value) => !String(value || '').replace(/<[^>]*>/g, '').trim();
+const sameList = (a, b) => a.length === b.length && a.every((item, index) => item === b[index]);
+
+function fillFromProgram(previous, next) {
+    if (!form.title || form.title === previous?.name) {
+        form.title = next?.name || '';
+    }
+
+    if (!form.description.trim() || form.description === previous?.description) {
+        form.description = next?.description || '';
+    }
+
+    ['learn', 'requirements', 'audience'].forEach((key) => {
+        if (form[key].length === 0 || sameList(form[key], previous?.[key] || [])) {
+            form[key] = [...(next?.[key] || [])];
+        }
+    });
+
+    if (!form.promo_video_url || form.promo_video_url === previous?.promo_video_url) {
+        form.promo_video_url = next?.promo_video_url || '';
+    }
+
+    form.no_template_image = false;
+}
 
 watch(() => form.program_id, (_, previousId) => {
     if (cls.value) {
         return;
     }
 
-    const previous = props.programs.find((program) => program.id === previousId) || null;
-    const next = template.value;
-
-    if (!form.title || form.title === previous?.name) {
-        form.title = next?.name || '';
-    }
-
-    if (emptyHtml(form.description) || form.description === previous?.description) {
-        form.description = next?.description || '';
-    }
-
-    form.no_template_image = false;
+    fillFromProgram(props.programs.find((program) => program.id === previousId) || null, template.value);
 });
+
+// Arriving with a program already chosen (a new class from the program's page).
+if (!cls.value && form.program_id) {
+    fillFromProgram(null, template.value);
+}
+
+// A suspended class starts again on a new date
+const restartOpen = ref(false);
+const restartForm = useForm({ starts_on: '' });
+
+function openRestart() {
+    restartForm.reset();
+    restartForm.clearErrors();
+    restartForm.starts_on = props.today;
+    restartOpen.value = true;
+}
+
+function restart() {
+    restartForm.post(route('teach.classes.reactivate', cls.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            restartOpen.value = false;
+        },
+    });
+}
 
 const cancelDialog = ref(false);
 const cancelForm = useForm({ reason: '' });

@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class ProgramTest extends TestCase
 {
-    public function test_an_instructor_makes_a_program_with_a_filtered_description_and_a_poster(): void
+    public function test_an_instructor_makes_a_program_with_plain_text_content_and_a_poster(): void
     {
         Storage::fake('public');
         $user = $this->instructor();
@@ -20,7 +20,11 @@ class ProgramTest extends TestCase
         $this->actingAs($user)->get('/teach/programs/create')->assertOk();
 
         $response = $this->post('/teach/programs', $this->data([
-            'description' => '<p onclick="x()">شرح <script>alert(1)</script></p>',
+            'description' => "شرح <script>alert(1)</script>\nسطر ثان",
+            'learn' => ['نقطة أولى', ' ', 'نقطة ثانية'],
+            'requirements' => ['متطلب'],
+            'audience' => ['لمن يريد التعلم'],
+            'promo_video_url' => 'https://youtu.be/dQw4w9WgXcQ',
             'instructor_id' => 999,
             'image' => UploadedFile::fake()->image('poster.png', 1600, 900),
         ]));
@@ -28,8 +32,11 @@ class ProgramTest extends TestCase
         $program = Program::query()->sole();
         $response->assertRedirect("/teach/programs/{$program->id}/edit");
         $this->assertSame($user->instructor->id, $program->instructor_id);
-        $this->assertStringNotContainsString('script', $program->description);
-        $this->assertStringNotContainsString('onclick', $program->description);
+        $this->assertSame("شرح <script>alert(1)</script>\nسطر ثان", $program->description);
+        $this->assertSame(['نقطة أولى', 'نقطة ثانية'], $program->learn);
+        $this->assertSame(['متطلب'], $program->requirements);
+        $this->assertSame(['لمن يريد التعلم'], $program->audience);
+        $this->assertSame('https://youtu.be/dQw4w9WgXcQ', $program->promo_video_url);
         $this->assertStringStartsWith('program-images/'.$program->instructor_id.'/', $program->image_path);
         Storage::disk('public')->assertExists($program->image_path);
         $this->assertTrue($program->is_active);
@@ -44,9 +51,32 @@ class ProgramTest extends TestCase
         $this->post('/teach/programs', $this->data(['name' => '']))->assertSessionHasErrors('name');
         $this->post('/teach/programs', $this->data(['name' => 'برنامج   قائم']))->assertSessionHasErrors(['name' => __('programs.name_taken')]);
         $this->post('/teach/programs', $this->data(['description' => '']))->assertSessionHasErrors('description');
-        $this->post('/teach/programs', $this->data(['description' => '<p> </p><br>']))->assertSessionHasErrors('description');
+        $this->post('/teach/programs', $this->data(['description' => " \n "]))->assertSessionHasErrors('description');
+        $this->post('/teach/programs', $this->data(['promo_video_url' => 'https://evil.example/video']))->assertSessionHasErrors('promo_video_url');
 
         $this->assertSame(1, Program::query()->count());
+    }
+
+    public function test_a_program_is_published_only_with_its_image(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/programs', $this->data(['is_published' => true]))
+            ->assertSessionHasErrors(['image' => __('programs.image_required_to_publish')]);
+        $this->assertSame(0, Program::query()->count());
+
+        $this->post('/teach/programs', $this->data(['is_published' => true, 'image' => UploadedFile::fake()->image('p.png', 1200, 800)]))
+            ->assertSessionHasNoErrors();
+        $program = Program::query()->sole();
+        $this->assertTrue($program->is_published);
+
+        // Taking the image away from a published program is refused; hiding it first works.
+        $this->put("/teach/programs/{$program->id}", $this->data(['is_published' => true, 'remove_image' => true]))
+            ->assertSessionHasErrors('image');
+        $this->put("/teach/programs/{$program->id}", $this->data(['is_published' => false, 'remove_image' => true]))
+            ->assertSessionHasNoErrors();
+        $this->assertNull($program->fresh()->image_path);
     }
 
     public function test_two_instructors_may_use_the_same_program_name(): void
@@ -180,6 +210,27 @@ class ProgramTest extends TestCase
         Storage::disk('public')->assertExists($program->fresh()->image_path);
     }
 
+    public function test_the_new_class_form_can_arrive_with_a_program_chosen(): void
+    {
+        $user = $this->instructor();
+        $program = Program::factory()->for($user->instructor)->create([
+            'name' => 'رياضيات',
+            'learn' => ['نقطة'],
+            'promo_video_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ]);
+        $stopped = Program::factory()->for($user->instructor)->create(['name' => 'متوقف', 'is_active' => false]);
+        $foreign = Program::factory()->for($this->instructor()->instructor)->create(['name' => 'غريب']);
+
+        $this->actingAs($user);
+        $this->get("/teach/classes/create?program={$program->id}")->assertInertia(fn (Assert $page) => $page
+            ->where('selectedProgram', $program->id)
+            ->where('programs.0.learn', ['نقطة'])
+            ->where('programs.0.promo_video_url', 'https://youtu.be/dQw4w9WgXcQ'));
+        $this->get("/teach/classes/create?program={$stopped->id}")->assertInertia(fn (Assert $page) => $page->where('selectedProgram', null));
+        $this->get("/teach/classes/create?program={$foreign->id}")->assertInertia(fn (Assert $page) => $page->where('selectedProgram', null));
+        $this->get('/teach/classes/create')->assertInertia(fn (Assert $page) => $page->where('selectedProgram', null));
+    }
+
     public function test_the_course_form_offers_active_programs_and_the_current_one(): void
     {
         $user = $this->instructor();
@@ -193,7 +244,8 @@ class ProgramTest extends TestCase
             ->where('programs.0.id', $active->id)
             ->where('programs.0.name', 'نشط')
             ->where('programs.0.description', $active->description)
-            ->where('programs.0.image_url', null));
+            ->where('programs.0.image_url', '/storage/program-images/1/test.jpg')
+            ->where('programs.0.learn', []));
         $this->get("/teach/classes/{$class->id}/edit")->assertInertia(fn (Assert $page) => $page
             ->has('programs', 2));
     }
@@ -206,9 +258,9 @@ class ProgramTest extends TestCase
     {
         return [
             'name' => 'رياضيات',
-            'description' => '<p>برنامج شامل.</p>',
+            'description' => 'برنامج شامل.',
             'is_active' => true,
-            'is_published' => true,
+            'is_published' => false,
             'is_featured' => false,
             ...$overrides,
         ];
@@ -222,7 +274,7 @@ class ProgramTest extends TestCase
     {
         return [
             'title' => 'فصل رياضيات',
-            'description' => '<p>شرح.</p>',
+            'description' => 'شرح.',
             'type' => 'online',
             'schedule_type' => 'daily',
             'meeting_url' => '',

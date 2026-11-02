@@ -19,9 +19,7 @@
                 @if ($program['poster_url'])
                     <div class="rq-detail-media"><img src="{{ $program['poster_url'] }}" alt="{{ $program['name'] }}"></div>
                 @endif
-                <h2 class="rq-h3">{{ __('site.programs.about_program') }}</h2>
-                {{-- Filtered on save by App\Support\SafeHtml::description(). --}}
-                <div class="rq-prose">{!! $program['description'] !!}</div>
+                @include('site.partials.course-content', ['item' => $program, 'aboutTitle' => __('site.programs.about_program')])
             </div>
 
             <aside class="rq-panel rq-panel--sticky">

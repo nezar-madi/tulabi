@@ -11,14 +11,17 @@ use Tests\TestCase;
 
 class ClassTest extends TestCase
 {
-    public function test_a_new_class_is_a_draft_with_a_filtered_description(): void
+    public function test_a_new_class_is_a_draft_with_plain_text_content(): void
     {
         $user = $this->instructor();
 
         $this->actingAs($user)->get('/teach/classes/create')->assertOk();
 
         $response = $this->post('/teach/classes', $this->data([
-            'description' => '<p onclick="x()">شرح <script>alert(1)</script><a href="javascript:alert(1)">رابط</a></p>',
+            'description' => "<script>alert(1)</script>\r\nسطر ثان\r\n\r\n\r\n\r\nفقرة",
+            'learn' => ['  حل المعادلات  ', '', 'التفاضل', '   '],
+            'requirements' => ['جبر أساسي'],
+            'audience' => [],
             'status' => TeachingClass::STATUS_PUBLISHED,
             'instructor_id' => 999,
             'currency_code' => 'USD',
@@ -32,9 +35,11 @@ class ClassTest extends TestCase
         $this->assertSame($user->instructor->id, $class->instructor_id);
         $this->assertSame('LYD', $class->currency_code);
         $this->assertSame([1, 3, 6], $class->days);
-        $this->assertStringNotContainsString('script', $class->description);
-        $this->assertStringNotContainsString('onclick', $class->description);
-        $this->assertStringNotContainsString('javascript', $class->description);
+        // Plain text: kept as typed (the pages escape it), line breaks normalised, blank runs squeezed.
+        $this->assertSame("<script>alert(1)</script>\nسطر ثان\n\nفقرة", $class->description);
+        $this->assertSame(['حل المعادلات', 'التفاضل'], $class->learn);
+        $this->assertSame(['جبر أساسي'], $class->requirements);
+        $this->assertNull($class->audience);
         $this->assertSame('2026-12-01', $class->starts_on->toDateString());
     }
 
@@ -45,7 +50,10 @@ class ClassTest extends TestCase
         $this->post('/teach/classes', $this->data(['type' => 'in_person', 'map_url' => '']))
             ->assertSessionHasErrors('map_url');
         $this->post('/teach/classes', $this->data(['description' => '']))->assertSessionHasErrors('description');
-        $this->post('/teach/classes', $this->data(['description' => '<p> </p><br>']))->assertSessionHasErrors('description');
+        $this->post('/teach/classes', $this->data(['description' => " \n  \n "]))->assertSessionHasErrors('description');
+        $this->post('/teach/classes', $this->data(['description' => str_repeat('ا', 5001)]))->assertSessionHasErrors('description');
+        $this->post('/teach/classes', $this->data(['learn' => array_fill(0, 16, 'نقطة')]))->assertSessionHasErrors('learn');
+        $this->post('/teach/classes', $this->data(['learn' => [str_repeat('ا', 201)]]))->assertSessionHasErrors('learn.0');
         $this->post('/teach/classes', $this->data(['ends_on' => '2026-11-01']))
             ->assertSessionHasErrors('ends_on');
         $this->post('/teach/classes', $this->data(['start_time' => '18:00', 'end_time' => '17:00']))
@@ -251,6 +259,84 @@ class ClassTest extends TestCase
         $this->assertNotNull($class->fresh()->published_at);
     }
 
+    public function test_a_class_is_published_only_with_its_image(): void
+    {
+        Storage::fake('public');
+        $user = $this->instructor();
+        $draft = TeachingClass::factory()->for($user->instructor)->create(['image_path' => null]);
+        $this->actingAs($user);
+
+        $this->post("/teach/classes/{$draft->id}/publish")
+            ->assertSessionHasErrors(['class' => __('classes.image_required_to_publish')]);
+        $this->assertSame(TeachingClass::STATUS_DRAFT, $draft->fresh()->status);
+
+        // A draft may be saved without an image; once it has one, it publishes.
+        $this->put("/teach/classes/{$draft->id}", $this->data(['image' => UploadedFile::fake()->image('c.png', 1200, 800)]))
+            ->assertSessionHasNoErrors();
+        $this->post("/teach/classes/{$draft->id}/publish")->assertSessionHasNoErrors();
+        $this->assertSame(TeachingClass::STATUS_PUBLISHED, $draft->fresh()->status);
+
+        // Its image cannot be taken away while it is shown to visitors.
+        $this->put("/teach/classes/{$draft->id}", $this->data(['remove_image' => true]))
+            ->assertSessionHasErrors(['image' => __('classes.image_required_published')]);
+        $this->assertNotNull($draft->fresh()->image_path);
+    }
+
+    public function test_a_class_without_an_image_is_not_shown_to_visitors(): void
+    {
+        $user = $this->instructor();
+        $shown = TeachingClass::factory()->published()->for($user->instructor)->create(['title' => 'له صورة']);
+        $hidden = TeachingClass::factory()->published()->for($user->instructor)->create(['title' => 'بلا صورة', 'image_path' => null]);
+
+        $this->get('/ahmed')->assertOk()->assertSee('له صورة')->assertDontSee('بلا صورة');
+        $this->get("/ahmed/classes/{$shown->id}")->assertOk();
+        $this->get("/ahmed/classes/{$hidden->id}")->assertNotFound();
+
+        // The owner still sees it (to add the image).
+        $this->actingAs($user)->get("/ahmed/classes/{$hidden->id}")->assertOk();
+    }
+
+    public function test_the_class_page_shows_the_description_the_lists_and_the_video(): void
+    {
+        $user = $this->instructor();
+        $class = TeachingClass::factory()->published()->for($user->instructor)->create([
+            'description' => "سطر أول <b>غير مغلّظ</b>\nسطر ثان",
+            'learn' => ['حل المعادلات', 'التفاضل'],
+            'requirements' => ['جبر أساسي'],
+            'audience' => ['طلاب الثانوي'],
+            'promo_video_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ]);
+
+        $this->get("/ahmed/classes/{$class->id}")->assertOk()
+            ->assertSee('سطر أول &lt;b&gt;غير مغلّظ&lt;/b&gt;', false)
+            ->assertDontSee('<b>غير مغلّظ</b>', false)
+            ->assertSeeInOrder([__('site.content.learn'), 'حل المعادلات', 'التفاضل', __('site.content.requirements'), 'جبر أساسي', __('site.content.audience'), 'طلاب الثانوي'])
+            ->assertSee('<iframe', false)
+            ->assertSee('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', false);
+
+        // A list with nothing in it leaves its heading out; a bad video link shows no player.
+        $class->forceFill(['learn' => null, 'requirements' => null, 'promo_video_url' => 'https://evil.example/x'])->save();
+        $this->get("/ahmed/classes/{$class->id}")->assertOk()
+            ->assertDontSee(__('site.content.learn'))
+            ->assertDontSee(__('site.content.requirements'))
+            ->assertSee(__('site.content.audience'))
+            ->assertDontSee('<iframe', false);
+    }
+
+    public function test_the_video_link_must_be_embeddable(): void
+    {
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/classes', $this->data(['promo_video_url' => 'https://evil.example/video']))
+            ->assertSessionHasErrors(['promo_video_url' => __('classes.video_invalid')]);
+        $this->post('/teach/classes', $this->data(['promo_video_url' => 'http://youtu.be/dQw4w9WgXcQ']))
+            ->assertSessionHasErrors('promo_video_url');
+        $this->assertSame(0, TeachingClass::query()->count());
+
+        $this->post('/teach/classes', $this->data(['promo_video_url' => 'https://vimeo.com/123456789']))->assertSessionHasNoErrors();
+        $this->assertSame('https://vimeo.com/123456789', TeachingClass::query()->sole()->promo_video_url);
+    }
+
     public function test_close_reopen_cancel_and_delete(): void
     {
         $user = $this->instructor();
@@ -342,7 +428,7 @@ class ClassTest extends TestCase
     {
         return [
             'title' => 'رياضيات الثالث الثانوي',
-            'description' => '<p>مراجعة شاملة.</p>',
+            'description' => 'مراجعة شاملة.',
             'type' => 'in_person',
             'location' => 'طرابلس، حي الأندلس',
             'map_url' => 'https://maps.app.goo.gl/abc123',

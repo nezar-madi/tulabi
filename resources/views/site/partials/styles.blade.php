@@ -230,6 +230,14 @@ a{color:inherit}
 .rq-floating-whatsapp{position:fixed;inset-inline-start:16px;bottom:16px;z-index:30;display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 14px 28px -12px rgba(0,0,0,.45)}
 .rq-floating-whatsapp:hover{background:#1EBE5B;color:#fff}
 /* tulabi additions (same tokens): the owner's banner, the instructor photo, the request form, messages */
+.tl-plain{margin:0 0 8px;white-space:pre-line;font-size:17px;line-height:1.9;color:var(--rq-ink)}
+.tl-list-title{margin:28px 0 10px}
+.tl-list{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.tl-list li{position:relative;padding-inline-start:26px;font-size:16px;line-height:1.7;color:var(--rq-ink)}
+.tl-list li::before{content:"";position:absolute;inset-inline-start:4px;top:.7em;width:7px;height:7px;border-radius:50%;background:var(--rq-primary)}
+.tl-list--learn{padding:16px 18px;border:1px solid var(--rq-line);border-radius:8px;background:var(--rq-surface)}
+.tl-video{position:relative;aspect-ratio:16/9;margin-bottom:24px;overflow:hidden;border:1px solid var(--rq-line);border-radius:8px;background:#000}
+.tl-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .tl-class-image{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--rq-line);border-radius:8px;margin-bottom:24px}
 .tl-owner-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding:10px 16px;background:#FBF1E0;color:#A45F00;font-size:15px}
 .tl-owner-bar a{color:inherit;font-weight:700}

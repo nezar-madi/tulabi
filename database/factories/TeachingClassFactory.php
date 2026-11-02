@@ -24,7 +24,14 @@ class TeachingClassFactory extends Factory
         return [
             'instructor_id' => Instructor::factory(),
             'title' => 'رياضيات الثالث الثانوي',
-            'description' => '<p>مراجعة شاملة للمنهج.</p>',
+            'description' => 'مراجعة شاملة للمنهج.',
+            'learn' => null,
+            'requirements' => null,
+            'audience' => null,
+            'auto_suspend' => false,
+            'min_seats' => null,
+            // The image is what lets a class show on the public page.
+            'image_path' => 'class-images/1/test.jpg',
             'type' => TeachingClass::TYPE_IN_PERSON,
             'location' => 'طرابلس، حي الأندلس',
             'map_url' => 'https://maps.app.goo.gl/abc123',

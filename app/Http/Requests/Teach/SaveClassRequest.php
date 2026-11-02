@@ -4,8 +4,9 @@ namespace App\Http\Requests\Teach;
 
 use App\Models\Program;
 use App\Models\TeachingClass;
+use App\Rules\EmbeddableVideoUrl;
 use App\Rules\GoogleMapsUrl;
-use App\Support\SafeHtml;
+use App\Support\CourseContent;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,13 @@ class SaveClassRequest extends InstructorRequest
                 (array) $this->input('manual_dates', []),
             )))),
             'seats' => $this->filled('seats') ? $this->input('seats') : null,
+            'description' => CourseContent::cleanDescription($this->input('description')),
+            'learn' => CourseContent::cleanList($this->input('learn', [])),
+            'requirements' => CourseContent::cleanList($this->input('requirements', [])),
+            'audience' => CourseContent::cleanList($this->input('audience', [])),
+            'promo_video_url' => $this->filled('promo_video_url') ? trim((string) $this->input('promo_video_url')) : null,
+            'auto_suspend' => $this->boolean('auto_suspend'),
+            'min_seats' => $this->boolean('auto_suspend') && $this->filled('min_seats') ? $this->input('min_seats') : null,
             'remove_image' => $this->boolean('remove_image'),
             'no_template_image' => $this->boolean('no_template_image'),
             'ends_on' => $this->filled('ends_on') ? $this->input('ends_on') : null,
@@ -48,13 +56,13 @@ class SaveClassRequest extends InstructorRequest
         $inPerson = $this->input('type') === TeachingClass::TYPE_IN_PERSON;
 
         return [
+            ...CourseContent::rules(),
             // Optional: the course belongs to one of the instructor's own programs.
             'program_id' => [
                 'nullable', 'integer',
                 Rule::exists('programs', 'id')->where('instructor_id', $this->instructor()?->getKey()),
             ],
             'title' => ['required', 'string', 'min:3', 'max:150'],
-            'description' => ['required', 'string', 'max:20000'],
             'type' => ['required', Rule::in([TeachingClass::TYPE_IN_PERSON, TeachingClass::TYPE_ONLINE])],
             // The written place is optional; the Google Maps link is what an in-person class needs.
             'location' => ['nullable', 'string', 'max:255'],
@@ -74,6 +82,15 @@ class SaveClassRequest extends InstructorRequest
             'end_time' => ['nullable', 'date_format:H:i', 'required_with:start_time'],
             'price' => ['required', 'numeric', 'min:0', 'max:1000000', 'decimal:0,3'],
             'seats' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            // A promotional video, embedded on the class page (YouTube, Vimeo or Dailymotion).
+            'promo_video_url' => ['nullable', 'string', 'max:500', new EmbeddableVideoUrl],
+            // «تعليق البدء تلقائيًا»: needs a minimum, which cannot be more than the seats.
+            'auto_suspend' => ['boolean'],
+            'min_seats' => [
+                Rule::requiredIf($this->boolean('auto_suspend')),
+                'nullable', 'integer', 'min:1', 'max:10000',
+                $this->filled('seats') ? 'lte:seats' : 'nullable',
+            ],
             'image' => [
                 'nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096',
                 'dimensions:min_width=600,min_height=300,max_width=6000,max_height=6000',
@@ -89,10 +106,16 @@ class SaveClassRequest extends InstructorRequest
     public function after(): array
     {
         return [function (Validator $validator) {
-            // The description is cleaned on save: a box with only empty tags does not count.
-            if (! $validator->errors()->has('description')
-                && ! SafeHtml::hasText(SafeHtml::description((string) $this->input('description')))) {
-                $validator->errors()->add('description', __('validation.required', ['attribute' => __('validation.attributes.description')]));
+            // A class already shown to visitors (or waiting to restart) keeps its image: take the
+            // image away only by closing it to the public first, never by editing.
+            $class = $this->route('class');
+
+            if ($class instanceof TeachingClass && $class->image_path !== null && $this->boolean('remove_image')
+                && $this->newImage() === null
+                && in_array($class->status, [
+                    TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED, TeachingClass::STATUS_SUSPENDED,
+                ], true)) {
+                $validator->errors()->add('image', __('classes.image_required_published'));
             }
 
             // A stopped program takes no new courses (one already in it may stay, as in rqmana).
@@ -178,7 +201,6 @@ class SaveClassRequest extends InstructorRequest
         $data = $this->validated();
         $online = $data['type'] === TeachingClass::TYPE_ONLINE;
 
-        $description = SafeHtml::description($data['description'] ?? null);
         $type = $data['schedule_type'];
         $days = $type === TeachingClass::SCHEDULE_WEEKLY ? ($data['days'] ?? []) : [];
         sort($days);
@@ -186,13 +208,17 @@ class SaveClassRequest extends InstructorRequest
         sort($dates);
 
         unset($data['image'], $data['remove_image'], $data['no_template_image']);
+        $lists = CourseContent::listsFrom($data);
         $location = trim((string) ($data['location'] ?? ''));
 
         return [
             ...$data,
             'program_id' => ($data['program_id'] ?? null) ?: null,
             'title' => trim($data['title']),
-            'description' => $description,
+            'description' => CourseContent::cleanDescription($data['description']),
+            ...$lists,
+            'auto_suspend' => (bool) ($data['auto_suspend'] ?? false),
+            'min_seats' => ($data['auto_suspend'] ?? false) ? ($data['min_seats'] ?? null) : null,
             'location' => $online || $location === '' ? null : $location,
             'map_url' => $online ? null : trim((string) $data['map_url']),
             'meeting_url' => $online ? (($data['meeting_url'] ?? null) ?: null) : null,

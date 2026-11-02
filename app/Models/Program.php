@@ -24,6 +24,10 @@ class Program extends Model
     protected $fillable = [
         'name',
         'description',
+        'learn',
+        'requirements',
+        'audience',
+        'promo_video_url',
         'is_active',
         'is_published',
         'is_featured',
@@ -32,6 +36,9 @@ class Program extends Model
     protected function casts(): array
     {
         return [
+            'learn' => 'array',
+            'requirements' => 'array',
+            'audience' => 'array',
             'is_active' => 'boolean',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
@@ -50,15 +57,15 @@ class Program extends Model
         return $this->hasMany(TeachingClass::class);
     }
 
-    /** What the public page shows: published and not stopped. */
+    /** What the public page shows: published, not stopped, and with its promotional image. */
     public function scopePublic(Builder $query): Builder
     {
-        return $query->where('is_published', true)->where('is_active', true);
+        return $query->where('is_published', true)->where('is_active', true)->whereNotNull('image_path');
     }
 
     public function isPublic(): bool
     {
-        return $this->is_published && $this->is_active;
+        return $this->is_published && $this->is_active && $this->image_path !== null;
     }
 
     /** A path on the current host (php artisan storage:link), so it works on any domain. */

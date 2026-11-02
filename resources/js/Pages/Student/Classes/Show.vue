@@ -19,6 +19,9 @@
                     {{ $t('student.classes.class_canceled') }}
                     <div v-if="cls.cancel_reason" class="mt-1">{{ cls.cancel_reason }}</div>
                 </v-alert>
+                <v-alert v-else-if="cls.status === 'suspended'" type="warning" variant="tonal" class="my-4" rounded="lg">
+                    {{ $t('student.classes.class_suspended') }}
+                </v-alert>
                 <p v-else-if="enrollment.decision_reason && ['rejected', 'canceled'].includes(enrollment.status)" class="detail__reason">
                     {{ $t('student.classes.reason', { reason: enrollment.decision_reason }) }}
                 </p>

@@ -21,7 +21,12 @@ class ProgramFactory extends Factory
         return [
             'instructor_id' => Instructor::factory(),
             'name' => 'رياضيات',
-            'description' => '<p>برنامج شامل للمنهج.</p>',
+            'description' => 'برنامج شامل للمنهج.',
+            'learn' => null,
+            'requirements' => null,
+            'audience' => null,
+            // The poster is what lets a program show on the public page.
+            'image_path' => 'program-images/1/test.jpg',
             'is_active' => true,
             'is_published' => false,
             'is_featured' => false,

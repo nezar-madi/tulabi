@@ -3,7 +3,8 @@
 namespace App\Http\Requests\Teach;
 
 use App\Models\Program;
-use App\Support\SafeHtml;
+use App\Rules\EmbeddableVideoUrl;
+use App\Support\CourseContent;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -25,6 +26,11 @@ class SaveProgramRequest extends InstructorRequest
     {
         $this->merge([
             'name' => is_string($this->input('name')) ? preg_replace('/\s+/u', ' ', trim($this->input('name'))) : $this->input('name'),
+            'description' => CourseContent::cleanDescription($this->input('description')),
+            'learn' => CourseContent::cleanList($this->input('learn', [])),
+            'requirements' => CourseContent::cleanList($this->input('requirements', [])),
+            'audience' => CourseContent::cleanList($this->input('audience', [])),
+            'promo_video_url' => $this->filled('promo_video_url') ? trim((string) $this->input('promo_video_url')) : null,
             'is_active' => $this->boolean('is_active'),
             'is_published' => $this->boolean('is_published'),
             'is_featured' => $this->boolean('is_featured'),
@@ -40,13 +46,14 @@ class SaveProgramRequest extends InstructorRequest
         $program = $this->route('program');
 
         return [
+            ...CourseContent::rules(),
             'name' => [
                 'required', 'string', 'min:3', 'max:'.Program::NAME_MAX,
                 Rule::unique('programs', 'name')
                     ->where('instructor_id', $this->instructor()?->getKey())
                     ->ignore($program instanceof Program ? $program->getKey() : null),
             ],
-            'description' => ['required', 'string', 'max:20000'],
+            'promo_video_url' => ['nullable', 'string', 'max:500', new EmbeddableVideoUrl],
             'is_active' => ['boolean'],
             'is_published' => ['boolean'],
             'is_featured' => ['boolean'],
@@ -72,10 +79,14 @@ class SaveProgramRequest extends InstructorRequest
     public function after(): array
     {
         return [function (Validator $validator) {
-            // The description is cleaned on save: a box with only empty tags does not count.
-            if (! $validator->errors()->has('description')
-                && ! SafeHtml::hasText(SafeHtml::description((string) $this->input('description')))) {
-                $validator->errors()->add('description', __('validation.required', ['attribute' => __('validation.attributes.description')]));
+            // A program shown on the instructor's page needs its promotional image: the saved one
+            // (not being removed) or a new one.
+            $program = $this->route('program');
+            $hasImage = $this->newImage() !== null
+                || ($program instanceof Program && $program->image_path !== null && ! $this->boolean('remove_image'));
+
+            if ($this->boolean('is_published') && ! $hasImage && ! $validator->errors()->has('image')) {
+                $validator->errors()->add('image', __('programs.image_required_to_publish'));
             }
         }];
     }
@@ -91,7 +102,8 @@ class SaveProgramRequest extends InstructorRequest
         return [
             ...$data,
             'name' => trim($data['name']),
-            'description' => SafeHtml::description($data['description']),
+            'description' => CourseContent::cleanDescription($data['description']),
+            ...CourseContent::listsFrom($data),
         ];
     }
 

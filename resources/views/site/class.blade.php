@@ -19,11 +19,7 @@
                 @if ($course['image_url'])
                     <img class="tl-class-image" src="{{ $course['image_url'] }}" alt="{{ $course['title'] }}">
                 @endif
-                <h2 class="rq-h3">{{ __('site.classes.about_class') }}</h2>
-                @if ($course['description'])
-                    {{-- Filtered on save by App\Support\SafeHtml::description(). --}}
-                    <div class="rq-prose">{!! $course['description'] !!}</div>
-                @endif
+                @include('site.partials.course-content', ['item' => $course, 'aboutTitle' => __('site.classes.about_class')])
             </div>
 
             <aside class="rq-panel rq-panel--sticky" id="request">

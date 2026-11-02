@@ -67,6 +67,13 @@
                         <Link :href="route('teach.programs.edit', program.id)" class="text-decoration-none">
                             <v-btn class="rq-btn" variant="tonal" color="primary">{{ $t('teach.programs.edit') }}</v-btn>
                         </Link>
+                        <Link
+                            v-if="program.is_active"
+                            :href="route('teach.classes.create', { program: program.id })"
+                            class="text-decoration-none"
+                        >
+                            <v-btn class="rq-btn" variant="text" color="primary">{{ $t('teach.programs.new_class_short') }}</v-btn>
+                        </Link>
                     </div>
                 </div>
             </article>

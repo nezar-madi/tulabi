@@ -97,6 +97,7 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
         Route::put('/classes/{class}', [ClassController::class, 'update'])->name('classes.update');
         Route::post('/classes/{class}/publish', [ClassController::class, 'publish'])->name('classes.publish');
         Route::post('/classes/{class}/close', [ClassController::class, 'close'])->name('classes.close');
+        Route::post('/classes/{class}/reactivate', [ClassController::class, 'reactivate'])->name('classes.reactivate');
         Route::post('/classes/{class}/cancel', [ClassController::class, 'cancel'])->name('classes.cancel');
         Route::delete('/classes/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
         Route::get('/classes/{class}/students', [EnrollmentController::class, 'students'])->name('classes.students');
