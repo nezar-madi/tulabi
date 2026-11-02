@@ -55,6 +55,13 @@ class DashboardController extends Controller
                 ->groupBy('status')
                 ->pluck('total', 'status'),
             'upcoming' => $upcoming,
+            // Accepted students in classes that are not canceled (one person in two classes counts twice).
+            'students' => Enrollment::query()
+                ->where('status', Enrollment::STATUS_ACCEPTED)
+                ->whereHas('teachingClass', fn ($query) => $query
+                    ->where('instructor_id', $instructor->getKey())
+                    ->where('status', '!=', TeachingClass::STATUS_CANCELED))
+                ->count(),
             'money' => $this->money($instructor),
         ]);
     }

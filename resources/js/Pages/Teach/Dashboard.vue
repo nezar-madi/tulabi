@@ -1,237 +1,598 @@
 <template>
     <Head :title="$t('teach.nav.dashboard')" />
 
-    <PageIntro :title="$t('teach.dashboard.title', { name: profile.display_name })" :breadcrumbs="[]">
-        <template #actions>
-            <CtaButton icon="tabler:plus" @click="router.visit(route('teach.classes.create'))">
-                {{ $t('teach.dashboard.new_class') }}
-            </CtaButton>
-        </template>
-    </PageIntro>
-
-    <section v-if="steps.some((step) => !step.done)" class="rq-card setup">
-        <h2 class="setup__title">{{ $t('teach.dashboard.setup_title') }}</h2>
-        <ul class="setup__steps">
-            <li v-for="step in steps" :key="step.key" :class="{ 'setup__step--done': step.done }">
-                <v-icon :icon="step.done ? 'tabler:circle-check' : 'tabler:circle'" size="20" />
-                {{ $t(`teach.dashboard.${step.key}`) }}
-            </li>
-        </ul>
-        <Link :href="route('teach.profile.edit')" class="text-decoration-none">
-            <v-btn class="rq-btn mt-2" variant="outlined" color="primary">{{ $t('teach.dashboard.go') }}</v-btn>
-        </Link>
-    </section>
-
-    <Link :href="route('teach.requests.index')" class="rq-card pending text-decoration-none" :class="{ 'pending--on': pending > 0 }">
-        <span class="rq-icon-tile rq-icon-tile--amber"><v-icon icon="tabler:inbox" /></span>
-        <span class="flex-grow-1">
-            <strong class="pending__title">{{ $t('teach.dashboard.pending_title') }}</strong>
-            <span class="pending__text">{{ pending > 0 ? $t('teach.dashboard.pending_open') : $t('teach.dashboard.pending_none') }}</span>
-        </span>
-        <span class="pending__number rq-number">{{ pending }}</span>
-    </Link>
-
-    <div class="money">
-        <div class="rq-card money__card">
-            <span class="rq-icon-tile rq-icon-tile--green"><v-icon icon="tabler:cash" /></span>
-            <span>
-                <span class="money__label">{{ $t('teach.dashboard.collected_month') }}</span>
-                <strong class="money__number rq-number">{{ $t('money.amount', { amount: money.collected }) }}</strong>
-            </span>
-        </div>
-        <div class="rq-card money__card">
-            <span class="rq-icon-tile rq-icon-tile--amber"><v-icon icon="tabler:wallet" /></span>
-            <span>
-                <span class="money__label">{{ $t('teach.dashboard.remaining_all') }}</span>
-                <strong class="money__number rq-number">{{ $t('money.amount', { amount: money.remaining }) }}</strong>
-            </span>
-        </div>
-    </div>
-
-    <div class="teach-stats">
-        <Link
-            v-for="item in statItems"
-            :key="item.status"
-            :href="route('teach.classes.index', { filter: item.filter })"
-            class="rq-card teach-stat text-decoration-none"
+    <div class="dashboard">
+        <PageIntro
+            :title="$t('teach.dashboard.title', { name: profile.display_name })"
+            :description="$t('teach.dashboard.lead')"
+            :breadcrumbs="[]"
         >
-            <span class="teach-stat__number rq-number">{{ counts[item.status] || 0 }}</span>
-            <span class="teach-stat__label">{{ $t(`teach.dashboard.counts.${item.status}`) }}</span>
-        </Link>
-    </div>
-
-    <h2 class="teach-subtitle">{{ $t('teach.dashboard.upcoming') }}</h2>
-    <p v-if="upcoming.length === 0" class="rq-card teach-empty">{{ $t('teach.dashboard.no_upcoming') }}</p>
-    <div class="class-grid">
-        <ClassCard v-for="cls in upcoming" :key="cls.id" :cls="cls" show-status>
             <template #actions>
-                <Link :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
-                    <v-btn class="rq-btn" variant="text" color="primary">
-                        <v-icon icon="tabler:users" start />
-                        {{ $t('teach.dashboard.students_count', { count: cls.students_count }) }}
-                    </v-btn>
-                </Link>
+                <v-btn
+                    v-if="profile.public_url"
+                    class="text-none"
+                    variant="tonal"
+                    color="primary"
+                    :href="profile.public_url"
+                    target="_blank"
+                    rel="noopener"
+                    prepend-icon="tabler:world"
+                >
+                    {{ $t('teach.nav.view_page') }}
+                </v-btn>
+                <v-btn
+                    class="text-none"
+                    variant="flat"
+                    color="primary"
+                    prepend-icon="tabler:plus"
+                    @click="router.visit(route('teach.classes.create'))"
+                >
+                    {{ $t('teach.dashboard.new_class') }}
+                </v-btn>
             </template>
-        </ClassCard>
+
+            <PageIntroStats :items="kpis" />
+        </PageIntro>
+
+        <!-- Setup: what the public page still needs -->
+        <section v-if="stepsDone < steps.length" class="dash-section">
+            <header class="dash-section__head">
+                <div class="min-w-0">
+                    <h3 class="dash-section__title rq-display">{{ $t('teach.dashboard.setup_title') }}</h3>
+                    <p class="dash-section__hint">{{ $t('teach.dashboard.setup_hint') }}</p>
+                </div>
+            </header>
+            <div class="dash-progress">
+                <span class="dash-progress__text">
+                    {{ $t('teach.dashboard.setup_progress', { done: stepsDone, total: steps.length }) }}
+                </span>
+                <span class="dash-progress__bar" aria-hidden="true">
+                    <span :style="{ width: `${Math.round((stepsDone / steps.length) * 100)}%` }" />
+                </span>
+            </div>
+            <ol class="dash-list dash-steps">
+                <li
+                    v-for="step in steps"
+                    :key="step.key"
+                    class="dash-list__row"
+                    :class="{ 'dash-step--done': step.done, 'dash-step--next': step.key === nextStep }"
+                >
+                    <span class="rq-icon-tile dash-list__tile" :class="{ 'rq-icon-tile--green': step.done }">
+                        <v-icon :icon="step.done ? 'tabler:check' : step.icon" size="18" />
+                    </span>
+                    <div class="dash-list__body min-w-0">
+                        <div class="dash-list__title">{{ $t(`teach.dashboard.${step.key}`) }}</div>
+                        <div class="dash-list__meta">{{ $t(`teach.dashboard.${step.key}_hint`) }}</div>
+                    </div>
+                    <span v-if="step.done" class="dash-label dash-label--done flex-shrink-0">{{ $t('teach.dashboard.done') }}</span>
+                    <v-btn
+                        v-else
+                        class="text-none flex-shrink-0"
+                        :variant="step.key === nextStep ? 'flat' : 'tonal'"
+                        color="primary"
+                        size="small"
+                        @click="router.visit(route('teach.profile.edit'))"
+                    >
+                        {{ $t('teach.dashboard.go') }}
+                    </v-btn>
+                </li>
+            </ol>
+        </section>
+
+        <div class="dash-grid">
+            <!-- Coming classes -->
+            <section class="dash-section">
+                <header class="dash-section__head">
+                    <div class="min-w-0">
+                        <h3 class="dash-section__title rq-display">{{ $t('teach.dashboard.upcoming') }}</h3>
+                        <p class="dash-section__hint">{{ $t('teach.dashboard.upcoming_hint') }}</p>
+                    </div>
+                    <v-btn
+                        class="text-none flex-shrink-0"
+                        variant="text"
+                        color="primary"
+                        size="small"
+                        append-icon="tabler:chevron-left"
+                        @click="router.visit(route('teach.classes.index'))"
+                    >
+                        {{ $t('teach.dashboard.all_classes') }}
+                    </v-btn>
+                </header>
+
+                <div v-if="upcoming.length === 0" class="dash-empty-state">
+                    <span class="rq-icon-tile"><v-icon icon="tabler:chalkboard" /></span>
+                    <p>{{ $t('teach.dashboard.no_upcoming') }}</p>
+                    <v-btn class="text-none" variant="tonal" color="primary" prepend-icon="tabler:plus" @click="router.visit(route('teach.classes.create'))">
+                        {{ $t('teach.dashboard.new_class') }}
+                    </v-btn>
+                </div>
+
+                <div v-else class="dash-list">
+                    <Link
+                        v-for="cls in upcoming"
+                        :key="cls.id"
+                        :href="route('teach.classes.students', cls.id)"
+                        class="dash-list__row dash-list__row--link"
+                    >
+                        <span class="dash-date" aria-hidden="true">
+                            <span class="dash-date__day rq-number">{{ day(cls.starts_on) }}</span>
+                            <span class="dash-date__month">{{ month(cls.starts_on) }}</span>
+                        </span>
+                        <div class="dash-list__body min-w-0">
+                            <div class="dash-list__title text-truncate">{{ cls.title }}</div>
+                            <div class="dash-list__meta">
+                                <v-icon :icon="cls.type === 'online' ? 'tabler:video' : 'tabler:map-pin'" size="14" />
+                                {{ $t(`class.type.${cls.type}`) }}
+                                <span class="dash-sep">·</span>
+                                <v-icon icon="tabler:users" size="14" />
+                                {{ $t('teach.dashboard.students_count', { count: cls.students_count }) }}
+                            </div>
+                        </div>
+                        <ClassStatusBadge :status="cls.status" :ended="cls.ended" class="flex-shrink-0" />
+                    </Link>
+                </div>
+            </section>
+
+            <!-- Classes by status + the public page -->
+            <div class="dash-stack">
+                <section class="dash-section">
+                    <header class="dash-section__head">
+                        <div class="min-w-0">
+                            <h3 class="dash-section__title rq-display">{{ $t('teach.dashboard.classes_title') }}</h3>
+                            <p class="dash-section__hint">{{ $t('teach.dashboard.classes_hint', { count: totalClasses }) }}</p>
+                        </div>
+                    </header>
+                    <div class="dash-status">
+                        <Link
+                            v-for="item in statusItems"
+                            :key="item.status"
+                            :href="route('teach.classes.index', { filter: item.filter })"
+                            class="dash-status__cell"
+                        >
+                            <span class="dash-status__dot" :class="`dash-status__dot--${item.tone}`" aria-hidden="true" />
+                            <span class="dash-status__label">{{ $t(`teach.dashboard.counts.${item.status}`) }}</span>
+                            <span class="dash-status__value rq-number">{{ counts[item.status] || 0 }}</span>
+                        </Link>
+                    </div>
+                </section>
+
+                <section v-if="profile.public_url" class="dash-section">
+                    <header class="dash-section__head">
+                        <div class="min-w-0">
+                            <h3 class="dash-section__title rq-display">{{ $t('teach.dashboard.page_title') }}</h3>
+                            <p class="dash-section__hint">{{ $t('teach.dashboard.page_hint') }}</p>
+                        </div>
+                    </header>
+                    <div class="dash-page">
+                        <a :href="profile.public_url" target="_blank" rel="noopener" class="dash-page__url" dir="ltr">
+                            {{ displayUrl }}
+                        </a>
+                        <div class="d-flex flex-wrap ga-2">
+                            <CopyButton :text="profile.public_url" :label="$t('teach.dashboard.copy_link')" />
+                            <v-btn class="text-none" variant="text" color="primary" prepend-icon="tabler:pencil" @click="router.visit(route('teach.profile.edit'))">
+                                {{ $t('teach.dashboard.edit_page') }}
+                            </v-btn>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import CtaButton from '@/Components/CtaButton.vue';
-import PageIntro from '@/Components/PageIntro.vue';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import ClassCard from '@/Components/ClassCard.vue';
+import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
+import CopyButton from '@/Components/CopyButton.vue';
+import PageIntro from '@/Components/PageIntro.vue';
+import PageIntroStats from '@/Components/PageIntroStats.vue';
 
 const props = defineProps({
     profile: { type: Object, required: true },
     counts: { type: Object, default: () => ({}) },
     upcoming: { type: Array, default: () => [] },
+    students: { type: Number, default: 0 },
     money: { type: Object, default: () => ({ collected: '0', remaining: '0' }) },
 });
 
+const { t } = useI18n();
 const page = usePage();
 const pending = computed(() => page.props.auth?.user?.pendingRequests || 0);
 
-const steps = computed(() => [
-    { key: 'step_slug', done: Boolean(props.profile.slug) },
-    { key: 'step_photo', done: props.profile.has_photo },
-    { key: 'step_bio', done: props.profile.has_bio },
+const kpis = computed(() => [
+    {
+        key: 'requests',
+        label: t('teach.dashboard.kpi_requests'),
+        value: pending.value,
+        icon: 'tabler:inbox',
+        tone: pending.value > 0 ? 'amber' : 'neutral',
+        href: route('teach.requests.index'),
+    },
+    {
+        key: 'students',
+        label: t('teach.dashboard.students_kpi'),
+        value: props.students,
+        icon: 'tabler:users',
+        tone: 'sky',
+    },
+    {
+        key: 'collected',
+        label: t('teach.dashboard.kpi_collected'),
+        value: t('money.amount', { amount: props.money.collected }),
+        icon: 'tabler:cash',
+        tone: 'success',
+    },
+    {
+        key: 'remaining',
+        label: t('teach.dashboard.kpi_remaining'),
+        value: t('money.amount', { amount: props.money.remaining }),
+        icon: 'tabler:wallet',
+        tone: 'warning',
+    },
 ]);
 
-const statItems = [
-    { status: 'published', filter: 'active' },
-    { status: 'closed', filter: 'active' },
-    { status: 'draft', filter: 'draft' },
-    { status: 'canceled', filter: 'canceled' },
+const steps = computed(() => [
+    { key: 'step_slug', icon: 'tabler:world', done: Boolean(props.profile.slug) },
+    { key: 'step_photo', icon: 'tabler:user', done: props.profile.has_photo },
+    { key: 'step_bio', icon: 'tabler:file-text', done: props.profile.has_bio },
+]);
+const stepsDone = computed(() => steps.value.filter((step) => step.done).length);
+const nextStep = computed(() => steps.value.find((step) => !step.done)?.key);
+
+const statusItems = [
+    { status: 'published', filter: 'active', tone: 'success' },
+    { status: 'closed', filter: 'active', tone: 'warning' },
+    { status: 'draft', filter: 'draft', tone: 'neutral' },
+    { status: 'canceled', filter: 'canceled', tone: 'danger' },
 ];
-</script>
+const totalClasses = computed(() => statusItems.reduce((sum, item) => sum + Number(props.counts[item.status] || 0), 0));
 
-<style scoped src="./teach.css"></style>
+const displayUrl = computed(() => String(props.profile.public_url || '').replace(/^https?:\/\//, ''));
 
-<style scoped>
-.setup {
-    padding: 20px;
-    margin-bottom: 16px;
-    border-radius: var(--rq-radius-card);
-    border-color: var(--rq-line-emphasis);
+// The date tile of a coming class: day number over the short Arabic month.
+function parse(value) {
+    const [y, m, d] = String(value || '').split('-').map(Number);
+
+    return y ? new Date(Date.UTC(y, m - 1, d)) : null;
 }
 
-.setup__title {
-    margin: 0 0 10px;
-    font-family: var(--rq-font-display);
+function day(value) {
+    return parse(value)?.getUTCDate() ?? '—';
+}
+
+function month(value) {
+    const date = parse(value);
+
+    return date ? new Intl.DateTimeFormat('ar-LY-u-nu-latn', { month: 'short', timeZone: 'UTC' }).format(date) : '';
+}
+</script>
+
+<style scoped>
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rq-space-6);
+}
+
+/* Sections: white card, hairline, header strip (as rqmana's dashboard) */
+.dash-section {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--rq-surface);
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+}
+
+.dash-section__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rq-space-4);
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--rq-line-soft);
+}
+
+.dash-section__title {
+    margin: 0;
     font-size: var(--rq-text-card-title);
+    font-weight: 600;
+    line-height: 1.45;
     color: var(--rq-text-heading);
 }
 
-.setup__steps {
+.dash-section__hint {
+    margin: 4px 0 0;
+    font-size: var(--rq-text-label);
+    line-height: 1.6;
+    color: var(--rq-text-muted);
+}
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--rq-space-6);
+    align-items: start;
+}
+
+.dash-stack {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--rq-space-6);
+    min-width: 0;
+}
+
+/* Lists: full-width rows split by hairlines, tint on hover */
+.dash-list {
+    display: flex;
+    flex-direction: column;
     margin: 0;
     padding: 0;
     list-style: none;
-    color: var(--rq-text-body);
 }
 
-.setup__steps li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.setup__step--done {
-    color: var(--rq-text-subtle);
-    text-decoration: line-through;
-}
-
-.setup__step--done .v-icon {
-    color: var(--rq-success);
-}
-
-.pending {
+.dash-list__row {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 16px 20px;
-    margin-bottom: 12px;
-    border-radius: var(--rq-radius-card);
+    padding: 16px 24px;
+    border-top: 1px solid var(--rq-line-soft);
     color: inherit;
+    text-decoration: none;
+    transition: background-color var(--rq-dur-fast) var(--rq-ease);
 }
 
-.pending--on {
-    border-color: var(--rq-line-emphasis);
+.dash-list__row:first-child {
+    border-top: 0;
 }
 
-.pending__title {
-    display: block;
+.dash-list__row:hover {
+    background: var(--rq-surface-hover);
+}
+
+.dash-list__row--link:focus-visible {
+    outline: 2px solid var(--rq-text-link);
+    outline-offset: -2px;
+}
+
+.dash-list__body {
+    flex: 1 1 auto;
+}
+
+.dash-list__tile {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+}
+
+.dash-list__title {
     font-family: var(--rq-font-display);
+    font-size: var(--rq-text-small);
+    font-weight: 600;
+    line-height: 1.5;
     color: var(--rq-text-heading);
 }
 
-.pending__text {
-    font-size: 14px;
+.dash-list__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--rq-text-label);
+    line-height: 1.5;
     color: var(--rq-text-muted);
 }
 
-.pending__number {
-    font-family: var(--rq-font-display);
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--rq-text-number);
+.dash-sep {
+    margin-inline: 4px;
+    color: var(--rq-text-subtle);
 }
 
-.money {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.money__card {
+/* Setup steps */
+.dash-progress {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 16px 20px;
-    border-radius: var(--rq-radius-card);
+    gap: var(--rq-space-4);
+    padding: var(--rq-space-4) var(--rq-space-6) var(--rq-space-2);
 }
 
-.money__label {
+.dash-progress__text {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--rq-text-body);
+}
+
+.dash-progress__bar {
+    flex: 1 1 auto;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--rq-surface-tint);
+}
+
+.dash-progress__bar span {
     display: block;
-    font-size: 14px;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--rq-success);
+    transition: width var(--rq-dur) var(--rq-ease);
+}
+
+.dash-step--done .dash-list__title {
     color: var(--rq-text-muted);
 }
 
-.money__number {
+.dash-step--next {
+    background: var(--rq-surface-hover);
+}
+
+.dash-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: var(--rq-radius-sm);
     font-family: var(--rq-font-display);
-    font-size: 24px;
-    color: var(--rq-text-number);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
-.teach-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 28px;
+.dash-label::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
-.teach-stat {
+.dash-label--done {
+    background: var(--rq-success-tint);
+    color: var(--rq-success);
+}
+
+/* Coming classes: a calendar tile with the start date */
+.dash-date {
     display: flex;
     flex-direction: column;
-    padding: 16px 18px;
-    border-radius: var(--rq-radius-card);
-    color: inherit;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 52px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-sm);
+    background: var(--rq-surface-tint);
+    line-height: 1.1;
 }
 
-.teach-stat__number {
+.dash-date__day {
     font-family: var(--rq-font-display);
-    font-size: 26px;
+    font-size: 19px;
     font-weight: 700;
     color: var(--rq-text-number);
 }
 
-.teach-stat__label {
-    font-size: 14px;
+.dash-date__month {
+    font-size: 11px;
     color: var(--rq-text-muted);
+}
+
+.dash-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--rq-space-3);
+    padding: var(--rq-space-8, 32px) var(--rq-space-6);
+    text-align: center;
+}
+
+.dash-empty-state p {
+    margin: 0;
+    font-size: var(--rq-text-small);
+    color: var(--rq-text-muted);
+}
+
+/* Classes by status: a 2 x 2 strip with hairline dividers */
+.dash-status {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dash-status__cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--rq-line-soft);
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--rq-dur-fast) var(--rq-ease);
+}
+
+.dash-status__cell:nth-child(-n + 2) {
+    border-top: 0;
+}
+
+.dash-status__cell:nth-child(even) {
+    border-inline-start: 1px solid var(--rq-line-soft);
+}
+
+.dash-status__cell:hover {
+    background: var(--rq-surface-hover);
+}
+
+.dash-status__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dash-status__dot--success { background: var(--rq-success); }
+.dash-status__dot--warning { background: var(--rq-warning); }
+.dash-status__dot--neutral { background: var(--rq-text-subtle); }
+.dash-status__dot--danger { background: var(--rq-danger); }
+
+.dash-status__label {
+    flex: 1 1 auto;
+    font-size: var(--rq-text-label);
+    color: var(--rq-text-muted);
+}
+
+.dash-status__value {
+    font-family: var(--rq-font-display);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--rq-text-heading);
+}
+
+/* The public page link */
+.dash-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rq-space-3);
+    padding: 16px 24px 20px;
+}
+
+.dash-page__url {
+    display: block;
+    padding: 10px 14px;
+    overflow: hidden;
+    border: 1px dashed var(--rq-line-emphasis);
+    border-radius: var(--rq-radius-sm);
+    background: var(--rq-surface-tint);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--rq-text-link);
+    text-align: left;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-page__url:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 599.98px) {
+    .dash-section__head,
+    .dash-list__row,
+    .dash-status__cell,
+    .dash-page {
+        padding-inline: var(--rq-space-4);
+    }
+
+    .dash-progress {
+        padding-inline: var(--rq-space-4);
+    }
+}
+
+@media (min-width: 960px) {
+    .dash-grid {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
 }
 </style>
