@@ -50,6 +50,12 @@
                 <p v-if="enrollment.note" class="detail__note">
                     <strong>{{ $t('student.classes.your_note') }}:</strong> {{ enrollment.note }}
                 </p>
+
+                <section v-if="enrollment.fee !== null || payments.length" class="detail__payments">
+                    <h2 class="detail__subtitle">{{ $t('student.classes.payments') }}</h2>
+                    <MoneyTotals :totals="totals" class="mb-3" />
+                    <PaymentList :payments="payments" :empty-text="$t('student.classes.no_payments')" />
+                </section>
             </article>
 
             <aside class="rq-card detail__side">
@@ -75,7 +81,6 @@
                     <div v-if="enrollment.status === 'accepted'">
                         <dt>{{ $t('student.classes.fee') }}</dt>
                         <dd class="detail__price rq-number">{{ formatPrice({ price: enrollment.fee ?? cls.price, currency: cls.currency }, t) }}</dd>
-                        <dd class="detail__muted">{{ $t('student.classes.paid_later') }}</dd>
                     </div>
                 </dl>
 
@@ -114,12 +119,16 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import EnrollmentStatusBadge from '@/Components/EnrollmentStatusBadge.vue';
 import FlashStatus from '@/Components/FlashStatus.vue';
+import MoneyTotals from '@/Components/MoneyTotals.vue';
+import PaymentList from '@/Components/PaymentList.vue';
 import WhatsAppButton from '@/Components/WhatsAppButton.vue';
 import { formatPeriod, formatPrice, formatSchedule } from '@/utils/classFormat';
 import { formatDate } from '@/utils/dates';
 
 const props = defineProps({
     enrollment: { type: Object, required: true },
+    totals: { type: Object, required: true },
+    payments: { type: Array, default: () => [] },
 });
 
 const { t } = useI18n();
@@ -200,6 +209,12 @@ function withdraw(question) {
     padding: 16px;
     border-radius: var(--rq-radius-md);
     background: var(--rq-surface-hover);
+}
+
+.detail__payments {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rq-line-soft);
 }
 
 .detail__description {

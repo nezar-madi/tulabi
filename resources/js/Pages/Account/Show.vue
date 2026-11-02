@@ -56,9 +56,14 @@
                     {{ $t('account.student_counts', { accepted: enrollmentCounts.accepted || 0, requested: enrollmentCounts.requested || 0 }) }}
                 </p>
                 <p v-else class="account__text">{{ $t('account.student_empty') }}</p>
-                <Link v-if="hasEnrollments" :href="route('student.classes.index')" class="text-decoration-none">
-                    <v-btn class="rq-btn mt-3" variant="outlined" color="primary">{{ $t('account.student_open') }}</v-btn>
-                </Link>
+                <div v-if="hasEnrollments" class="d-flex flex-wrap ga-2 mt-3">
+                    <Link :href="route('student.classes.index')" class="text-decoration-none">
+                        <v-btn class="rq-btn" variant="outlined" color="primary">{{ $t('account.student_open') }}</v-btn>
+                    </Link>
+                    <Link :href="route('student.payments.index')" class="text-decoration-none">
+                        <v-btn class="rq-btn" variant="text" color="primary">{{ $t('account.payments_open') }}</v-btn>
+                    </Link>
+                </div>
             </div>
         </section>
 

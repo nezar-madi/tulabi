@@ -6,11 +6,13 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstructorApplicationController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\Student\JoinClassController;
 use App\Http\Controllers\Student\StudentClassController;
 use App\Http\Controllers\Teach\ClassController;
 use App\Http\Controllers\Teach\DashboardController as TeachDashboardController;
 use App\Http\Controllers\Teach\EnrollmentController;
+use App\Http\Controllers\Teach\PaymentController;
 use App\Http\Controllers\Teach\ProfileController;
 use App\Http\Middleware\EnsureInstructor;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -57,6 +59,10 @@ Route::middleware(['auth:web', AuthenticateSession::class])->group(function () {
     Route::get('/account/classes/{enrollment}', [StudentClassController::class, 'show'])->name('student.classes.show');
     Route::post('/account/classes/{enrollment}/withdraw', [StudentClassController::class, 'withdraw'])
         ->name('student.classes.withdraw');
+    Route::get('/account/payments', [StudentClassController::class, 'payments'])->name('student.payments.index');
+
+    // Receipts (PDF): the instructor who recorded the payment and the student it is for.
+    Route::get('/receipts/{payment}', [ReceiptController::class, 'show'])->name('receipts.show');
 
     // «اطلب الانضمام» (the GET brings a visitor back to the class page after signing in).
     Route::get('/classes/{class}/request', [JoinClassController::class, 'create'])->name('classes.request.create');
@@ -96,6 +102,12 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
         Route::post('/enrollments/{enrollment}/reset-link', [EnrollmentController::class, 'resetLink'])
             ->middleware('throttle:instructor-reset-link')
             ->name('enrollments.reset-link');
+
+        // Payments: voided, never deleted; only method and notes change (PaymentRequest checks ownership).
+        Route::get('/enrollments/{enrollment}/payments', [PaymentController::class, 'index'])->name('enrollments.payments');
+        Route::post('/enrollments/{enrollment}/payments', [PaymentController::class, 'store'])->name('enrollments.payments.store');
+        Route::put('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
+        Route::post('/payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
     });
 
 // The public instructor pages (tulabi.ly/{slug}) are in routes/pages.php, loaded last.

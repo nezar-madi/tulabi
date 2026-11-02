@@ -33,6 +33,23 @@
         <span class="pending__number rq-number">{{ pending }}</span>
     </Link>
 
+    <div class="money">
+        <div class="rq-card money__card">
+            <span class="rq-icon-tile rq-icon-tile--green"><v-icon icon="tabler:cash" /></span>
+            <span>
+                <span class="money__label">{{ $t('teach.dashboard.collected_month') }}</span>
+                <strong class="money__number rq-number">{{ $t('money.amount', { amount: money.collected }) }}</strong>
+            </span>
+        </div>
+        <div class="rq-card money__card">
+            <span class="rq-icon-tile rq-icon-tile--amber"><v-icon icon="tabler:wallet" /></span>
+            <span>
+                <span class="money__label">{{ $t('teach.dashboard.remaining_all') }}</span>
+                <strong class="money__number rq-number">{{ $t('money.amount', { amount: money.remaining }) }}</strong>
+            </span>
+        </div>
+    </div>
+
     <div class="teach-stats">
         <Link
             v-for="item in statItems"
@@ -70,6 +87,7 @@ const props = defineProps({
     profile: { type: Object, required: true },
     counts: { type: Object, default: () => ({}) },
     upcoming: { type: Array, default: () => [] },
+    money: { type: Object, default: () => ({ collected: '0', remaining: '0' }) },
 });
 
 const page = usePage();
@@ -160,6 +178,33 @@ const statItems = [
     font-family: var(--rq-font-display);
     font-size: 28px;
     font-weight: 700;
+    color: var(--rq-text-number);
+}
+
+.money {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.money__card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: var(--rq-radius-card);
+}
+
+.money__label {
+    display: block;
+    font-size: 14px;
+    color: var(--rq-text-muted);
+}
+
+.money__number {
+    font-family: var(--rq-font-display);
+    font-size: 24px;
     color: var(--rq-text-number);
 }
 

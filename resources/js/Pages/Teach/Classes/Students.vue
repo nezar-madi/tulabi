@@ -30,6 +30,9 @@
                     · {{ $t('teach.students.fee', { fee: feeText(row.fee) }) }}
                 </template>
             </p>
+            <p v-if="row.status === 'accepted' || Number(row.totals.paid) > 0" class="student__money">
+                {{ $t('teach.students.paid_remaining', { paid: row.totals.paid, remaining: row.totals.remaining }) }}
+            </p>
             <p v-if="row.note" class="student__note">{{ row.note }}</p>
             <p v-if="row.decision_reason" class="student__note">{{ row.decision_reason }}</p>
         </div>
@@ -40,6 +43,16 @@
                 <v-btn class="rq-btn rq-btn--primary" @click="post('accept', row)">{{ $t('teach.requests.accept') }}</v-btn>
                 <v-btn class="rq-btn" variant="outlined" color="error" @click="openReason('reject', row)">{{ $t('teach.requests.reject') }}</v-btn>
             </template>
+            <Link
+                v-if="row.status === 'accepted' || Number(row.totals.paid) > 0"
+                :href="route('teach.enrollments.payments', row.id)"
+                class="text-decoration-none"
+            >
+                <v-btn class="rq-btn rq-btn--primary">
+                    <v-icon icon="tabler:cash" start />
+                    {{ $t('teach.students.payments') }}
+                </v-btn>
+            </Link>
             <template v-if="row.status === 'accepted'">
                 <v-btn class="rq-btn" variant="outlined" color="primary" @click="post('reset-link', row)">
                     <v-icon icon="tabler:key" start />
@@ -153,6 +166,13 @@ function openReason(action, row) {
     margin: 4px 0 0;
     font-size: 14px;
     color: var(--rq-text-muted);
+}
+
+.student__money {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--rq-text-number);
 }
 
 .student__note {

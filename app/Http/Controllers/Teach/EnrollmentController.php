@@ -12,6 +12,7 @@ use App\Support\ClassPresenter;
 use App\Support\EnrollmentPresenter;
 use App\Support\Enrollments;
 use App\Support\PasswordResetLinks;
+use App\Support\PaymentPresenter;
 use App\Support\WhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -58,11 +59,14 @@ class EnrollmentController extends Controller
         $class = $this->ownClass($request, $class);
 
         $enrollments = $class->enrollments()
-            ->with(['user', 'teachingClass'])
+            ->with(['user', 'teachingClass', 'payments'])
             ->orderByRaw('case status when ? then 0 when ? then 1 else 2 end', [Enrollment::STATUS_REQUESTED, Enrollment::STATUS_ACCEPTED])
             ->oldest('requested_at')
             ->get()
-            ->map(fn (Enrollment $enrollment) => EnrollmentPresenter::forInstructor($enrollment));
+            ->map(fn (Enrollment $enrollment) => [
+                ...EnrollmentPresenter::forInstructor($enrollment),
+                'totals' => PaymentPresenter::totals($enrollment),
+            ]);
 
         return Inertia::render('Teach/Classes/Students', [
             'item' => [

@@ -129,7 +129,8 @@
         },
         "student_empty": "لم تطلب الانضمام إلى أي فصل بعد.",
         "student_open": "عرض فصولي",
-        "student_counts": "{accepted} مقبول · {requested} بانتظار الموافقة"
+        "student_counts": "{accepted} مقبول · {requested} بانتظار الموافقة",
+        "payments_open": "دفعاتي وإيصالاتي"
     },
     "admin": {
         "title": "الإدارة",
@@ -264,7 +265,10 @@
             "pending_title": "طلبات بانتظار ردّك",
             "pending_none": "لا طلبات جديدة.",
             "pending_open": "عرض الطلبات",
-            "students_count": "{count} طالب مقبول"
+            "students_count": "{count} طالب مقبول",
+            "money_title": "المال",
+            "collected_month": "المحصّل هذا الشهر",
+            "remaining_all": "المتبقي على الطلاب"
         },
         "profile": {
             "title": "صفحتي",
@@ -361,7 +365,32 @@
             "reset_link": "رابط تعيين كلمة المرور",
             "reset_title": "رابط لـ {name}",
             "reset_text": "صالح ساعة واحدة ومرة واحدة. أرسله لطالبك على واتساب.",
-            "send_whatsapp": "إرسال على واتساب"
+            "send_whatsapp": "إرسال على واتساب",
+            "payments": "الدفعات",
+            "paid_remaining": "مدفوع {paid} · متبقٍ {remaining} د.ل"
+        },
+        "payments": {
+            "title": "دفعات {name}",
+            "back": "طلاب الفصل",
+            "record_title": "تسجيل دفعة",
+            "amount": "المبلغ",
+            "paid_at": "تاريخ الدفع",
+            "method": "طريقة الدفع",
+            "notes": "ملاحظات (اختياري)",
+            "record": "تسجيل الدفعة",
+            "paid_in_full": "دفع الطالب الرسم كاملًا.",
+            "not_member": "تُسجّل الدفعات للطلاب المقبولين في فصل لم يُلغَ.",
+            "list_title": "الدفعات المسجّلة",
+            "empty": "لا دفعات بعد.",
+            "edit": "تعديل",
+            "edit_title": "تعديل الدفعة {number}",
+            "edit_note": "المبلغ والتاريخ لا يتغيّران بعد التسجيل. إن كان فيهما خطأ فألغِ الدفعة وسجّلها من جديد.",
+            "void": "إلغاء",
+            "void_title": "إلغاء الدفعة {number}",
+            "void_text": "تبقى الدفعة ورقم إيصالها، ولا تُحتسب، ويظهر على إيصالها «ملغى».",
+            "void_reason": "سبب الإلغاء",
+            "void_confirm": "إلغاء الدفعة",
+            "save": "حفظ"
         }
     },
     "public": {
@@ -418,7 +447,6 @@
             "open": "التفاصيل",
             "instructor": "المدرّس",
             "fee": "الرسم",
-            "paid_later": "المدفوع والإيصالات تظهر هنا قريبًا.",
             "meeting": "رابط الحصة",
             "join_meeting": "دخول الحصة",
             "meeting_missing": "لم يضع المدرّس رابط الحصة بعد.",
@@ -432,7 +460,29 @@
             "contact": "تواصل مع المدرّس",
             "class_page": "صفحة الفصل",
             "back": "كل فصولي",
-            "requested_on": "طلبت في {date}"
+            "requested_on": "طلبت في {date}",
+            "payments": "دفعاتي في هذا الفصل",
+            "no_payments": "لا دفعات مسجّلة بعد."
+        },
+        "payments": {
+            "title": "دفعاتي",
+            "empty": "لا دفعات مسجّلة بعد. يسجّل المدرّس دفعتك حين تدفع له، ويظهر إيصالها هنا."
         }
+    },
+    "money": {
+        "fee": "الرسم",
+        "paid": "المدفوع",
+        "remaining": "المتبقي",
+        "amount": "{amount} د.ل",
+        "methods": {
+            "cash": "نقدًا",
+            "transfer": "تحويل",
+            "other": "أخرى",
+            "dpay": "DPay",
+            "mypay": "MyPay"
+        },
+        "receipt": "الإيصال",
+        "voided": "ملغاة",
+        "void_reason": "سبب الإلغاء: {reason}"
     }
 }

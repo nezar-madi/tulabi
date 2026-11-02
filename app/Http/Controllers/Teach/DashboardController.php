@@ -5,16 +5,18 @@ namespace App\Http\Controllers\Teach;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Teach\Concerns\FindsOwnClass;
 use App\Models\Enrollment;
+use App\Models\Instructor;
+use App\Models\Payment;
 use App\Models\TeachingClass;
 use App\Support\ClassPresenter;
+use App\Support\Currency;
 use App\Support\TulabiClock;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The instructor's home: what the page still needs, and the coming classes.
- * Requests and money join in phases 3 and 4.
+ * The instructor's home: what the page still needs, money this month, the coming classes.
  */
 class DashboardController extends Controller
 {
@@ -53,6 +55,40 @@ class DashboardController extends Controller
                 ->groupBy('status')
                 ->pluck('total', 'status'),
             'upcoming' => $upcoming,
+            'money' => $this->money($instructor),
         ]);
+    }
+
+    /**
+     * Collected this month (payments dated this month in Libya, voided ones left out) and
+     * still owed by accepted students of running classes.
+     *
+     * @return array{collected: string, remaining: string, currency: string}
+     */
+    private function money(Instructor $instructor): array
+    {
+        [$from, $to] = TulabiClock::monthRangeUtc();
+
+        $collected = Payment::query()
+            ->where('instructor_id', $instructor->getKey())
+            ->notVoided()
+            ->whereBetween('paid_at', [$from, $to])
+            ->get(['amount'])
+            ->sum(fn (Payment $payment) => Currency::toMillis($payment->amount));
+
+        $remaining = Enrollment::query()
+            ->where('status', Enrollment::STATUS_ACCEPTED)
+            ->whereHas('teachingClass', fn ($query) => $query
+                ->where('instructor_id', $instructor->getKey())
+                ->where('status', '!=', TeachingClass::STATUS_CANCELED))
+            ->with(['teachingClass', 'payments'])
+            ->get()
+            ->sum(fn (Enrollment $enrollment) => $enrollment->remainingMillis());
+
+        return [
+            'collected' => Currency::format(Currency::fromMillis($collected)),
+            'remaining' => Currency::format(Currency::fromMillis($remaining)),
+            'currency' => Currency::SYMBOL,
+        ];
     }
 }
