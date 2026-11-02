@@ -13,6 +13,7 @@ use App\Http\Controllers\Teach\ClassController;
 use App\Http\Controllers\Teach\DashboardController as TeachDashboardController;
 use App\Http\Controllers\Teach\EnrollmentController;
 use App\Http\Controllers\Teach\PaymentController;
+use App\Http\Controllers\Teach\PaymentOverviewController;
 use App\Http\Controllers\Teach\ProfileController;
 use App\Http\Controllers\Teach\ProgramController;
 use App\Http\Controllers\Teach\StudentController;
@@ -121,6 +122,8 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
             ->name('enrollments.reset-link');
 
         // Payments: voided, never deleted; only method and notes change (PaymentRequest checks ownership).
+        // «المدفوعات» gathers all of them with filters; the actions below do the work.
+        Route::get('/payments', PaymentOverviewController::class)->name('payments.index');
         Route::get('/enrollments/{enrollment}/payments', [PaymentController::class, 'index'])->name('enrollments.payments');
         Route::post('/enrollments/{enrollment}/payments', [PaymentController::class, 'store'])->name('enrollments.payments.store');
         Route::put('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
