@@ -97,11 +97,10 @@ export default {
                         :aria-label="requestsLabel"
                         :title="requestsLabel"
                     >
-                        <span class="main-bar__inbox">
-                            <v-icon icon="tabler:inbox" />
-                            <span v-if="pendingRequests > 0" class="main-bar__count">{{ pendingRequests > 99 ? '99+' : pendingRequests }}</span>
-                        </span>
+                        <v-icon icon="tabler:inbox" />
                     </v-btn>
+                    <!-- Outside the button: Vuetify clips what a button's content draws past its edge -->
+                    <span v-if="pendingRequests > 0" class="main-bar__count" aria-hidden="true">{{ pendingRequests > 99 ? '99+' : pendingRequests }}</span>
                 </Link>
                 <span class="main-bar__desktop-only">
                     <ThemeToggler />
@@ -158,31 +157,30 @@ export default {
 }
 
 .main-bar__requests {
-    display: inline-flex;
-    text-decoration: none;
-}
-
-.main-bar__inbox {
     position: relative;
     display: inline-flex;
+    text-decoration: none;
 }
 
 /* The number of requests waiting, on the icon's corner */
 .main-bar__count {
     position: absolute;
-    top: -8px;
-    inset-inline-end: -10px;
+    top: 1px;
+    inset-inline-end: -3px;
+    box-sizing: border-box;
     min-width: 18px;
     height: 18px;
-    padding: 0 5px;
+    padding: 0 3px;
+    border: 2px solid var(--rq-surface);
     border-radius: 9px;
     background: var(--rq-warning);
     font-family: var(--rq-font-display);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    line-height: 18px;
+    line-height: 14px;
     color: #fff;
     text-align: center;
+    pointer-events: none;
 }
 
 /* ---------- Top bar (spec Topbar): white, 64px, 1px hairline underneath ---------- */
