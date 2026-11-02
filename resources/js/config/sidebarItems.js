@@ -21,6 +21,7 @@ export function accountSidebarItems(user) {
                 label: pending > 0 ? { text: String(pending), color: 'warning' } : null,
             },
             { id: 'teach-classes', titleKey: 'teach.nav.classes', icon: 'tabler:chalkboard', routeName: 'teach.classes.index', sectionKey: 'sidebar.sections.teaching' },
+            { id: 'teach-students', titleKey: 'teach.nav.students', icon: 'tabler:users', routeName: 'teach.students.index', sectionKey: 'sidebar.sections.teaching' },
             { id: 'teach-profile', titleKey: 'teach.nav.profile', icon: 'tabler:id-badge-2', routeName: 'teach.profile.edit', sectionKey: 'sidebar.sections.teaching' },
         );
     }

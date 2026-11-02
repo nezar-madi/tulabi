@@ -268,7 +268,8 @@
             "classes": "الدورات",
             "profile": "صفحتي",
             "view_page": "عرض صفحتي",
-            "requests": "طلبات الانضمام"
+            "requests": "طلبات الانضمام",
+            "students": "الطلاب"
         },
         "dashboard": {
             "title": "أهلًا {name}",
@@ -435,6 +436,37 @@
             "void_reason": "سبب الإلغاء",
             "void_confirm": "إلغاء الدفعة",
             "save": "حفظ"
+        },
+        "roster": {
+            "title": "الطلاب",
+            "lead": "كل من قُبل في دوراتك، وما دفعوه وما بقي عليهم.",
+            "stat_active": "طلاب حاليون",
+            "stat_all": "كل الطلاب",
+            "stat_remaining": "متبقٍ للتحصيل",
+            "search": "ابحث بالاسم أو الهاتف",
+            "all_courses": "كل الدورات",
+            "course": "الدورة",
+            "filters": {
+                "active": "حاليون",
+                "past": "سابقون",
+                "all": "الكل"
+            },
+            "empty": "لا طلاب هنا بعد. يظهر الطالب هنا حين تقبل طلبه في إحدى دوراتك.",
+            "empty_search": "لا نتائج مطابقة.",
+            "no_name": "لم يكتب اسمه بعد",
+            "instructor": "مدرّس",
+            "suspended": "حسابه موقوف",
+            "courses_count": "{count} دورة",
+            "active_count": "{count} فعّالة",
+            "paid": "مدفوع",
+            "remaining": "متبقٍ",
+            "fee": "الرسم",
+            "accepted_on": "قُبل في {date}",
+            "show_courses": "الدورات",
+            "hide_courses": "إخفاء",
+            "payments": "الدفعات",
+            "remove": "إخراج",
+            "reset_link": "رابط كلمة المرور"
         }
     },
     "public": {

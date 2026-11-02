@@ -14,6 +14,7 @@ use App\Http\Controllers\Teach\DashboardController as TeachDashboardController;
 use App\Http\Controllers\Teach\EnrollmentController;
 use App\Http\Controllers\Teach\PaymentController;
 use App\Http\Controllers\Teach\ProfileController;
+use App\Http\Controllers\Teach\StudentController;
 use App\Http\Middleware\EnsureInstructor;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\Route;
@@ -97,6 +98,9 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
         Route::post('/classes/{class}/cancel', [ClassController::class, 'cancel'])->name('classes.cancel');
         Route::delete('/classes/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
         Route::get('/classes/{class}/students', [EnrollmentController::class, 'students'])->name('classes.students');
+
+        // «الطلاب»: everyone accepted in any of the instructor's courses.
+        Route::get('/students', [StudentController::class, 'index'])->name('students.index');
 
         // Every {enrollment} must be in one of the instructor's classes (EnrollmentActionRequest).
         Route::get('/requests', [EnrollmentController::class, 'requests'])->name('requests.index');
