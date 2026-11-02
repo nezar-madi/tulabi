@@ -70,12 +70,40 @@
     </v-alert>
 
     <div class="cf">
-        <form id="class-form" class="cf__main" @submit.prevent="save">
+        <form id="class-form" class="cf__main" @submit.prevent="submit">
+            <!-- The steps: one at a time on a new class; tabs to open in any order on an existing one -->
+            <nav class="cf-steps" :class="{ 'cf-steps--tabs': cls }" :aria-label="$t('teach.classes.wizard.label')">
+                <button
+                    v-for="(entry, index) in steps"
+                    :key="entry.key"
+                    type="button"
+                    class="cf-step"
+                    :class="{
+                        'cf-step--on': step === index,
+                        'cf-step--done': stepDone(index),
+                        'cf-step--error': stepHasErrors(index),
+                    }"
+                    :disabled="!canOpen(index)"
+                    :aria-current="step === index ? 'step' : undefined"
+                    @click="goTo(index)"
+                >
+                    <span class="cf-step__num">
+                        <v-icon v-if="stepHasErrors(index)" icon="tabler:alert-triangle" size="15" />
+                        <v-icon v-else-if="stepDone(index)" icon="tabler:check" size="16" />
+                        <template v-else>{{ index + 1 }}</template>
+                    </span>
+                    <span class="cf-step__text">
+                        <small>{{ $t('teach.classes.wizard.step', { n: index + 1 }) }}</small>
+                        <strong>{{ $t(`teach.classes.wizard.steps.${entry.key}`) }}</strong>
+                    </span>
+                </button>
+            </nav>
+
             <fieldset :disabled="readOnly" class="cf__fieldset">
                 <!-- 1. Basics: how the class is made, and its title -->
-                <section id="cf-basics" class="cf-section">
+                <section v-show="step === 0" id="cf-basics" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">1</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:pencil" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.classes.form.basics') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.classes.form.basics_hint') }}</p>
@@ -148,9 +176,9 @@
                 </section>
 
                 <!-- 2. Content: description, the three lists and the video -->
-                <section id="cf-content" class="cf-section">
+                <section v-show="step === 1" id="cf-content" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">2</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:file-text" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.classes.form.content') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.classes.form.content_hint') }}</p>
@@ -162,9 +190,9 @@
                 </section>
 
                 <!-- 3. Promotional image -->
-                <section id="cf-image" class="cf-section">
+                <section v-show="step === 1" id="cf-image" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">3</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:photo" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.classes.fields.image') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.classes.fields.image_required') }}</p>
@@ -199,9 +227,9 @@
                 </section>
 
                 <!-- 4. Where: in person (map link) or online (meeting link) -->
-                <section id="cf-place" class="cf-section">
+                <section v-show="step === 2" id="cf-place" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">4</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:map-pin" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.classes.form.place') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.classes.form.place_hint') }}</p>
@@ -268,9 +296,9 @@
                 </section>
 
                 <!-- 5. When: period, days of study and time -->
-                <section id="cf-schedule" class="cf-section">
+                <section v-show="step === 2" id="cf-schedule" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">5</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:calendar-event" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.classes.form.schedule') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.classes.form.schedule_hint') }}</p>
@@ -358,9 +386,9 @@
                 </section>
 
                 <!-- 6. Price and seats, and «تعليق البدء تلقائيًا» -->
-                <section id="cf-seats" class="cf-section">
+                <section v-show="step === 3" id="cf-seats" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">6</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:cash" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.classes.form.price') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.classes.form.price_hint') }}</p>
@@ -416,7 +444,60 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Before creating: everything on one card, each line opens its step -->
+                <section v-if="!cls" v-show="step === 3" id="cf-review" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num"><v-icon icon="tabler:circle-check" size="16" /></span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.wizard.review') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.wizard.review_hint') }}</p>
+                        </div>
+                    </header>
+                    <dl class="cf-review">
+                        <div v-for="row in summary" :key="row.key" class="cf-review__row">
+                            <dt>{{ $t(`teach.classes.wizard.summary.${row.key}`) }}</dt>
+                            <dd :class="{ 'cf-review__empty': row.empty }">{{ row.value }}</dd>
+                            <button type="button" class="cf-review__edit" @click="goTo(row.step)">{{ $t('teach.classes.edit') }}</button>
+                        </div>
+                    </dl>
+                </section>
             </fieldset>
+
+            <div v-if="!readOnly" class="cf-nav">
+                <v-btn
+                    v-if="step > 0"
+                    class="text-none"
+                    variant="text"
+                    color="primary"
+                    prepend-icon="tabler:arrow-right"
+                    @click="goTo(step - 1)"
+                >
+                    {{ $t('teach.classes.wizard.back') }}
+                </v-btn>
+                <v-spacer />
+                <v-btn
+                    v-if="step < last"
+                    class="text-none"
+                    variant="flat"
+                    color="primary"
+                    append-icon="tabler:arrow-left"
+                    @click="next"
+                >
+                    {{ $t('teach.classes.wizard.next', { name: $t(`teach.classes.wizard.steps.${steps[step + 1].key}`) }) }}
+                </v-btn>
+                <v-btn
+                    v-else-if="!cls"
+                    type="submit"
+                    class="text-none"
+                    variant="flat"
+                    color="primary"
+                    prepend-icon="tabler:check"
+                    :loading="form.processing"
+                >
+                    {{ $t('teach.classes.create') }}
+                </v-btn>
+            </div>
         </form>
 
         <!-- Side panel: a live preview, what is still missing, and the save button -->
@@ -439,7 +520,7 @@
                 </div>
 
                 <v-btn
-                    v-if="!readOnly"
+                    v-if="!readOnly && (cls || step === last)"
                     type="submit"
                     form="class-form"
                     class="text-none cf-side__save"
@@ -460,7 +541,7 @@
                     <span class="cf-ready__bar" aria-hidden="true"><span :style="{ width: `${Math.round((readyDone / readiness.length) * 100)}%` }" /></span>
                     <ul class="cf-ready__list">
                         <li v-for="item in readiness" :key="item.key" :class="{ 'cf-ready__item--done': item.done }">
-                            <button type="button" @click="scrollTo(item.section)">
+                            <button type="button" @click="openSection(item.section)">
                                 <v-icon :icon="item.done ? 'tabler:circle-check' : 'tabler:circle'" size="18" />
                                 {{ $t(`teach.classes.form.ready.${item.key}`) }}
                             </button>
@@ -475,8 +556,34 @@
 
     <!-- Phones: the save button stays in reach at the bottom -->
     <div v-if="!readOnly" class="cf-bar">
-        <span class="cf-bar__status">{{ $t('teach.classes.form.ready_short', { done: readyDone, total: readiness.length }) }}</span>
         <v-btn
+            v-if="!cls && step > 0"
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+            :aria-label="$t('teach.classes.wizard.back')"
+            @click="goTo(step - 1)"
+        >
+            <v-icon icon="tabler:arrow-right" />
+        </v-btn>
+        <span class="cf-bar__status">
+            {{ cls
+                ? $t('teach.classes.form.ready_short', { done: readyDone, total: readiness.length })
+                : $t('teach.classes.wizard.bar', { n: step + 1, total: steps.length, name: $t(`teach.classes.wizard.steps.${steps[step].key}`) }) }}
+        </span>
+        <v-btn
+            v-if="!cls && step < last"
+            class="text-none"
+            variant="flat"
+            color="primary"
+            append-icon="tabler:arrow-left"
+            @click="next"
+        >
+            {{ $t('teach.classes.wizard.next_short') }}
+        </v-btn>
+        <v-btn
+            v-else
             type="submit"
             form="class-form"
             class="text-none"
@@ -537,7 +644,7 @@
 
 <script setup>
 import PageIntro from '@/Components/PageIntro.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
@@ -548,7 +655,7 @@ import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
-import { WEEK_ORDER, formatDay, formatPrice } from '@/utils/classFormat';
+import { WEEK_ORDER, formatDay, formatPeriod, formatPrice, formatSchedule } from '@/utils/classFormat';
 
 const props = defineProps({
     item: { type: Object, default: null },
@@ -751,11 +858,156 @@ function save() {
                 preserveScroll: true,
                 forceFormData: true,
                 onSuccess: saved,
+                onError: openFirstError,
             });
     } else {
-        form.transform(send).post(route('teach.classes.store'), { forceFormData: true, onSuccess: saved });
+        form.transform(send).post(route('teach.classes.store'), { forceFormData: true, onSuccess: saved, onError: openFirstError });
     }
 }
+
+// ---------- Steps ----------
+// A new class is filled one step at a time («التالي» checks the step first); an existing one
+// opens any step as a tab. Each field belongs to one step, so a server error opens its step.
+const steps = [
+    { key: 'class', sections: ['cf-basics'], fields: ['program_id', 'title'] },
+    { key: 'content', sections: ['cf-content', 'cf-image'], fields: ['description', 'learn', 'requirements', 'audience', 'promo_video_url', 'image', 'remove_image'] },
+    {
+        key: 'when',
+        sections: ['cf-place', 'cf-schedule'],
+        fields: ['type', 'location', 'map_url', 'meeting_url', 'starts_on', 'ends_on', 'schedule_type', 'days', 'manual_dates', 'start_time', 'end_time'],
+    },
+    { key: 'price', sections: ['cf-seats', 'cf-review'], fields: ['price', 'seats', 'auto_suspend', 'min_seats'] },
+];
+const last = steps.length - 1;
+const step = ref(0);
+const reached = ref(cls.value ? last : 0);
+
+const stepOf = (field) => steps.findIndex((entry) => entry.fields.includes(field.split('.')[0]));
+const stepHasErrors = (index) => Object.keys(form.errors).some((field) => stepOf(field) === index);
+const canOpen = (index) => index <= reached.value;
+
+// What a step still lacks, as { field: message } (the server checks everything again).
+function missing(index) {
+    const need = {};
+    const required = t('teach.classes.wizard.required');
+
+    if (index === 0) {
+        if (mode.value === 'program' && !form.program_id) {
+            need.program_id = required;
+        }
+
+        if (form.title.trim().length < 3) {
+            need.title = t('teach.classes.wizard.title_short');
+        }
+    } else if (index === 1) {
+        if (!form.description.trim()) {
+            need.description = required;
+        }
+    } else if (index === 2) {
+        if (form.type === 'in_person' && !form.map_url.trim()) {
+            need.map_url = required;
+        }
+
+        if (!form.starts_on) {
+            need.starts_on = required;
+        }
+
+        if (form.schedule_type === 'weekly' && form.days.length === 0) {
+            need.days = t('teach.classes.wizard.pick_days');
+        }
+
+        if (form.schedule_type === 'manual' && form.manual_dates.length === 0) {
+            need.manual_dates = t('teach.classes.wizard.pick_dates');
+        }
+    } else if (index === 3) {
+        if (form.price === '' || form.price === null) {
+            need.price = required;
+        }
+
+        if (form.auto_suspend && (form.min_seats === '' || form.min_seats === null)) {
+            need.min_seats = required;
+        }
+    }
+
+    return need;
+}
+
+const stepDone = (index) => index !== step.value && index <= reached.value && !stepHasErrors(index)
+    && Object.keys(missing(index)).length === 0;
+
+function scrollToForm() {
+    nextTick(() => document.getElementById('class-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
+function goTo(index, force = false) {
+    if (index < 0 || index > last || (!force && !canOpen(index))) {
+        return;
+    }
+
+    step.value = index;
+    reached.value = Math.max(reached.value, index);
+    scrollToForm();
+}
+
+// «التالي»: the step's own checks first, then the next step.
+function next() {
+    const need = missing(step.value);
+
+    form.clearErrors(...steps[step.value].fields);
+
+    if (Object.keys(need).length > 0) {
+        form.setError(need);
+        nextTick(() => document.querySelector('#class-form .v-messages__message, #class-form small.text-error')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+
+        return;
+    }
+
+    goTo(step.value + 1, true);
+}
+
+function submit() {
+    if (!cls.value && step.value < last) {
+        next();
+
+        return;
+    }
+
+    save();
+}
+
+function openFirstError() {
+    nextTick(() => {
+        const first = steps.findIndex((_, index) => stepHasErrors(index));
+
+        if (first !== -1 && first !== step.value) {
+            goTo(first, true);
+        }
+    });
+}
+
+// The readiness list opens the step a section is on, then scrolls to it.
+function openSection(id) {
+    goTo(steps.findIndex((entry) => entry.sections.includes(id)), true);
+    nextTick(() => scrollTo(id));
+}
+
+const summary = computed(() => {
+    const learnCount = form.learn.filter((entry) => entry.trim() !== '').length;
+    const rows = [
+        { key: 'title', step: 0, value: form.title.trim() },
+        ...(template.value ? [{ key: 'program', step: 0, value: template.value.name }] : []),
+        { key: 'content', step: 1, value: form.description.trim() ? t(learnCount ? 'teach.classes.wizard.content_value' : 'teach.classes.wizard.content_plain', { count: learnCount }) : '' },
+        { key: 'image', step: 1, value: imagePreview.value ? t('teach.classes.wizard.image_yes') : t('teach.classes.wizard.image_no'), empty: !imagePreview.value },
+        { key: 'place', step: 2, value: form.type === 'in_person' ? (form.location.trim() || t('class.type.in_person')) : t('class.type.online') },
+        { key: 'period', step: 2, value: form.starts_on ? formatPeriod(form, t) : '' },
+        { key: 'schedule', step: 2, value: formatSchedule(form, t) },
+        { key: 'price', step: 3, value: form.price === '' || form.price === null ? '' : previewPrice.value },
+        { key: 'seats', step: 3, value: form.seats ? String(form.seats) : t('teach.classes.wizard.no_limit') },
+    ];
+
+    return rows.map((row) => ({ ...row, empty: row.empty || row.value === '', value: row.value || '—' }));
+});
 
 // ---------- Side panel: a live preview and what is still missing to publish ----------
 const currencyLabel = computed(() => (props.currency === 'LYD' ? 'د.ل' : props.currency));
@@ -812,3 +1064,219 @@ function cancelClass() {
 
 <style scoped src="../teach.css"></style>
 <style scoped src="../courseForm.css"></style>
+
+<style scoped>
+/* ---------- Steps ---------- */
+.cf__main {
+    scroll-margin-top: 88px;
+}
+
+.cf-steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: var(--rq-space-5);
+    padding: 8px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+    background: var(--rq-surface);
+}
+
+.cf-step {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--rq-radius-md);
+    background: none;
+    color: var(--rq-text-muted);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--rq-dur-fast) var(--rq-ease);
+}
+
+.cf-step:hover:not(:disabled) {
+    background: var(--rq-surface-hover);
+}
+
+.cf-step:focus-visible {
+    outline: none;
+    box-shadow: var(--rq-focus-ring);
+}
+
+.cf-step:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.cf-step__num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border: 1.5px solid var(--rq-line-strong);
+    border-radius: 50%;
+    background: var(--rq-surface);
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    transition: all var(--rq-dur-fast) var(--rq-ease);
+}
+
+.cf-step__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+.cf-step__text small {
+    font-size: 11px;
+    color: var(--rq-text-subtle);
+}
+
+.cf-step__text strong {
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cf-step--on {
+    background: var(--rq-surface-hover);
+    color: var(--rq-text-heading);
+}
+
+.cf-step--on .cf-step__num {
+    border-color: var(--rq-action-primary);
+    background: var(--rq-action-primary);
+    color: var(--rq-text-on-primary);
+    box-shadow: 0 0 0 4px var(--rq-icon-tile);
+}
+
+.cf-step--done .cf-step__num {
+    border-color: var(--rq-success);
+    background: var(--rq-success);
+    color: #fff;
+}
+
+.cf-step--done {
+    color: var(--rq-text-body);
+}
+
+.cf-step--error .cf-step__num {
+    border-color: var(--rq-danger);
+    background: var(--rq-danger-tint);
+    color: var(--rq-danger);
+}
+
+/* A thin bar under the current step */
+.cf-step--on::after {
+    position: absolute;
+    inset-inline: 10px;
+    bottom: -9px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--rq-action-primary);
+    content: "";
+}
+
+/* Phones: numbers only, the current step keeps its name */
+@media (max-width: 759.98px) {
+    .cf-steps {
+        grid-template-columns: repeat(4, auto);
+        justify-content: space-between;
+    }
+
+    .cf-step:not(.cf-step--on) .cf-step__text {
+        display: none;
+    }
+}
+
+/* ---------- Back / next ---------- */
+.cf-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: var(--rq-space-5);
+}
+
+@media (max-width: 1099.98px) {
+    .cf-nav {
+        display: none; /* the bottom bar does this on narrow screens */
+    }
+}
+
+/* ---------- Review ---------- */
+.cf-review {
+    margin: 0;
+    padding: 6px 24px 12px;
+}
+
+.cf-review__row {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rq-line-soft);
+}
+
+.cf-review__row:last-child {
+    border-bottom: 0;
+}
+
+.cf-review dt {
+    font-size: 13px;
+    color: var(--rq-text-muted);
+}
+
+.cf-review dd {
+    margin: 0;
+    font-size: 14px;
+    color: var(--rq-text-heading);
+    overflow-wrap: anywhere;
+}
+
+.cf-review__empty {
+    color: var(--rq-text-subtle) !important;
+}
+
+.cf-review__edit {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--rq-text-link);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.cf-review__edit:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 599.98px) {
+    .cf-review {
+        padding-inline: 16px;
+    }
+
+    .cf-review__row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .cf-review dd {
+        grid-column: 1;
+    }
+
+    .cf-review__edit {
+        grid-row: 1;
+        grid-column: 2;
+    }
+}
+</style>
