@@ -189,9 +189,9 @@
     </div>
 
     <!-- Record a payment for any student who still owes -->
-    <v-dialog v-model="recordOpen" max-width="520">
+    <v-dialog v-model="recordOpen" max-width="520" scrollable>
         <v-card class="app-form-dialog">
-            <v-card-text class="pa-6">
+            <v-card-text class="app-form-dialog__body pt-6 pb-2">
                 <h2 class="rq-dialog__title mb-4">{{ $t('teach.money.record') }}</h2>
                 <FormPlainSelect
                     v-model="recordEnrollment"
@@ -244,9 +244,9 @@
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="editOpen" max-width="480">
+    <v-dialog v-model="editOpen" max-width="480" scrollable>
         <v-card v-if="editing" class="app-form-dialog">
-            <v-card-text class="pa-6">
+            <v-card-text class="app-form-dialog__body pt-6 pb-2">
                 <h2 class="rq-dialog__title mb-2">{{ $t('teach.payments.edit_title', { number: editing.receipt_number }) }}</h2>
                 <p class="rq-dialog__subtitle mb-4">{{ $t('teach.payments.edit_note') }}</p>
                 <v-btn-toggle v-model="editForm.method" mandatory class="mb-4">
@@ -268,9 +268,9 @@
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="voidOpen" max-width="480">
+    <v-dialog v-model="voidOpen" max-width="480" scrollable>
         <v-card v-if="voiding" class="app-form-dialog">
-            <v-card-text class="pa-6">
+            <v-card-text class="app-form-dialog__body pt-6 pb-2">
                 <h2 class="rq-dialog__title mb-2">{{ $t('teach.payments.void_title', { number: voiding.receipt_number }) }}</h2>
                 <p class="rq-dialog__subtitle mb-4">{{ $t('teach.payments.void_text') }}</p>
                 <FormPlainTextarea
