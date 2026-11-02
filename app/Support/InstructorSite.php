@@ -4,7 +4,9 @@ namespace App\Support;
 
 use App\Models\Enrollment;
 use App\Models\Instructor;
+use App\Models\Program;
 use App\Models\TeachingClass;
+use Illuminate\Support\Str;
 
 /**
  * The data of an instructor's public page, in the shape of rqmana's center website
@@ -32,6 +34,27 @@ class InstructorSite
                 __('instructors.whatsapp_hello', ['name' => $instructor->display_name]),
             ),
             'is_owner' => $isOwner,
+            'has_programs' => $instructor->programs()->public()->exists(),
+        ];
+    }
+
+    /**
+     * A program as the public pages show it. $upcoming is the number of its courses that are open.
+     *
+     * @return array<string, mixed>
+     */
+    public static function program(Program $program, Instructor $instructor, int $upcoming = 0): array
+    {
+        return [
+            'id' => $program->id,
+            'name' => $program->name,
+            'description' => $program->description,
+            'summary' => Str::limit(trim(preg_replace('/\s+/u', ' ', strip_tags(str_replace(['</p>', '<br>', '</li>'], ' ', (string) $program->description)))), 160),
+            'url' => route('programs.show', ['slug' => $instructor->slug, 'program' => $program->id]),
+            'poster_url' => $program->imageUrl(),
+            'is_featured' => $program->is_featured,
+            'is_public' => $program->isPublic(),
+            'upcoming_count' => $upcoming,
         ];
     }
 
@@ -52,6 +75,10 @@ class InstructorSite
             'location' => $class->type === TeachingClass::TYPE_IN_PERSON ? $class->location : null,
             'map_url' => $class->type === TeachingClass::TYPE_IN_PERSON ? $class->map_url : null,
             'image_url' => $class->imageUrl(),
+            'program' => $class->program?->isPublic() ? [
+                'name' => $class->program->name,
+                'url' => route('programs.show', ['slug' => $instructor->slug, 'program' => $class->program->id]),
+            ] : null,
             'status' => $class->status,
             'status_label' => match (true) {
                 $ended => __('site.status.ended'),

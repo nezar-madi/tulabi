@@ -43,6 +43,7 @@ class TeachingClass extends Model
     protected $table = 'classes';
 
     protected $fillable = [
+        'program_id',
         'title',
         'description',
         'type',
@@ -81,6 +82,12 @@ class TeachingClass extends Model
     public function instructor(): BelongsTo
     {
         return $this->belongsTo(Instructor::class);
+    }
+
+    /** @return BelongsTo<Program, $this> */
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
     }
 
     /** @return HasMany<Enrollment, $this> */

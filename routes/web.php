@@ -14,6 +14,7 @@ use App\Http\Controllers\Teach\DashboardController as TeachDashboardController;
 use App\Http\Controllers\Teach\EnrollmentController;
 use App\Http\Controllers\Teach\PaymentController;
 use App\Http\Controllers\Teach\ProfileController;
+use App\Http\Controllers\Teach\ProgramController;
 use App\Http\Controllers\Teach\StudentController;
 use App\Http\Middleware\EnsureInstructor;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -98,6 +99,14 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
         Route::post('/classes/{class}/cancel', [ClassController::class, 'cancel'])->name('classes.cancel');
         Route::delete('/classes/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
         Route::get('/classes/{class}/students', [EnrollmentController::class, 'students'])->name('classes.students');
+
+        // «البرامج التدريبية»: the catalogue courses belong to. Every {program} must be the instructor's own.
+        Route::get('/programs', [ProgramController::class, 'index'])->name('programs.index');
+        Route::get('/programs/create', [ProgramController::class, 'create'])->name('programs.create');
+        Route::post('/programs', [ProgramController::class, 'store'])->name('programs.store');
+        Route::get('/programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
+        Route::put('/programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
+        Route::delete('/programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
 
         // «الطلاب»: everyone accepted in any of the instructor's courses.
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');

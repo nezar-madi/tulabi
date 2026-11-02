@@ -64,6 +64,20 @@
     <form @submit.prevent="save">
         <fieldset :disabled="readOnly" class="class-form">
             <section class="rq-card teach-section">
+                <FormPlainSelect
+                    v-if="programs.length"
+                    v-model="form.program_id"
+                    :label="$t('teach.classes.fields.program')"
+                    :items="programItems"
+                    item-title="name"
+                    item-value="id"
+                    :placeholder="$t('teach.classes.fields.program_none')"
+                    clearable
+                    :hint="$t('teach.classes.fields.program_hint')"
+                    persistent-hint
+                    :error-messages="form.errors.program_id"
+                    class="mb-3"
+                />
                 <FormPlainTextField
                     v-model="form.title"
                     :label="$t('teach.classes.fields.title')"
@@ -269,6 +283,7 @@ import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
 import FormPlainDatePicker from '@/Components/formFields/FormPlainDatePicker.vue';
 import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';
+import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
@@ -277,6 +292,8 @@ import { WEEK_ORDER } from '@/utils/classFormat';
 const props = defineProps({
     item: { type: Object, default: null },
     currency: { type: String, default: 'LYD' },
+    // The programs a course may be put in: [{ id, name }].
+    programs: { type: Array, default: () => [] },
     publicUrl: { type: String, default: null },
 });
 
@@ -284,7 +301,10 @@ const { t } = useI18n();
 const cls = computed(() => props.item);
 const readOnly = computed(() => cls.value?.status === 'canceled');
 
+const programItems = computed(() => props.programs);
+
 const form = useForm({
+    program_id: cls.value?.program_id ?? null,
     title: cls.value?.title || '',
     description: cls.value?.description || '',
     type: cls.value?.type || 'in_person',

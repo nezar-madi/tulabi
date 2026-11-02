@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Teach;
 
+use App\Models\Program;
 use App\Models\TeachingClass;
 use App\Rules\GoogleMapsUrl;
 use App\Support\SafeHtml;
@@ -41,6 +42,11 @@ class SaveClassRequest extends InstructorRequest
         $inPerson = $this->input('type') === TeachingClass::TYPE_IN_PERSON;
 
         return [
+            // Optional: the course belongs to one of the instructor's own programs.
+            'program_id' => [
+                'nullable', 'integer',
+                Rule::exists('programs', 'id')->where('instructor_id', $this->instructor()?->getKey()),
+            ],
             'title' => ['required', 'string', 'min:3', 'max:150'],
             'description' => ['required', 'string', 'max:20000'],
             'type' => ['required', Rule::in([TeachingClass::TYPE_IN_PERSON, TeachingClass::TYPE_ONLINE])],
@@ -74,6 +80,17 @@ class SaveClassRequest extends InstructorRequest
             if (! $validator->errors()->has('description')
                 && ! SafeHtml::hasText(SafeHtml::description((string) $this->input('description')))) {
                 $validator->errors()->add('description', __('validation.required', ['attribute' => __('validation.attributes.description')]));
+            }
+
+            // A stopped program takes no new courses (one already in it may stay, as in rqmana).
+            if ($this->filled('program_id') && ! $validator->errors()->has('program_id')) {
+                $program = Program::query()->find((int) $this->input('program_id'));
+                $class = $this->route('class');
+                $alreadyIn = $class instanceof TeachingClass && (int) $class->program_id === (int) $this->input('program_id');
+
+                if ($program !== null && ! $program->is_active && ! $alreadyIn) {
+                    $validator->errors()->add('program_id', __('programs.inactive'));
+                }
             }
 
             $start = $this->input('start_time');
@@ -111,6 +128,7 @@ class SaveClassRequest extends InstructorRequest
 
         return [
             ...$data,
+            'program_id' => ($data['program_id'] ?? null) ?: null,
             'title' => trim($data['title']),
             'description' => $description,
             'location' => $online || $location === '' ? null : $location,

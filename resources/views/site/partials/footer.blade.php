@@ -8,6 +8,9 @@
             <h2>{{ __('site.nav.menu') }}</h2>
             <ul>
                 <li><a href="{{ $site['url'] }}#classes">{{ __('site.nav.classes') }}</a></li>
+                @if ($site['has_programs'] ?? false)
+                    <li><a href="{{ route('programs.index', ['slug' => $site['slug']]) }}">{{ __('site.nav.programs') }}</a></li>
+                @endif
                 @if ($site['about'])
                     <li><a href="{{ $site['url'] }}#about">{{ __('site.nav.about') }}</a></li>
                 @endif

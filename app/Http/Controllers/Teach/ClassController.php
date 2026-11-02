@@ -7,6 +7,8 @@ use App\Http\Controllers\Teach\Concerns\FindsOwnClass;
 use App\Http\Requests\Teach\CancelClassRequest;
 use App\Http\Requests\Teach\InstructorActionRequest;
 use App\Http\Requests\Teach\SaveClassRequest;
+use App\Models\Instructor;
+use App\Models\Program;
 use App\Models\TeachingClass;
 use App\Support\ClassImage;
 use App\Support\ClassLifecycle;
@@ -61,11 +63,12 @@ class ClassController extends Controller
 
     public function create(Request $request): Response
     {
-        $this->instructor($request);
+        $instructor = $this->instructor($request);
 
         return Inertia::render('Teach/Classes/Form', [
             'item' => null,
             'currency' => Currency::CODE,
+            'programs' => $this->programOptions($instructor, null),
         ]);
     }
 
@@ -95,6 +98,7 @@ class ClassController extends Controller
         return Inertia::render('Teach/Classes/Form', [
             'item' => ClassPresenter::forOwner($class),
             'currency' => $class->currency_code,
+            'programs' => $this->programOptions($this->instructor($request), $class->program_id),
             'publicUrl' => $class->isPubliclyVisible() || $class->status === TeachingClass::STATUS_DRAFT
                 ? $this->publicUrl($class)
                 : null,
@@ -143,6 +147,21 @@ class ClassController extends Controller
         $this->lifecycle->delete($this->ownClass($request, $class));
 
         return redirect()->route('teach.classes.index', ['filter' => 'draft'])->with('status', __('classes.deleted'));
+    }
+
+    /**
+     * The programs a course may be put in: the active ones, and the one it is already in.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    private function programOptions(Instructor $instructor, ?int $current): array
+    {
+        return $instructor->programs()
+            ->where(fn ($query) => $query->where('is_active', true)->when($current, fn ($q) => $q->orWhere('id', $current)))
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Program $program) => ['id' => $program->id, 'name' => $program->name])
+            ->all();
     }
 
     private function renderImage(SaveClassRequest $request): ?string

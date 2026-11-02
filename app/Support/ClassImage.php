@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Program;
 use App\Models\TeachingClass;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -73,14 +74,18 @@ class ClassImage
         return (string) ob_get_clean();
     }
 
-    /** Save rendered bytes as the class's image and delete the one it replaces. */
-    public function attach(TeachingClass $class, string $jpeg): string
+    /**
+     * Save rendered bytes as the model's image (a class, or a program in its own folder) and
+     * delete the one it replaces.
+     */
+    public function attach(TeachingClass|Program $model, string $jpeg): string
     {
-        $path = TeachingClass::IMAGE_DIRECTORY.'/'.$class->instructor_id.'/'.Str::random(32).'.jpg';
+        $directory = $model instanceof Program ? Program::IMAGE_DIRECTORY : TeachingClass::IMAGE_DIRECTORY;
+        $path = $directory.'/'.$model->instructor_id.'/'.Str::random(32).'.jpg';
         Storage::disk('public')->put($path, $jpeg);
 
-        $old = $class->image_path;
-        $class->forceFill(['image_path' => $path])->save();
+        $old = $model->image_path;
+        $model->forceFill(['image_path' => $path])->save();
 
         if ($old !== null) {
             Storage::disk('public')->delete($old);
@@ -89,11 +94,11 @@ class ClassImage
         return $path;
     }
 
-    public function delete(TeachingClass $class): void
+    public function delete(TeachingClass|Program $model): void
     {
-        if ($class->image_path !== null) {
-            Storage::disk('public')->delete($class->image_path);
-            $class->forceFill(['image_path' => null])->save();
+        if ($model->image_path !== null) {
+            Storage::disk('public')->delete($model->image_path);
+            $model->forceFill(['image_path' => null])->save();
         }
     }
 }

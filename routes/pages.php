@@ -12,6 +12,15 @@ Route::get('/{slug}', [InstructorPageController::class, 'show'])
     ->where('slug', InstructorSlug::routePattern())
     ->name('instructors.show');
 
+Route::get('/{slug}/programs', [InstructorPageController::class, 'programs'])
+    ->where('slug', InstructorSlug::routePattern())
+    ->name('programs.index');
+
+Route::get('/{slug}/programs/{program}', [InstructorPageController::class, 'showProgram'])
+    ->where('slug', InstructorSlug::routePattern())
+    ->whereNumber('program')
+    ->name('programs.show');
+
 Route::get('/{slug}/classes/{class}', [InstructorPageController::class, 'showClass'])
     ->where('slug', InstructorSlug::routePattern())
     ->whereNumber('class')

@@ -30,6 +30,9 @@
                 <div class="rq-price {{ $course['is_free'] ? 'rq-price--free' : '' }}">{{ $course['price'] }}</div>
                 <dl class="rq-facts">
                     <div><dt>{{ __('site.classes.instructor') }}</dt><dd><a class="rq-link" href="{{ $site['url'] }}">{{ $site['name'] }}</a></dd></div>
+                    @if ($course['program'])
+                        <div><dt>{{ __('site.classes.program') }}</dt><dd><a class="rq-link" href="{{ $course['program']['url'] }}">{{ $course['program']['name'] }}</a></dd></div>
+                    @endif
                     <div><dt>{{ __('site.classes.starts') }}</dt><dd>{{ $course['starting_date'] }}</dd></div>
                     @if ($course['ending_date'])
                         <div><dt>{{ __('site.classes.ends') }}</dt><dd>{{ $course['ending_date'] }}</dd></div>

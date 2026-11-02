@@ -47,6 +47,7 @@ class ClassPresenter
             ...self::forPublic($class),
             'location' => $class->location,
             'meeting_url' => $class->meeting_url,
+            'program_id' => $class->program_id,
             'cancel_reason' => $class->cancel_reason,
             'published_at' => $class->published_at?->toIso8601String(),
             'canceled_at' => $class->canceled_at?->toIso8601String(),

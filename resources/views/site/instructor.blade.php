@@ -78,6 +78,28 @@
         </div>
     </section>
 
+    @if (count($programs) > 0)
+        <section class="rq-section rq-section--tint" id="programs">
+            <div class="rq-wrap">
+                <div class="rq-section-head">
+                    <div>
+                        <p class="rq-eyebrow rq-eyebrow--plain">{{ __('site.programs.eyebrow') }}</p>
+                        <h2 class="rq-h2">{{ __('site.programs.title') }}</h2>
+                        <p class="rq-lead">{{ __('site.programs.intro') }}</p>
+                    </div>
+                    @if ($programsTotal > count($programs))
+                        <a class="rq-btn rq-btn--ghost" href="{{ route('programs.index', ['slug' => $site['slug']]) }}">{{ __('site.programs.all') }}</a>
+                    @endif
+                </div>
+                <div class="rq-grid">
+                    @foreach ($programs as $program)
+                        @include('site.partials.program-card', ['program' => $program])
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     @if ($site['about'])
         <section class="rq-section rq-section--tint" id="about">
             <div class="rq-wrap rq-about">

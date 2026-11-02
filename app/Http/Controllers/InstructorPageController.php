@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Instructor;
+use App\Models\Program;
 use App\Models\TeachingClass;
 use App\Models\User;
 use App\Support\InstructorSite;
@@ -33,6 +34,8 @@ class InstructorPageController extends Controller
         return view('site.instructor', [
             'site' => $site,
             'courses' => $courses,
+            'programs' => $this->publicPrograms($instructor, limit: 3),
+            'programsTotal' => $instructor->programs()->public()->count(),
             // The first line of the bio under the name (the full bio is in «نبذة»).
             'lead' => $bio === '' ? null : Str::limit(Str::before($bio, "\n"), 220),
             'meta' => [
@@ -41,6 +44,76 @@ class InstructorPageController extends Controller
                 'canonical' => $instructor->publicUrl(),
             ],
         ]);
+    }
+
+    /** The published programs: tulabi.ly/{slug}/programs. */
+    public function programs(Request $request, string $slug): View
+    {
+        $instructor = $this->instructor($slug);
+
+        return view('site.programs.index', [
+            'site' => InstructorSite::site($instructor, $this->isOwner($request, $instructor)),
+            'programs' => $this->publicPrograms($instructor),
+            'meta' => [
+                'title' => __('site.programs.title').' - '.$instructor->display_name.' | طلابي',
+                'description' => __('site.programs.intro'),
+                'canonical' => route('programs.index', ['slug' => $instructor->slug]),
+            ],
+        ]);
+    }
+
+    /** One program with its open courses. The owner also sees a program that is not published yet. */
+    public function showProgram(Request $request, string $slug, int $program): View
+    {
+        $instructor = $this->instructor($slug);
+        $isOwner = $this->isOwner($request, $instructor);
+
+        /** @var Program $model */
+        $model = $instructor->programs()
+            ->whereKey($program)
+            ->when(! $isOwner, fn ($query) => $query->public())
+            ->firstOrFail();
+
+        $runs = $this->openClasses($instructor)
+            ->where('program_id', $model->id)
+            ->map(fn (TeachingClass $class) => InstructorSite::course($class, $instructor))
+            ->values()
+            ->all();
+
+        $site = InstructorSite::site($instructor, $isOwner);
+        $site['is_owner'] = $isOwner;
+
+        return view('site.programs.show', [
+            'site' => $site,
+            'program' => InstructorSite::program($model, $instructor, count($runs)),
+            'runs' => $runs,
+            'ownerBar' => $model->isPublic() ? null : __('site.programs.hidden_bar'),
+            'ownerEditUrl' => route('teach.programs.edit', $model),
+            'meta' => [
+                'title' => $model->name.' - '.$instructor->display_name.' | طلابي',
+                'description' => InstructorSite::program($model, $instructor)['summary'],
+                'canonical' => route('programs.show', ['slug' => $instructor->slug, 'program' => $model->id]),
+            ],
+        ]);
+    }
+
+    /**
+     * Published, active programs: the featured ones first, each with its number of open courses.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function publicPrograms(Instructor $instructor, ?int $limit = null): array
+    {
+        $open = $this->openClasses($instructor)->countBy('program_id');
+
+        return $instructor->programs()
+            ->public()
+            ->orderByDesc('is_featured')
+            ->orderBy('name')
+            ->when($limit, fn ($query) => $query->limit($limit))
+            ->get()
+            ->map(fn (Program $program) => InstructorSite::program($program, $instructor, (int) ($open[$program->id] ?? 0)))
+            ->all();
     }
 
     public function showClass(Request $request, string $slug, int $class): View
@@ -90,6 +163,7 @@ class InstructorPageController extends Controller
         $today = TulabiClock::today();
 
         return $instructor->classes()
+            ->with('program')
             ->publiclyVisible()
             ->where(fn ($query) => $query
                 ->where('ends_on', '>=', $today)

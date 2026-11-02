@@ -1,0 +1,108 @@
+/* Dropdown menu: white frame, navy hairline, 6px corners, soft navy shadow */
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) {
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface);
+    box-shadow: var(--rq-shadow-frame-sm) !important;
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list {
+    padding: 4px;
+    background: transparent;
+    box-shadow: none !important;
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list-item {
+    min-height: 38px;
+    border-radius: var(--rq-radius-sm);
+    color: var(--rq-text-body);
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list-item-title {
+    font-size: 14px;
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list-item .v-list-item__overlay {
+    display: none;
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list-item:hover {
+    background: var(--rq-surface-hover);
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list-item--active {
+    background: var(--rq-surface-hover);
+    color: var(--rq-text-heading);
+}
+
+.v-overlay__content:is(.v-select__content, .v-autocomplete__content) .v-list-item.v-list-item--active::after {
+    opacity: 0;
+}
+
+.form-plain-field--select :is(.v-select, .v-autocomplete).v-input--density-comfortable .v-field--variant-plain {
+    --v-field-padding-top: 0;
+    --v-field-padding-bottom: 0;
+    --v-input-control-height: 42px;
+}
+
+.form-plain-field--select :is(.v-select, .v-autocomplete) .v-field {
+    align-items: center;
+}
+
+.form-plain-field--select :is(.v-select, .v-autocomplete) .v-field__input {
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: 42px;
+}
+
+.form-plain-field--select :is(.v-select, .v-autocomplete) .v-field .v-field__input > input {
+    align-self: center;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    line-height: 42px;
+}
+
+.form-plain-field--select :is(.v-select, .v-autocomplete) :is(.v-select__selection, .v-autocomplete__selection) {
+    align-items: center;
+    min-height: 42px;
+}
+
+.form-plain-field--select :is(.v-select, .v-autocomplete) .v-field :is(.v-field__prepend-inner, .v-field__append-inner, .v-field__clearable) {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.form-plain-field--multiple .v-field--variant-plain {
+    height: auto;
+    min-height: 42px;
+}
+
+.form-plain-field--multiple :is(.v-select, .v-autocomplete).v-input--density-comfortable .v-field--variant-plain {
+    --v-input-control-height: auto;
+}
+
+.form-plain-field--multiple :is(.v-select, .v-autocomplete) .v-field__input {
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 4px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.form-plain-field--multiple :is(.v-select, .v-autocomplete) .v-field .v-field__input > input {
+    height: 28px;
+    line-height: 28px;
+}
+
+.form-plain-field--multiple :is(.v-select, .v-autocomplete) :is(.v-select__selection, .v-autocomplete__selection) {
+    min-height: 0;
+}
+
+.form-plain-field--multiple .v-chip {
+    height: 24px;
+    margin: 0;
+}

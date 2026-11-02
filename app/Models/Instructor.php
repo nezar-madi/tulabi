@@ -56,6 +56,12 @@ class Instructor extends Model
         return $this->hasMany(TeachingClass::class);
     }
 
+    /** @return HasMany<Program, $this> */
+    public function programs(): HasMany
+    {
+        return $this->hasMany(Program::class);
+    }
+
     /**
      * Instructors whose page is public: a slug is chosen, teaching is on and the account is active.
      *

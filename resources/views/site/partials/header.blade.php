@@ -4,6 +4,7 @@
     $navItems = [
         ['url' => $home, 'label' => __('site.nav.home'), 'active' => request()->routeIs('instructors.show')],
         ['url' => $home.'#classes', 'label' => __('site.nav.classes'), 'active' => request()->routeIs('classes.show')],
+        ['url' => $home.'#programs', 'label' => __('site.nav.programs'), 'active' => request()->routeIs('programs.*'), 'show' => $site['has_programs'] ?? false],
         ['url' => $home.'#about', 'label' => __('site.nav.about'), 'active' => false, 'show' => (bool) $site['about']],
         ['url' => $home.'#contact', 'label' => __('site.nav.contact'), 'active' => false],
     ];
