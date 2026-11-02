@@ -70,7 +70,13 @@
                     </div>
                     <div>
                         <dt>{{ $t('public.place') }}</dt>
-                        <dd>{{ cls.type === 'in_person' ? cls.location : $t('class.type.online') }}</dd>
+                        <dd>
+                            <template v-if="cls.type === 'in_person'">
+                                <template v-if="cls.location">{{ cls.location }}<br></template>
+                                <a v-if="cls.map_url" :href="cls.map_url" target="_blank" rel="noopener noreferrer">{{ $t('public.map') }}</a>
+                            </template>
+                            <template v-else>{{ $t('class.type.online') }}</template>
+                        </dd>
                     </div>
                     <div v-if="enrollment.status === 'accepted'">
                         <dt>{{ $t('student.classes.fee') }}</dt>

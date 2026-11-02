@@ -16,6 +16,9 @@
     <section class="rq-section">
         <div class="rq-wrap rq-detail">
             <div class="rq-block">
+                @if ($course['image_url'])
+                    <img class="tl-class-image" src="{{ $course['image_url'] }}" alt="{{ $course['title'] }}">
+                @endif
                 <h2 class="rq-h3">{{ __('site.classes.about_class') }}</h2>
                 @if ($course['description'])
                     {{-- Filtered on save by App\Support\SafeHtml::description(). --}}
@@ -40,8 +43,11 @@
                     <div>
                         <dt>{{ __('site.classes.place') }}</dt>
                         <dd>
-                            @if ($course['location'])
-                                {{ $course['location'] }}
+                            @if ($course['type'] === 'in_person')
+                                @if ($course['location']){{ $course['location'] }}<br>@endif
+                                @if ($course['map_url'])
+                                    <a class="rq-link" href="{{ $course['map_url'] }}" target="_blank" rel="noopener noreferrer">{{ __('site.classes.map') }}</a>
+                                @endif
                             @else
                                 {{ $course['type_label'] }} · {{ __('site.classes.online_note') }}
                             @endif

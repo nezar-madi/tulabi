@@ -27,6 +27,7 @@ class TeachingClassFactory extends Factory
             'description' => '<p>مراجعة شاملة للمنهج.</p>',
             'type' => TeachingClass::TYPE_IN_PERSON,
             'location' => 'طرابلس، حي الأندلس',
+            'map_url' => 'https://maps.app.goo.gl/abc123',
             'meeting_url' => null,
             'starts_on' => $start->toDateString(),
             'ends_on' => $start->addWeeks(8)->toDateString(),
@@ -50,6 +51,7 @@ class TeachingClassFactory extends Factory
         return $this->state(fn () => [
             'type' => TeachingClass::TYPE_ONLINE,
             'location' => null,
+            'map_url' => null,
             'meeting_url' => 'https://meet.google.com/abc-defg-hij',
         ]);
     }

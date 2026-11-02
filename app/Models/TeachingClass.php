@@ -37,6 +37,9 @@ class TeachingClass extends Model
     /** Owes nothing and takes no payments (as in rqmana). */
     public const STATUS_CANCELED = 'canceled';
 
+    /** Folder of the promotional images on the public disk (App\Support\ClassImage). */
+    public const IMAGE_DIRECTORY = 'class-images';
+
     protected $table = 'classes';
 
     protected $fillable = [
@@ -44,6 +47,7 @@ class TeachingClass extends Model
         'description',
         'type',
         'location',
+        'map_url',
         'meeting_url',
         'starts_on',
         'ends_on',
@@ -65,6 +69,12 @@ class TeachingClass extends Model
             'published_at' => 'datetime',
             'canceled_at' => 'datetime',
         ];
+    }
+
+    /** A path on the current host (php artisan storage:link), so it works on any domain. */
+    public function imageUrl(): ?string
+    {
+        return $this->image_path === null ? null : '/storage/'.$this->image_path;
     }
 
     /** @return BelongsTo<Instructor, $this> */

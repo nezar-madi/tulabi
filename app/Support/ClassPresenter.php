@@ -21,6 +21,8 @@ class ClassPresenter
             'description' => $class->description,
             'type' => $class->type,
             'location' => $class->type === TeachingClass::TYPE_IN_PERSON ? $class->location : null,
+            'map_url' => $class->type === TeachingClass::TYPE_IN_PERSON ? $class->map_url : null,
+            'image_url' => $class->imageUrl(),
             'starts_on' => $class->starts_on?->toDateString(),
             'ends_on' => $class->ends_on?->toDateString(),
             'days' => $class->days ?? [],

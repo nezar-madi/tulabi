@@ -230,6 +230,7 @@ a{color:inherit}
 .rq-floating-whatsapp{position:fixed;inset-inline-start:16px;bottom:16px;z-index:30;display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;box-shadow:0 14px 28px -12px rgba(0,0,0,.45)}
 .rq-floating-whatsapp:hover{background:#1EBE5B;color:#fff}
 /* tulabi additions (same tokens): the owner's banner, the instructor photo, the request form, messages */
+.tl-class-image{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--rq-line);border-radius:8px;margin-bottom:24px}
 .tl-owner-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding:10px 16px;background:#FBF1E0;color:#A45F00;font-size:15px}
 .tl-owner-bar a{color:inherit;font-weight:700}
 .rq-brand img.tl-brand-photo{width:44px;height:44px;max-width:none;border-radius:50%;object-fit:cover}

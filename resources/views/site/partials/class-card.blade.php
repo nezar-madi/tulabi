@@ -1,6 +1,10 @@
 <article class="rq-card">
     <a class="rq-card-media" href="{{ $course['url'] }}" tabindex="-1" aria-hidden="true">
-        <span class="rq-card-placeholder">@include('site.partials.icon', ['name' => $course['type'] === 'online' ? 'video' : 'layers', 'size' => 44])</span>
+        @if ($course['image_url'])
+            <img src="{{ $course['image_url'] }}" alt="" loading="lazy">
+        @else
+            <span class="rq-card-placeholder">@include('site.partials.icon', ['name' => $course['type'] === 'online' ? 'video' : 'layers', 'size' => 44])</span>
+        @endif
         <span class="rq-chip rq-chip--status {{ $course['is_open'] ? 'rq-chip--active' : '' }}">{{ $course['status_label'] }}</span>
     </a>
     <div class="rq-card-body">

@@ -50,6 +50,8 @@ class InstructorSite
             'type' => $class->type,
             'type_label' => __('site.type.'.$class->type),
             'location' => $class->type === TeachingClass::TYPE_IN_PERSON ? $class->location : null,
+            'map_url' => $class->type === TeachingClass::TYPE_IN_PERSON ? $class->map_url : null,
+            'image_url' => $class->imageUrl(),
             'status' => $class->status,
             'status_label' => match (true) {
                 $ended => __('site.status.ended'),

@@ -4,6 +4,8 @@ namespace Tests\Feature\Teach;
 
 use App\Models\TeachingClass;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -40,8 +42,10 @@ class ClassTest extends TestCase
     {
         $this->actingAs($this->instructor());
 
-        $this->post('/teach/classes', $this->data(['type' => 'in_person', 'location' => '']))
-            ->assertSessionHasErrors('location');
+        $this->post('/teach/classes', $this->data(['type' => 'in_person', 'map_url' => '']))
+            ->assertSessionHasErrors('map_url');
+        $this->post('/teach/classes', $this->data(['description' => '']))->assertSessionHasErrors('description');
+        $this->post('/teach/classes', $this->data(['description' => '<p> </p><br>']))->assertSessionHasErrors('description');
         $this->post('/teach/classes', $this->data(['ends_on' => '2026-11-01']))
             ->assertSessionHasErrors('ends_on');
         $this->post('/teach/classes', $this->data(['start_time' => '18:00', 'end_time' => '17:00']))
@@ -53,6 +57,110 @@ class ClassTest extends TestCase
             ->assertSessionHasErrors('meeting_url');
 
         $this->assertSame(0, TeachingClass::query()->count());
+    }
+
+    public function test_the_place_text_is_optional_but_the_map_link_must_be_google_maps(): void
+    {
+        $this->actingAs($this->instructor());
+
+        foreach ([
+            'http://maps.app.goo.gl/abc',
+            'https://evil.example/maps/abc',
+            'https://google.com.evil.example/maps/x',
+            'https://www.google.com/search?q=maps',
+            'https://maps.app.goo.gl/',
+            'javascript:alert(1)',
+            'مكاني',
+        ] as $url) {
+            $this->post('/teach/classes', $this->data(['map_url' => $url]))->assertSessionHasErrors('map_url');
+        }
+
+        $this->assertSame(0, TeachingClass::query()->count());
+
+        foreach ([
+            'https://maps.app.goo.gl/abc123',
+            'https://www.google.com/maps/place/Tripoli/@32.9,13.1,12z',
+            'https://maps.google.com/?q=32.9,13.1',
+            'https://goo.gl/maps/xyz789',
+        ] as $url) {
+            $this->post('/teach/classes', $this->data(['location' => '', 'map_url' => $url]))
+                ->assertSessionHasNoErrors();
+        }
+
+        $this->assertSame(4, TeachingClass::query()->count());
+        $this->assertNull(TeachingClass::query()->first()->location);
+    }
+
+    public function test_an_online_class_needs_no_map_link_and_drops_one(): void
+    {
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/classes', $this->data(['type' => 'online', 'map_url' => 'https://maps.app.goo.gl/abc']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull(TeachingClass::query()->sole()->map_url);
+    }
+
+    public function test_a_promotional_image_is_saved_replaced_and_removed(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/classes', $this->data(['image' => UploadedFile::fake()->image('promo.png', 1600, 900)]))
+            ->assertSessionHasNoErrors();
+
+        $class = TeachingClass::query()->sole();
+        $first = $class->image_path;
+        $this->assertStringStartsWith('class-images/'.$class->instructor_id.'/', $first);
+        $this->assertStringEndsWith('.jpg', $first);
+        Storage::disk('public')->assertExists($first);
+        $this->assertSame('/storage/'.$first, $class->imageUrl());
+
+        // Saved as a 16:10 JPEG whatever was uploaded.
+        [$width, $height] = getimagesizefromstring(Storage::disk('public')->get($first));
+        $this->assertSame(1200, $width);
+        $this->assertSame(750, $height);
+
+        $this->put("/teach/classes/{$class->id}", $this->data(['image' => UploadedFile::fake()->image('new.jpg', 800, 800)]))
+            ->assertSessionHasNoErrors();
+        $class->refresh();
+        $this->assertNotSame($first, $class->image_path);
+        Storage::disk('public')->assertMissing($first);
+        Storage::disk('public')->assertExists($class->image_path);
+
+        // Saving without a file keeps the image; asking to remove deletes it.
+        $kept = $class->image_path;
+        $this->put("/teach/classes/{$class->id}", $this->data());
+        $this->assertSame($kept, $class->fresh()->image_path);
+
+        $this->put("/teach/classes/{$class->id}", $this->data(['remove_image' => true]));
+        $this->assertNull($class->fresh()->image_path);
+        Storage::disk('public')->assertMissing($kept);
+    }
+
+    public function test_the_image_must_be_a_real_image_of_a_sensible_size(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/classes', $this->data(['image' => UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')]))
+            ->assertSessionHasErrors('image');
+        $this->post('/teach/classes', $this->data(['image' => UploadedFile::fake()->image('small.png', 100, 100)]))
+            ->assertSessionHasErrors('image');
+        $this->post('/teach/classes', $this->data(['image' => UploadedFile::fake()->create('big.png', 5000, 'image/png')]))
+            ->assertSessionHasErrors('image');
+
+        $this->assertSame(0, TeachingClass::query()->count());
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_the_image_cannot_be_set_through_other_fields(): void
+    {
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/classes', $this->data(['image_path' => 'instructors/1/x.jpg']));
+
+        $this->assertNull(TeachingClass::query()->sole()->image_path);
     }
 
     public function test_the_other_types_fields_are_emptied(): void
@@ -184,6 +292,7 @@ class ClassTest extends TestCase
             'description' => '<p>مراجعة شاملة.</p>',
             'type' => 'in_person',
             'location' => 'طرابلس، حي الأندلس',
+            'map_url' => 'https://maps.app.goo.gl/abc123',
             'meeting_url' => '',
             'starts_on' => '2026-12-01',
             'ends_on' => '2027-01-31',

@@ -77,8 +77,38 @@
                     v-model="form.description"
                     :label="$t('teach.classes.fields.description')"
                     :placeholder="$t('teach.classes.fields.description_hint')"
+                    required
                     :error-messages="form.errors.description"
                 />
+            </section>
+
+            <!-- Promotional image -->
+            <section class="rq-card teach-section">
+                <p class="form-plain-field__label font-weight-medium mb-1">{{ $t('teach.classes.fields.image') }}</p>
+                <p class="teach-hint">{{ $t('teach.classes.fields.image_hint') }}</p>
+                <div class="class-image">
+                    <div class="class-image__frame" :class="{ 'class-image__frame--empty': !imagePreview }">
+                        <img v-if="imagePreview" :src="imagePreview" alt="">
+                        <v-icon v-else icon="tabler:photo" size="36" />
+                    </div>
+                    <div class="d-flex flex-wrap ga-2">
+                        <input
+                            ref="imageInput"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            class="d-none"
+                            @change="pickImage"
+                        >
+                        <v-btn class="rq-btn" variant="tonal" color="primary" :disabled="readOnly" @click="imageInput.click()">
+                            <v-icon icon="tabler:upload" start />
+                            {{ imagePreview ? $t('teach.classes.fields.image_change') : $t('teach.classes.fields.image_upload') }}
+                        </v-btn>
+                        <v-btn v-if="imagePreview" class="rq-btn" variant="text" color="error" :disabled="readOnly" @click="clearImage">
+                            {{ $t('teach.classes.fields.image_remove') }}
+                        </v-btn>
+                    </div>
+                </div>
+                <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
             </section>
 
             <section class="rq-card teach-section">
@@ -94,15 +124,25 @@
                     </v-btn>
                 </v-btn-toggle>
 
-                <FormPlainTextField
-                    v-if="form.type === 'in_person'"
-                    v-model="form.location"
-                    :label="$t('teach.classes.fields.location')"
-                    :placeholder="$t('teach.classes.fields.location_hint')"
-                    required
-                    :field-attrs="{ name: 'location' }"
-                    :error-messages="form.errors.location"
-                />
+                <template v-if="form.type === 'in_person'">
+                    <FormPlainTextField
+                        v-model="form.map_url"
+                        :label="$t('teach.classes.fields.map_url')"
+                        placeholder="https://maps.app.goo.gl/..."
+                        required
+                        :field-attrs="{ name: 'map_url', dir: 'ltr', inputmode: 'url' }"
+                        :error-messages="form.errors.map_url"
+                        class="mb-3"
+                    />
+                    <p class="teach-hint mb-3">{{ $t('teach.classes.fields.map_url_hint') }}</p>
+                    <FormPlainTextField
+                        v-model="form.location"
+                        :label="`${$t('teach.classes.fields.location')} (${$t('common.optional')})`"
+                        :placeholder="$t('teach.classes.fields.location_hint')"
+                        :field-attrs="{ name: 'location' }"
+                        :error-messages="form.errors.location"
+                    />
+                </template>
                 <template v-else>
                     <FormPlainTextField
                         v-model="form.meeting_url"
@@ -117,19 +157,18 @@
 
             <section class="rq-card teach-section">
                 <div class="class-form__row">
-                    <FormPlainTextField
+                    <FormPlainDatePicker
                         v-model="form.starts_on"
                         :label="$t('teach.classes.fields.starts_on')"
-                        type="date"
                         required
-                        :field-attrs="{ name: 'starts_on' }"
+                        :disabled="readOnly"
                         :error-messages="form.errors.starts_on"
                     />
-                    <FormPlainTextField
+                    <FormPlainDatePicker
                         v-model="form.ends_on"
                         :label="$t('teach.classes.fields.ends_on')"
-                        type="date"
-                        :field-attrs="{ name: 'ends_on' }"
+                        :min="form.starts_on || undefined"
+                        :disabled="readOnly"
                         :error-messages="form.errors.ends_on"
                     />
                 </div>
@@ -150,18 +189,17 @@
                 </div>
 
                 <div class="class-form__row">
-                    <FormPlainTextField
+                    <FormPlainTimePicker
                         v-model="form.start_time"
                         :label="$t('teach.classes.fields.start_time')"
-                        type="time"
-                        :field-attrs="{ name: 'start_time' }"
+                        :disabled="readOnly"
                         :error-messages="form.errors.start_time"
                     />
-                    <FormPlainTextField
+                    <FormPlainTimePicker
                         v-model="form.end_time"
                         :label="$t('teach.classes.fields.end_time')"
-                        type="time"
-                        :field-attrs="{ name: 'end_time' }"
+                        :min="form.start_time || undefined"
+                        :disabled="readOnly"
                         :error-messages="form.errors.end_time"
                     />
                 </div>
@@ -229,7 +267,9 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
+import FormPlainDatePicker from '@/Components/formFields/FormPlainDatePicker.vue';
 import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';
+import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 import { WEEK_ORDER } from '@/utils/classFormat';
@@ -249,6 +289,9 @@ const form = useForm({
     description: cls.value?.description || '',
     type: cls.value?.type || 'in_person',
     location: cls.value?.location || '',
+    map_url: cls.value?.map_url || '',
+    image: null,
+    remove_image: false,
     meeting_url: cls.value?.meeting_url || '',
     starts_on: cls.value?.starts_on || '',
     ends_on: cls.value?.ends_on || '',
@@ -272,11 +315,61 @@ function toggleDay(day) {
     }
 }
 
+// The promotional image: the saved one, or the file just chosen (shown before saving).
+const imageInput = ref(null);
+const chosenPreview = ref(null);
+const imagePreview = computed(() => chosenPreview.value || (form.remove_image ? null : cls.value?.image_url || null));
+
+function pickImage(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (chosenPreview.value) {
+        URL.revokeObjectURL(chosenPreview.value);
+    }
+
+    form.image = file;
+    form.remove_image = false;
+    chosenPreview.value = URL.createObjectURL(file);
+    event.target.value = '';
+}
+
+function clearImage() {
+    if (chosenPreview.value) {
+        URL.revokeObjectURL(chosenPreview.value);
+    }
+
+    form.image = null;
+    form.remove_image = Boolean(cls.value?.image_url);
+    chosenPreview.value = null;
+}
+
 function save() {
+    // A file needs a multipart body, and PHP only reads one on POST: update through _method.
+    const send = (data) => {
+        const { image, ...rest } = data;
+
+        return { ...rest, ...(image ? { image } : {}) };
+    };
+    // The saved image comes back with the page, so the chosen file is let go.
+    const saved = () => {
+        form.image = null;
+        form.remove_image = false;
+        chosenPreview.value = null;
+    };
+
     if (cls.value) {
-        form.put(route('teach.classes.update', cls.value.id), { preserveScroll: true });
+        form.transform((data) => ({ ...send(data), _method: 'put' }))
+            .post(route('teach.classes.update', cls.value.id), {
+                preserveScroll: true,
+                forceFormData: true,
+                onSuccess: saved,
+            });
     } else {
-        form.post(route('teach.classes.store'));
+        form.transform(send).post(route('teach.classes.store'), { forceFormData: true, onSuccess: saved });
     }
 }
 
@@ -308,6 +401,37 @@ function cancelClass() {
     margin: 0;
     padding: 0;
     min-width: 0;
+}
+
+.class-image {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+}
+
+.class-image__frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 240px;
+    max-width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface-tint);
+}
+
+.class-image__frame--empty {
+    border-style: dashed;
+    color: var(--rq-text-subtle);
+}
+
+.class-image__frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .class-form__row {

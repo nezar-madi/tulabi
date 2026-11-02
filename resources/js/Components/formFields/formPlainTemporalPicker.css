@@ -1,0 +1,69 @@
+/* Activator layout: the icon side keeps the field's usual 14px edge; the far side 10px (clear button) */
+:is(.form-plain-field--date-picker, .form-plain-field--time-picker) .v-field--variant-plain {
+    align-items: center;
+    padding-inline-start: 14px;
+    padding-inline-end: 10px;
+}
+
+:is(.form-plain-field--date-picker, .form-plain-field--time-picker) .v-field.v-field--variant-plain :is(.v-field__prepend-inner, .v-field__append-inner, .v-field__clearable) {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Calendar/clock icon on the field's 14px edge, 8px before the value */
+:is(.form-plain-field--date-picker, .form-plain-field--time-picker) .v-field.v-field--variant-plain .v-field__prepend-inner {
+    padding-inline-start: 0;
+    padding-inline-end: 8px;
+}
+
+:is(.form-plain-field--date-picker, .form-plain-field--time-picker) .v-field.v-field--variant-plain :is(.v-field__append-inner, .v-field__clearable) {
+    padding-inline-start: 0;
+    padding-inline-end: 6px;
+}
+
+:is(.form-plain-field--date-picker, .form-plain-field--time-picker) .v-field--variant-plain .v-field__input {
+    padding-inline-start: 0;
+}
+
+:is(.form-plain-field--date-picker, .form-plain-field--time-picker) .v-field--error.v-field--variant-plain {
+    border-color: var(--rq-danger);
+}
+
+.v-overlay__content:has(> .v-picker) {
+    min-width: auto !important;
+}
+
+/* Date/time picker popup: brand frame */
+.v-overlay__content > .v-picker {
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md) !important;
+    background: var(--rq-surface);
+    box-shadow: var(--rq-shadow-frame-sm) !important;
+    font-family: var(--rq-font-body);
+}
+
+.v-overlay__content > .v-picker .v-date-picker-controls {
+    font-family: var(--rq-font-display);
+    color: var(--rq-text-heading);
+}
+
+/* Title and chosen date sit on the primary-colored band, so they use the on-primary color. */
+.v-overlay__content > .v-picker .v-picker-title,
+.v-overlay__content > .v-picker .v-date-picker-header {
+    font-family: var(--rq-font-display);
+    color: var(--rq-text-on-primary);
+}
+
+.v-overlay__content > .v-picker .v-btn {
+    border-radius: var(--rq-radius-sm);
+    letter-spacing: 0;
+}
+
+.v-overlay__content > .v-picker .v-date-picker-month__day--selected .v-btn,
+.v-overlay__content > .v-picker .v-date-picker-month__day--selected .v-btn.bg-primary {
+    background: var(--rq-action-primary) !important;
+    color: var(--rq-text-on-primary) !important;
+}

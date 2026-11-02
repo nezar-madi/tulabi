@@ -8,14 +8,17 @@ use App\Http\Requests\Teach\CancelClassRequest;
 use App\Http\Requests\Teach\InstructorActionRequest;
 use App\Http\Requests\Teach\SaveClassRequest;
 use App\Models\TeachingClass;
+use App\Support\ClassImage;
 use App\Support\ClassLifecycle;
 use App\Support\ClassPresenter;
 use App\Support\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 /**
  * The instructor's classes. Every query starts from the signed-in instructor, and every
@@ -27,7 +30,7 @@ class ClassController extends Controller
 
     private const FILTERS = ['active', 'draft', 'canceled'];
 
-    public function __construct(private readonly ClassLifecycle $lifecycle) {}
+    public function __construct(private readonly ClassLifecycle $lifecycle, private readonly ClassImage $images) {}
 
     public function index(Request $request): Response
     {
@@ -68,12 +71,19 @@ class ClassController extends Controller
 
     public function store(SaveClassRequest $request): RedirectResponse
     {
+        // The image is decoded first, so an unreadable file stops everything before the class is saved.
+        $jpeg = $this->renderImage($request);
+
         $class = new TeachingClass($request->classData());
         $class->forceFill([
             'instructor_id' => $this->instructor($request)->getKey(),
             'currency_code' => Currency::CODE,
             'status' => TeachingClass::STATUS_DRAFT,
         ])->save();
+
+        if ($jpeg !== null) {
+            $this->images->attach($class, $jpeg);
+        }
 
         return redirect()->route('teach.classes.edit', $class)->with('status', __('classes.created'));
     }
@@ -93,7 +103,16 @@ class ClassController extends Controller
 
     public function update(SaveClassRequest $request, TeachingClass $class): RedirectResponse
     {
-        $this->ownClass($request, $class)->fill($request->classData())->save();
+        $class = $this->ownClass($request, $class);
+        $jpeg = $this->renderImage($request);
+
+        $class->fill($request->classData())->save();
+
+        if ($jpeg !== null) {
+            $this->images->attach($class, $jpeg);
+        } elseif ($request->boolean('remove_image')) {
+            $this->images->delete($class);
+        }
 
         return back()->with('status', __('classes.saved'));
     }
@@ -124,6 +143,21 @@ class ClassController extends Controller
         $this->lifecycle->delete($this->ownClass($request, $class));
 
         return redirect()->route('teach.classes.index', ['filter' => 'draft'])->with('status', __('classes.deleted'));
+    }
+
+    private function renderImage(SaveClassRequest $request): ?string
+    {
+        $file = $request->newImage();
+
+        if ($file === null) {
+            return null;
+        }
+
+        try {
+            return $this->images->render($file);
+        } catch (RuntimeException) {
+            throw ValidationException::withMessages(['image' => __('classes.image_unreadable')]);
+        }
     }
 
     private function publicUrl(TeachingClass $class): ?string

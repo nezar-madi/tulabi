@@ -1,5 +1,6 @@
 <template>
     <article class="rq-card class-card">
+        <img v-if="cls.image_url" :src="cls.image_url" alt="" class="class-card__image" loading="lazy">
         <div class="class-card__head">
             <span class="rq-badge" :class="cls.type === 'online' ? 'rq-badge--info' : ''">
                 <v-icon :icon="cls.type === 'online' ? 'tabler:video' : 'tabler:map-pin'" size="14" class="me-1" />
@@ -54,6 +55,15 @@ const schedule = computed(() => formatSchedule(props.cls, t));
     gap: 10px;
     padding: 20px;
     border-radius: var(--rq-radius-card);
+}
+
+.class-card__image {
+    display: block;
+    width: calc(100% + 40px);
+    max-width: none;
+    margin: -20px -20px 4px;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
 }
 
 .class-card__head {

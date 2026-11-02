@@ -3,7 +3,9 @@
 namespace App\Http\Requests\Teach;
 
 use App\Models\TeachingClass;
+use App\Rules\GoogleMapsUrl;
 use App\Support\SafeHtml;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -24,6 +26,7 @@ class SaveClassRequest extends InstructorRequest
         $this->merge([
             'days' => array_values(array_unique(array_map('intval', (array) $this->input('days', [])))),
             'seats' => $this->filled('seats') ? $this->input('seats') : null,
+            'remove_image' => $this->boolean('remove_image'),
             'ends_on' => $this->filled('ends_on') ? $this->input('ends_on') : null,
             'start_time' => $this->filled('start_time') ? $this->input('start_time') : null,
             'end_time' => $this->filled('end_time') ? $this->input('end_time') : null,
@@ -39,9 +42,11 @@ class SaveClassRequest extends InstructorRequest
 
         return [
             'title' => ['required', 'string', 'min:3', 'max:150'],
-            'description' => ['nullable', 'string', 'max:20000'],
+            'description' => ['required', 'string', 'max:20000'],
             'type' => ['required', Rule::in([TeachingClass::TYPE_IN_PERSON, TeachingClass::TYPE_ONLINE])],
-            'location' => [$inPerson ? 'required' : 'nullable', 'string', 'max:255'],
+            // The written place is optional; the Google Maps link is what an in-person class needs.
+            'location' => ['nullable', 'string', 'max:255'],
+            'map_url' => [$inPerson ? 'required' : 'nullable', 'string', 'max:500', new GoogleMapsUrl],
             'meeting_url' => ['nullable', 'string', 'max:500', 'url:https,http'],
             'starts_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:2020-01-01', 'before:2100-01-01'],
             'ends_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:starts_on', 'before:2100-01-01'],
@@ -51,6 +56,11 @@ class SaveClassRequest extends InstructorRequest
             'end_time' => ['nullable', 'date_format:H:i', 'required_with:start_time'],
             'price' => ['required', 'numeric', 'min:0', 'max:1000000', 'decimal:0,3'],
             'seats' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'image' => [
+                'nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096',
+                'dimensions:min_width=600,min_height=300,max_width=6000,max_height=6000',
+            ],
+            'remove_image' => ['boolean'],
         ];
     }
 
@@ -60,6 +70,12 @@ class SaveClassRequest extends InstructorRequest
     public function after(): array
     {
         return [function (Validator $validator) {
+            // The description is cleaned on save: a box with only empty tags does not count.
+            if (! $validator->errors()->has('description')
+                && ! SafeHtml::hasText(SafeHtml::description((string) $this->input('description')))) {
+                $validator->errors()->add('description', __('validation.required', ['attribute' => __('validation.attributes.description')]));
+            }
+
             $start = $this->input('start_time');
             $end = $this->input('end_time');
 
@@ -67,6 +83,13 @@ class SaveClassRequest extends InstructorRequest
                 $validator->errors()->add('end_time', __('classes.end_time_after'));
             }
         }];
+    }
+
+    public function newImage(): ?UploadedFile
+    {
+        $file = $this->file('image');
+
+        return $file instanceof UploadedFile ? $file : null;
     }
 
     /**
@@ -83,11 +106,15 @@ class SaveClassRequest extends InstructorRequest
         $days = $data['days'] ?? [];
         sort($days);
 
+        unset($data['image'], $data['remove_image']);
+        $location = trim((string) ($data['location'] ?? ''));
+
         return [
             ...$data,
             'title' => trim($data['title']),
-            'description' => SafeHtml::hasText($description) ? $description : null,
-            'location' => $online ? null : trim((string) ($data['location'] ?? '')),
+            'description' => $description,
+            'location' => $online || $location === '' ? null : $location,
+            'map_url' => $online ? null : trim((string) $data['map_url']),
             'meeting_url' => $online ? (($data['meeting_url'] ?? null) ?: null) : null,
             'days' => $days === [] ? null : $days,
         ];
