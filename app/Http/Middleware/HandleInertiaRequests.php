@@ -59,9 +59,12 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
+        $isInstructor = $user->isInstructor();
+
         return [
             'name' => $user->name,
-            'isInstructor' => $user->isInstructor(),
+            'isInstructor' => $isInstructor,
+            'instructorUrl' => $isInstructor ? $user->instructor->publicUrl() : null,
         ];
     }
 }

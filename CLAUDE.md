@@ -8,7 +8,7 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 
 - **Sister product of rqmana** (`C:\laragon\www\center-saas`, multi-center SaaS for training centers). Same stack and design system, but **one database and no tenancy**: no `TenantManager`, `IdentifyTenant`, per-center databases or panel host. Copy pieces from rqmana when needed, never its tenancy.
 - **Stack:** Laravel 13, Inertia v2, Vue 3 `<script setup>`, Vuetify 4, vue-i18n, Ziggy, `giggsey/libphonenumber-for-php`. PHPUnit (not Pest), sqlite in memory for tests.
-- **Phase:** 0 (foundation) and 1 (accounts) are done. Phase 2 (instructor page and classes) waits for the owner. The phases are listed in `docs/spec.md` §8.
+- **Phase:** 0 (foundation), 1 (accounts) and 2 (instructor page and classes) are done. Phase 3 (join requests, student side) waits for the owner. The phases are listed in `docs/spec.md` §8.
 - **Work is local only** for now: no server, no staging, no GitHub remote. Commit locally; never push without asking.
 
 ## Decisions from the spec (don't undo without asking)
@@ -39,6 +39,16 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 - Local data: `php artisan migrate:fresh --seed` makes sample accounts (password `password`) and, locally only, `admin@tulabi.test` (sets up its authenticator at first login).
 - The skeleton's users migration was edited in place (phone, status; no `password_reset_tokens`) because nothing has been deployed yet. From the first deploy on, never edit an old migration.
 
+## Instructor page and classes (phase 2)
+
+- **Instructor area** `/teach` (`EnsureInstructor`, `TeachLayout.vue`): الرئيسية (setup checklist, counts, coming classes), فصولي, صفحتي. Every `{class}` is checked twice: the FormRequest (`Requests\Teach\InstructorRequest::authorize()`, 403) and the controller (`FindsOwnClass::ownClass()`, 404). Queries start from `$instructor->classes()`. `tests/Feature/Teach/ClassTest.php` holds the isolation tests; add one for every new class route.
+- **Public pages** `routes/pages.php`, loaded last: `/{slug}` (`instructors.show`) and `/{slug}/classes/{id}` (`classes.show`). A page is public when the slug is set, `instructors.status` is active and the account is active (`Instructor::scopePublic`). Visitors see published and closed classes that have not ended; the owner also sees their drafts (with a banner); canceled classes are seen by nobody. **`meeting_url` never goes to a public page** (`ClassPresenter::forPublic`); it is for accepted students (phase 3).
+- **Slugs** (`App\Support\InstructorSlug`): lowercase English letters, digits and single dashes, starting with a letter, 3-40 characters, chosen by the instructor in «صفحتي» (null until then; publishing a class needs it, and it cannot be cleared while classes are public). The route pattern excludes `RESERVED`; **add every new top-level path to `RESERVED`** (`PublicPagesTest` fails otherwise).
+- **Classes** = model `TeachingClass`, table `classes` (`Class` is reserved in PHP; Vue props carrying a class are named `item`, since `class` is not a usable prop name). Status changes only through `App\Support\ClassLifecycle`: draft → published ⇄ closed; any → canceled (final, read-only, optional reason); only drafts are deleted (soft delete). Class dates are DATE columns (calendar days in Libya, no time zone) and days are Carbon weekday numbers (0 = Sunday), shown Saturday first. Price is `decimal(12,3)` in LYD (`currency_code` stored per class). Seats are a warning only.
+- **Descriptions** go through `App\Support\SafeHtml::description()` (copied from rqmana with `tests/Unit/SafeHtmlTest.php`) and are edited with rqmana's `FormPlainRichText` (tiptap).
+- **Photo** (`App\Support\InstructorPhoto`): decoded with GD and saved again as a 512px square JPEG on the `public` disk (`instructors/{id}/`), the old file deleted; served as `/storage/...` (run `php artisan storage:link`). Links (`App\Support\ProfileLinks`): up to 5 http(s) URLs, icon chosen from the host.
+- The «اطلب الانضمام» button on a class page is shown disabled until phase 3.
+
 ## Conventions carried over from rqmana
 
 - **Dates:** timestamps are stored in UTC; `config('app.timezone')` stays `UTC`. For "today", "this month" or a date a person typed, use `App\Support\TulabiClock` (Africa/Tripoli, from `config/tulabi.php`), never `now()->toDateString()`. A typed `Y-m-d` means local midnight (`TulabiClock::storeDate()`). Filter by date with `startOfDayUtc()`/`endOfDayUtc()`, not `whereDate`.
@@ -57,7 +67,8 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 ```bash
 composer install && npm install
 cp .env.example .env && php artisan key:generate
-php artisan migrate
+php artisan migrate --seed          # sample accounts and classes
+php artisan storage:link
 npm run build                      # or: npm run dev (Vite on 127.0.0.1:5174)
 php artisan serve --port=8010      # http://127.0.0.1:8010
 ```
@@ -66,6 +77,6 @@ php artisan serve --port=8010      # http://127.0.0.1:8010
 
 ## Tests
 
-- `php artisan test` (sqlite in memory, `phpunit.xml` forces it): 78 tests. `tests/TestCase.php` uses `RefreshDatabase` and calls `withoutVite()` so pages render without a build. Admin test accounts need a confirmed second factor: `Admin::factory()->withTwoFactor()`; `actingAs($admin, 'admin')`.
+- `php artisan test` (sqlite in memory, `phpunit.xml` forces it): 125 tests. `tests/TestCase.php` uses `RefreshDatabase` and calls `withoutVite()` so pages render without a build. Admin test accounts need a confirmed second factor: `Admin::factory()->withTwoFactor()`; `actingAs($admin, 'admin')`.
 - `npm run test:js` (vitest): translation strings compile, every Tabler icon used is registered.
 - CI (`.github/workflows/ci.yml`, mirrors rqmana): PHP tests on 8.3 and 8.5, then `npm ci`, `test:js` and the build on 8.5. It runs once a GitHub remote exists.

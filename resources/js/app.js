@@ -12,6 +12,7 @@ import { vuetify } from './config/vuetify';
 import { resolveInitialTheme } from './config/themePreference';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import TeachLayout from '@/Layouts/TeachLayout.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'طلابي';
 const locale = 'ar';
@@ -62,7 +63,13 @@ createInertiaApp({
 
         // A page that sets its own layout (or layout: null) keeps it.
         if (page.default.layout === undefined) {
-            page.default.layout = name.startsWith('Admin/') ? AdminLayout : PublicLayout;
+            if (name.startsWith('Admin/')) {
+                page.default.layout = AdminLayout;
+            } else if (name.startsWith('Teach/')) {
+                page.default.layout = TeachLayout;
+            } else {
+                page.default.layout = PublicLayout;
+            }
         }
 
         return page;

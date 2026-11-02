@@ -1,0 +1,51 @@
+/* Shared look of the public instructor and class pages. */
+.owner-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--rq-warning-tint);
+    color: var(--rq-warning);
+    font-size: 14px;
+}
+
+.owner-bar a {
+    color: inherit;
+    font-weight: 600;
+}
+
+.public-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 16px 64px;
+}
+
+.public-bio {
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    border-radius: var(--rq-radius-card);
+    line-height: var(--rq-lh-body);
+    white-space: pre-line;
+}
+
+.public-subtitle {
+    margin: 0 0 12px;
+    font-family: var(--rq-font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--rq-text-heading);
+}
+
+.public-empty {
+    padding: 28px;
+    border-radius: var(--rq-radius-card);
+    color: var(--rq-text-muted);
+    text-align: center;
+}
+
+.public-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}

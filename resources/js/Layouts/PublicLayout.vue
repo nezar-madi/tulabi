@@ -18,10 +18,20 @@
                     </v-btn>
 
                     <template v-if="user">
+                        <Link
+                            v-if="user.isInstructor && !inTeach"
+                            :href="route('teach.dashboard')"
+                            class="text-decoration-none"
+                        >
+                            <v-btn class="rq-btn rq-btn--ghost" variant="text">
+                                <v-icon icon="tabler:school" start />
+                                {{ $t('nav.teach') }}
+                            </v-btn>
+                        </Link>
                         <Link :href="route('account')" class="text-decoration-none">
                             <v-btn class="rq-btn rq-btn--ghost" variant="text">
                                 <v-icon icon="tabler:user" start />
-                                {{ $t('nav.account') }}
+                                {{ user.isInstructor && inTeach ? $t('nav.student_view') : $t('nav.account') }}
                             </v-btn>
                         </Link>
                         <v-btn
@@ -44,6 +54,7 @@
                     </template>
                 </div>
             </div>
+            <slot name="subnav" />
         </header>
 
         <v-main class="public-main">
@@ -61,6 +72,7 @@ import { persistTheme } from '@/config/themePreference';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user || null);
+const inTeach = computed(() => String(page.component || '').startsWith('Teach/'));
 
 const theme = useTheme();
 const isDark = computed(() => theme.global.current.value.dark);

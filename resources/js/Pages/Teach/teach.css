@@ -1,0 +1,71 @@
+/* Shared look of the instructor pages. */
+.teach-title {
+    margin: 0;
+    font-size: var(--rq-text-h2);
+    font-weight: 700;
+    color: var(--rq-text-heading);
+}
+
+.teach-subtitle {
+    margin: 0 0 12px;
+    font-family: var(--rq-font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--rq-text-heading);
+}
+
+.teach-empty {
+    padding: 28px;
+    border-radius: var(--rq-radius-card);
+    color: var(--rq-text-muted);
+    text-align: center;
+}
+
+.teach-section {
+    padding: 24px;
+    margin-bottom: 16px;
+    border-radius: var(--rq-radius-card);
+}
+
+.teach-section__title {
+    margin: 0 0 16px;
+    font-family: var(--rq-font-display);
+    font-size: var(--rq-text-card-title);
+    font-weight: 600;
+    color: var(--rq-text-heading);
+}
+
+.teach-hint {
+    margin: -8px 0 12px;
+    font-size: var(--rq-text-caption);
+    color: var(--rq-text-subtle);
+}
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.teach-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--rq-line-soft);
+    overflow-x: auto;
+}
+
+.teach-tabs__tab {
+    padding: 10px 14px;
+    border-bottom: 2px solid transparent;
+    color: var(--rq-text-muted);
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.teach-tabs__tab--active {
+    border-bottom-color: var(--rq-line-emphasis);
+    color: var(--rq-text-heading);
+}

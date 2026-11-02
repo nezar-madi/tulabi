@@ -1,0 +1,124 @@
+.form-plain-rich-text__shell {
+    border: 1px solid var(--rq-line-strong);
+    border-radius: var(--rq-radius-sm);
+    background-color: var(--rq-surface);
+    color: var(--rq-text-body);
+    overflow: hidden;
+    transition:
+        border-color var(--rq-dur) var(--rq-ease),
+        box-shadow var(--rq-dur) var(--rq-ease);
+}
+
+.form-plain-rich-text__shell--focused {
+    border-color: var(--rq-action-primary);
+    box-shadow: none;
+}
+
+.form-plain-rich-text--error .form-plain-rich-text__shell {
+    border-color: var(--rq-danger);
+}
+
+.form-plain-rich-text__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--rq-line);
+    background: var(--rq-bg-page);
+}
+
+.form-plain-rich-text__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: var(--rq-radius-sm);
+    background: transparent;
+    color: var(--rq-text-muted);
+    cursor: pointer;
+}
+
+.form-plain-rich-text__btn:hover:not(:disabled) {
+    background: var(--rq-surface);
+    color: var(--rq-text-heading);
+}
+
+.form-plain-rich-text__btn.is-active {
+    background: var(--rq-surface-hover);
+    color: var(--rq-text-heading);
+}
+
+.form-plain-rich-text__btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.form-plain-rich-text__divider {
+    width: 1px;
+    height: 20px;
+    margin-inline: 4px;
+    background: var(--rq-line);
+}
+
+.form-plain-rich-text__content {
+    padding: 12px 16px;
+}
+
+.form-plain-rich-text__content .tiptap,
+.form-plain-rich-text__prose {
+    min-height: inherit;
+    outline: none;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.form-plain-rich-text__prose p {
+    margin: 0 0 0.75em;
+}
+
+.form-plain-rich-text__prose p:last-child {
+    margin-bottom: 0;
+}
+
+.form-plain-rich-text__prose h2,
+.form-plain-rich-text__prose h3 {
+    margin: 0 0 0.5em;
+    font-family: var(--rq-font-display);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--rq-text-heading);
+}
+
+.form-plain-rich-text__prose h2 {
+    font-size: 1.15rem;
+}
+
+.form-plain-rich-text__prose h3 {
+    font-size: 1.05rem;
+}
+
+.form-plain-rich-text__prose ul,
+.form-plain-rich-text__prose ol {
+    margin: 0 0 0.75em;
+    padding-inline-start: 1.25rem;
+}
+
+.form-plain-rich-text__prose a {
+    color: var(--rq-action-primary);
+    text-decoration: underline;
+}
+
+.form-plain-rich-text__prose p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: right;
+    color: var(--rq-text-subtle);
+    pointer-events: none;
+    height: 0;
+}
+
+.form-plain-rich-text__messages {
+    padding-inline: 4px;
+}

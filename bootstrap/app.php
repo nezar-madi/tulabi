@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
+
+            // tulabi.ly/{slug}: after every other route.
+            Route::middleware('web')->group(base_path('routes/pages.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
