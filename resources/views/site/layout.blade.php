@@ -6,7 +6,7 @@
     <title>{{ $meta['title'] }}</title>
     <meta name="description" content="{{ $meta['description'] }}">
     <link rel="canonical" href="{{ $meta['canonical'] }}">
-    <meta name="theme-color" content="#00613E">
+    <meta name="theme-color" content="#0D4AA8">
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="طلابي">

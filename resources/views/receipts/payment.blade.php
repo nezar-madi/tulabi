@@ -1,9 +1,9 @@
 @php
     // Navy green (resources/css/tokens.css), as rqmana's receipt in its blue.
-    $primary = '#00613E';
-    $dark = '#003A23';
-    $tint = '#EDF6F0';
-    $plate = '#D8EDE1';
+    $primary = '#0D4AA8';
+    $dark = '#08286E';
+    $tint = '#EEF4FC';
+    $plate = '#DCE8FA';
     $isVoided = $payment->isVoided();
 @endphp
 <!DOCTYPE html>

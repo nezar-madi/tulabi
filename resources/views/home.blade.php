@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>طلابي - منصة المدرّسين المستقلين في ليبيا</title>
 <meta name="description" content="صفحة باسمك لفصولك، وطلاب يطلبون الانضمام من هواتفهم، ودفعات وإيصالات بالدينار الليبي في مكان واحد.">
-<meta name="theme-color" content="#00613E">
+<meta name="theme-color" content="#0D4AA8">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_LY">
 <meta property="og:site_name" content="طلابي">
@@ -142,7 +142,7 @@
               <div class="cl-head"><div><span class="cl-crumb">الرئيسية › الفصول</span><b class="cl-title">الفصول</b></div><span class="cl-new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>فصل جديد</span></div>
               <div class="cl-rows">
                 <div class="cl-row cl-row--head"><span>الفصل</span><span>المواعيد</span><span>السعر</span><span>الحالة</span></div>
-                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#00613E">ر</i><span><b>رياضيات الثالث الثانوي</b><small>حضوري · طرابلس</small></span></span><span><small>السبت، الإثنين</small></span><span><small>300 د.ل</small></span><span><i class="st st--green">منشور</i></span></div>
+                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#0D4AA8">ر</i><span><b>رياضيات الثالث الثانوي</b><small>حضوري · طرابلس</small></span></span><span><small>السبت، الإثنين</small></span><span><small>300 د.ل</small></span><span><i class="st st--green">منشور</i></span></div>
                 <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#0E7C86">م</i><span><b>مراجعة الامتحانات</b><small>عن بعد</small></span></span><span><small>الأحد، الثلاثاء</small></span><span><small>150 د.ل</small></span><span><i class="st st--green">منشور</i></span></div>
                 <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#6D4AB5">ف</i><span><b>فيزياء الثاني الثانوي</b><small>حضوري · طرابلس</small></span></span><span><small>الأربعاء</small></span><span><small>250 د.ل</small></span><span><i class="st st--grey">مسودة</i></span></div>
               </div>
@@ -169,7 +169,7 @@
               <div class="cl-head"><div><span class="cl-crumb">الرئيسية › طلبات الانضمام</span><b class="cl-title">طلبات الانضمام</b></div></div>
               <div class="cl-rows">
                 <div class="cl-row cl-row--head"><span>الطالب</span><span>الفصل</span><span>الهاتف</span><span>الحالة</span></div>
-                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#00613E">س</i><span><b>سارة أحمد</b><small>هل يناسب الفصل الثاني الثانوي؟</small></span></span><span><small>رياضيات الثالث</small></span><span><small dir="ltr">091-2345678</small></span><span><i class="st st--blue">جديد</i></span></div>
+                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#0D4AA8">س</i><span><b>سارة أحمد</b><small>هل يناسب الفصل الثاني الثانوي؟</small></span></span><span><small>رياضيات الثالث</small></span><span><small dir="ltr">091-2345678</small></span><span><i class="st st--blue">جديد</i></span></div>
                 <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#0E7C86">م</i><span><b>محمد علي</b><small>—</small></span></span><span><small>مراجعة الامتحانات</small></span><span><small dir="ltr">092-1112233</small></span><span><i class="st st--green">مقبول</i></span></div>
               </div>
             </div>
@@ -195,8 +195,8 @@
               <div class="cl-head"><div><span class="cl-crumb">الفصول › رياضيات الثالث الثانوي</span><b class="cl-title">دفعات سارة أحمد</b></div></div>
               <div class="cl-rows">
                 <div class="cl-row cl-row--head"><span>الإيصال</span><span>التاريخ</span><span>المبلغ</span><span>الحالة</span></div>
-                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#00613E"><svg width="16" height="16"><use href="#i-receipt"/></svg></i><span><b dir="ltr">TL-20261110-0001</b><small>نقدًا</small></span></span><span><small>10 نوفمبر</small></span><span><small>150 د.ل</small></span><span><i class="st st--green">مدفوعة</i></span></div>
-                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#00613E"><svg width="16" height="16"><use href="#i-receipt"/></svg></i><span><b dir="ltr">TL-20261124-0003</b><small>تحويل</small></span></span><span><small>24 نوفمبر</small></span><span><small>100 د.ل</small></span><span><i class="st st--green">مدفوعة</i></span></div>
+                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#0D4AA8"><svg width="16" height="16"><use href="#i-receipt"/></svg></i><span><b dir="ltr">TL-20261110-0001</b><small>نقدًا</small></span></span><span><small>10 نوفمبر</small></span><span><small>150 د.ل</small></span><span><i class="st st--green">مدفوعة</i></span></div>
+                <div class="cl-row"><span class="cl-name"><i class="cl-ico" style="--c:#0D4AA8"><svg width="16" height="16"><use href="#i-receipt"/></svg></i><span><b dir="ltr">TL-20261124-0003</b><small>تحويل</small></span></span><span><small>24 نوفمبر</small></span><span><small>100 د.ل</small></span><span><i class="st st--green">مدفوعة</i></span></div>
               </div>
             </div>
           </div>
