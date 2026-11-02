@@ -13,8 +13,8 @@ function initialSidebarDrawer() {
 export const useAppStore = defineStore('app', {
     state: () => ({
         sidebarDrawer: initialSidebarDrawer(),
-        // Desktop starts collapsed to icons (rail); the toggle expands it
-        sidebarRail: initialSidebarDrawer(),
+        // Open by default on desktop; the toggle collapses it to icons (rail)
+        sidebarRail: false,
     }),
 
     actions: {
