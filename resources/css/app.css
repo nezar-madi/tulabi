@@ -1,9 +1,455 @@
-@import 'tailwindcss';
+@import './tokens.css';
+@import './vuetify-overrides.css';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+html,
+body {
+  height: 100%;
 }
+
+html {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / legacy Edge */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+body {
+  margin: 0;
+  font-family: var(--rq-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Text fields: placeholder size (input keeps Vuetify field size) */
+.v-application .v-field ::placeholder {
+  font-size: 14px;
+}
+
+/* Font size utilities (px) */
+.fs-12 {
+  font-size: 12px;
+}
+
+.fs-14 {
+  font-size: 14px;
+}
+
+.fs-16 {
+  font-size: 16px;
+}
+
+/* Legacy card utilities = the Raqmana card: white, 8px, 1px hairline, no shadow */
+.card-shadow {
+    box-shadow: none !important;
+}
+
+.card-br {
+    border-radius: var(--rq-radius-card) !important;
+}
+
+.v-card.card-br {
+    border: 1px solid var(--rq-line);
+}
+
+.btn-br {
+    border-radius: var(--rq-radius-sm) !important;
+}
+
+.btn-custome-shadow {
+    box-shadow: none !important;
+}
+
+.background-blur {
+    backdrop-filter: blur(var(--v-back-blur));
+}
+
+.v-theme--light .v-navigation-drawer--rail {
+    box-shadow: var(--v-sidebar-shadow) !important;
+    border: none !important;
+  }
+
+.v-btn--variant-tonal:not([class*="text-"]):not([class*="bg-"]) {
+  background-color: var(--rq-surface-hover) !important;
+  color: var(--rq-text-muted) !important;
+}
+
+
+/* Overlay scrollbar — matches Sidebar.vue `.sidebar-scroll-container` */
+.app-overlay-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.app-overlay-scrollbar:hover {
+  scrollbar-color: #bdbdbd transparent;
+}
+
+.app-overlay-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.app-overlay-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-overlay-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.app-overlay-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: #bdbdbd;
+}
+
+/* A normal, always-visible scrollbar that is only 2px thick (assistant panel).
+   Firefox has no 2px size: "thin" is its narrowest. */
+.app-scrollbar-2px::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+.app-scrollbar-2px::-webkit-scrollbar-track {
+  background: rgba(128, 128, 128, .12);
+}
+
+.app-scrollbar-2px::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, .55);
+  border-radius: 2px;
+}
+
+.app-scrollbar-2px::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, .85);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .app-scrollbar-2px {
+    scrollbar-width: thin;
+  }
+}
+
+.app-form-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 720px);
+}
+
+/* Any scroll area inside a dialog or menu keeps the wheel to itself at its ends */
+.v-overlay__content .v-card-text,
+.v-overlay__content .v-list,
+.v-overlay__content [class*="__body"] {
+  overscroll-behavior: contain;
+}
+
+/* A <form> wrapping the body must shrink too, or a long body pushes the actions off-screen */
+.app-form-dialog > form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The scroll area sits 24px in from the card edge — the actions' inset — so its scrollbar lines up
+   with the buttons. Fields keep a 32px gutter; a dialog can narrow them with
+   --app-form-dialog-content-max (centred). */
+.app-form-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-inline: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain; /* reaching the end doesn't scroll the page behind */
+  padding-inline: 8px !important;
+}
+
+/* .v-card.… outranks components that set their own width (e.g. the department picker) */
+.v-card.app-form-dialog .app-form-dialog__body > * {
+  max-width: var(--app-form-dialog-content-max, none);
+  margin-inline: auto;
+}
+
+/* ------------------------------------------------------------------
+ * Raqmana brand primitives (see tokens.css).
+ * Opt-in classes so pages can move to the design system one at a time.
+ * ------------------------------------------------------------------ */
+
+.rq-display {
+  font-family: var(--rq-font-display);
+  text-wrap: balance;
+}
+
+/* Eyebrow: 28px x 2px accent rule + small display text */
+.rq-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--rq-font-display);
+  font-size: var(--rq-text-eyebrow-size);
+  font-weight: 500;
+  letter-spacing: .5px;
+  color: var(--rq-text-eyebrow);
+}
+
+.rq-eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: var(--rq-rule-accent);
+  flex-shrink: 0;
+}
+
+/* Card: white, 1px hairline, 8px corners, no shadow (spec Card "plain") */
+.rq-panel,
+.rq-card {
+  background: var(--rq-surface);
+  border: 1px solid var(--rq-line);
+  border-radius: var(--rq-radius-card);
+  color: var(--rq-text-body);
+}
+
+/* Card header: title + subtitle on the start, actions on the end, hairline underneath */
+.rq-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--rq-line-soft);
+}
+
+.rq-card__title {
+  margin: 0;
+  font-family: var(--rq-font-display);
+  font-size: var(--rq-text-card-title);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--rq-text-heading);
+}
+
+.rq-card__subtitle {
+  margin: 4px 0 0;
+  font-size: var(--rq-text-label);
+  line-height: 1.6;
+  color: var(--rq-text-muted);
+}
+
+.rq-card__body {
+  padding: 24px;
+}
+
+/* Tint card: page-tone fill, no border (spec Card "soft") */
+.rq-card--soft {
+  background: var(--rq-surface-hover);
+  border-color: transparent;
+}
+
+/* Status label badge (spec Badge): 4px, tint fill, dot + status colour */
+.rq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--rq-radius-sm);
+  background: var(--rq-surface-chrome);
+  color: var(--rq-text-muted);
+  font-family: var(--rq-font-display);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.rq-badge--success { background: var(--rq-success-tint); color: var(--rq-success); }
+.rq-badge--warning { background: var(--rq-warning-tint); color: var(--rq-warning); }
+.rq-badge--danger { background: var(--rq-danger-tint); color: var(--rq-danger); }
+.rq-badge--info { background: var(--rq-info-tint); color: var(--rq-info); }
+
+.rq-badge:is(.rq-badge--success, .rq-badge--warning, .rq-badge--danger, .rq-badge--info)::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Icon tile: 42px, tint-strong fill, green icon, 10px corners (12px from 48px up) */
+.rq-icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--rq-icon-tile);
+  color: var(--rq-action-primary);
+  flex-shrink: 0;
+}
+
+/* Accent tiles (palette in tokens.css) for variety where green would repeat */
+.rq-icon-tile--teal { background: var(--rq-accent-teal-tint); color: var(--rq-accent-teal); }
+.rq-icon-tile--violet { background: var(--rq-accent-violet-tint); color: var(--rq-accent-violet); }
+.rq-icon-tile--amber { background: var(--rq-accent-amber-tint); color: var(--rq-accent-amber); }
+.rq-icon-tile--rose { background: var(--rq-accent-rose-tint); color: var(--rq-accent-rose); }
+.rq-icon-tile--green { background: var(--rq-accent-green-tint); color: var(--rq-accent-green); }
+.rq-icon-tile--sky { background: var(--rq-accent-sky-tint); color: var(--rq-accent-sky); }
+
+/* Outline pill chip (quick actions, tags); the icon is green */
+.rq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--rq-line-strong);
+  border-radius: var(--rq-radius-pill);
+  background: transparent;
+  color: var(--rq-text-body);
+  font-family: var(--rq-font-body);
+  font-size: var(--rq-text-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--rq-dur) var(--rq-ease), color var(--rq-dur) var(--rq-ease), border-color var(--rq-dur) var(--rq-ease);
+}
+
+.rq-chip .v-icon {
+  color: var(--rq-action-primary);
+}
+
+.rq-chip:hover {
+  background: var(--rq-surface-hover);
+}
+
+/* Buttons: 4px corners, display font, flat; hover darkens, no scale/shadow */
+.v-btn.rq-btn {
+  border-radius: var(--rq-radius-sm) !important;
+  font-family: var(--rq-font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+  box-shadow: none !important;
+}
+
+.v-btn.rq-btn--primary {
+  background: var(--rq-action-primary) !important;
+  color: var(--rq-text-on-primary) !important;
+}
+
+.v-btn.rq-btn--primary:hover {
+  background: var(--rq-action-primary-hover) !important;
+}
+
+.v-btn.rq-btn--ghost {
+  color: var(--rq-text-heading) !important;
+}
+
+.v-btn.rq-btn--ghost:hover {
+  background: var(--rq-surface-hover) !important;
+}
+
+/* Loading skeleton: a flat tint block that gently pulses (no gradient shimmer) */
+.rq-skeleton {
+  display: block;
+  border-radius: var(--rq-radius-sm);
+  background: var(--rq-surface-hover);
+  animation: rq-skeleton-pulse 1.4s var(--rq-ease) infinite;
+}
+
+@keyframes rq-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rq-skeleton {
+    animation: none;
+  }
+}
+
+/* Western digits in tabular layout for stats */
+.rq-number {
+  font-family: var(--rq-font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--rq-text-number);
+}
+
+/* Dialog frame: white, navy hairline, 8px corners, lifted navy shadow (use on the dialog's v-card).
+   .app-form-dialog (the shared create/edit dialog card) gets the same frame. */
+.v-card.rq-dialog,
+.v-card.app-form-dialog {
+  overflow: hidden;
+  border: 1px solid var(--rq-line);
+  border-radius: var(--rq-radius-card) !important;
+  background: var(--rq-surface);
+  box-shadow: var(--rq-shadow-lifted) !important;
+  color: var(--rq-text-body);
+}
+
+.rq-dialog__title {
+  margin: 0;
+  font-family: var(--rq-font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--rq-text-heading);
+}
+
+.rq-dialog__subtitle {
+  margin: 2px 0 0;
+  font-size: var(--rq-text-label);
+  color: var(--rq-text-muted);
+}
+
+/* Selectable list rows inside dialogs/pickers: hairline dividers, tint on hover, primary outline when selected */
+.rq-pick-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rq-line);
+}
+
+.rq-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--rq-line-soft);
+  border-radius: var(--rq-radius-md);
+  background: transparent;
+  color: var(--rq-text-body);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--rq-dur) var(--rq-ease), box-shadow var(--rq-dur) var(--rq-ease);
+}
+
+.rq-pick-row:hover:not(:disabled) {
+  background: var(--rq-surface-hover);
+}
+
+.rq-pick-row--selected,
+.rq-pick-row--selected:hover:not(:disabled) {
+  background: var(--rq-surface-hover);
+  box-shadow: inset 0 0 0 1px var(--rq-action-primary);
+}
+
+/* List card (spec StudentsScreen): filters and tabs at the top, table with a chrome header,
+   hairline rows tinted on hover. Put on the element that wraps AppDataTable. */
+.rq-list {
+  --app-data-table-inset: 24px;
+  --app-data-table-table-inset: 0px;
+  --app-data-table-edge-pad: 24px;
+  --app-data-table-row-hover: var(--rq-surface-hover);
+  --app-data-table-header-top: 20px;
+
+  overflow: hidden;
+  background: var(--rq-surface);
+  border: 1px solid var(--rq-line);
+  border-radius: var(--rq-radius-card);
+  color: var(--rq-text-body);
+}
+

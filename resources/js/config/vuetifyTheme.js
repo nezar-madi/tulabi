@@ -1,0 +1,141 @@
+/*
+ * Tulabi themes for Vuetify: rqmana's themes recoloured green (spec: vuetify/vuetify.config.ts in the
+ * "Raqmana design system specifications" Claude Design project).
+ * Hairlines come from border-color + border-opacity (dark green at 12% light, light green at 13% dark).
+ */
+const sharedVariables = {
+    'border-radius-lg': '12px',
+    'border-radius-md': '8px',
+    'border-radius-sm': '4px',
+    'high-emphasis-opacity': 1,
+    'medium-emphasis-opacity': 0.72,
+    'disabled-opacity': 0.45,
+    'high-opacity': 1,
+    'medium-opacity': 0.72,
+    'half-opacity': 0.5,
+    'shadow-opacity': 0.05,
+    'back-blur': '12px',
+    'theme-overlay-multiplier': 1,
+};
+
+export const theme = {
+    defaultTheme: 'light',
+    themes: {
+        light: {
+            dark: false,
+            colors: {
+                background: '#F3F8F5', // page
+                surface: '#FFFFFF', // cards, sheets, drawers
+                'surface-bright': '#FFFFFF',
+                'surface-light': '#F4F8F6', // chrome: table heads, dialog footers
+                'surface-variant': '#ECF7F1', // tint soft
+                'on-surface-variant': '#0A7D4F',
+                'on-background': '#33393F',
+                'on-surface': '#33393F',
+                primary: '#0A7D4F',
+                'on-primary': '#FFFFFF',
+                'primary-darken-1': '#075C3A', // hover / pressed
+                secondary: '#0E8C5A', // accent
+                'on-secondary': '#FFFFFF',
+                'secondary-darken-1': '#075C3A',
+                accent: '#16A06A',
+                'accent-light': '#7FD3AE',
+                highlight: '#FFC24A', // yellow marks and underlines
+                'on-highlight': '#33393F',
+                tint: '#ECF7F1',
+                'tint-strong': '#D6F0E3',
+                heading: '#0A7D4F', // headings are green
+                muted: '#5B6570',
+                subtle: '#78838C',
+                info: '#0E8C5A',
+                'on-info': '#FFFFFF',
+                success: '#1E7A45',
+                'on-success': '#FFFFFF',
+                warning: '#A45F00',
+                'on-warning': '#FFFFFF',
+                error: '#B42318',
+                'on-error': '#FFFFFF',
+                'success-tint': '#E6F4EC',
+                'warning-tint': '#FBF1E0',
+                'error-tint': '#FCEBEA',
+                toast: '#075C3A',
+                cyan: '#0891B2',
+                'on-cyan': '#FFFFFF',
+                emerald: '#1E7A45',
+                'on-emerald': '#FFFFFF',
+                'app-bar': '#FFFFFF',
+            },
+            variables: {
+                ...sharedVariables,
+                'border-color': '#075C3A',
+                'border-opacity': 0.12,
+                'hover-opacity': 0.06,
+                'focus-opacity': 0.1,
+                'pressed-opacity': 0.14,
+                'activated-opacity': 0.1,
+                'card-shadow': 'none',
+                'btn-shadow': 'none',
+                'sidebar-shadow': 'none',
+                'input-border': 'rgba(7, 92, 58, .22)',
+            },
+        },
+        dark: {
+            dark: true,
+            colors: {
+                background: '#0A1A13',
+                surface: '#0F2A1E',
+                'surface-bright': '#143826',
+                'surface-light': '#0D2219',
+                'surface-variant': '#143826',
+                'on-surface-variant': '#D6F0E3',
+                'on-background': '#E4EEE9',
+                'on-surface': '#E4EEE9',
+                primary: '#239B66',
+                'on-primary': '#FFFFFF',
+                'primary-darken-1': '#3DB57E', // hover goes lighter in dark
+                secondary: '#5CC995',
+                'on-secondary': '#0A1A13',
+                'secondary-darken-1': '#7FD3AE',
+                accent: '#3FBF85',
+                'accent-light': '#7FD3AE',
+                highlight: '#FFC24A', // yellow marks and underlines
+                'on-highlight': '#33393F',
+                tint: '#143826',
+                'tint-strong': '#1B4A33',
+                heading: '#D6F0E3',
+                muted: '#A6B9AF',
+                subtle: '#7F9188',
+                info: '#5CC995',
+                'on-info': '#0A1A13',
+                success: '#5BCB8A',
+                'on-success': '#0A1A13',
+                warning: '#F0B55A',
+                'on-warning': '#0A1A13',
+                error: '#F2837A',
+                'on-error': '#0A1A13',
+                'success-tint': '#173A2E',
+                'warning-tint': '#3A2F1C',
+                'error-tint': '#3D2226',
+                toast: '#075C3A',
+                cyan: '#22B8D6',
+                'on-cyan': '#0A1A13',
+                emerald: '#5BCB8A',
+                'on-emerald': '#0A1A13',
+                'app-bar': '#0F2A1E',
+            },
+            variables: {
+                ...sharedVariables,
+                'border-color': '#7FD3AE',
+                'border-opacity': 0.13,
+                'hover-opacity': 0.08,
+                'focus-opacity': 0.12,
+                'pressed-opacity': 0.16,
+                'activated-opacity': 0.12,
+                'card-shadow': 'none',
+                'btn-shadow': 'none',
+                'sidebar-shadow': 'none',
+                'input-border': 'rgba(127, 211, 174, .26)',
+            },
+        },
+    },
+};

@@ -1,0 +1,426 @@
+/*
+ * Raqmana × Vuetify: rules that component props can't express
+ * (spec: vuetify/overrides.scss in the "Raqmana design system specifications" project).
+ * Loaded after Vuetify's styles; everything reads the --rq-* tokens, so dark mode follows.
+ */
+
+/* ---------- Type: headings green, in the display face ---------- */
+.v-application :is(.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6, .v-card-title, .v-toolbar-title) {
+  font-family: var(--rq-font-display);
+  letter-spacing: 0;
+}
+
+.v-application .text-overline {
+  font-family: var(--rq-font-display);
+  letter-spacing: .5px;
+  text-transform: none;
+}
+
+/* ---------- Buttons: 4px, display font, 40px; hover darkens (no grey overlay), 3px focus ring ---------- */
+.v-btn {
+  font-family: var(--rq-font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.v-btn:not(.v-btn--icon):not(.rounded-pill):not(.rounded-circle):not(.rq-pill) {
+  border-radius: var(--rq-radius-sm) !important;
+}
+
+.v-btn.v-btn--size-small:not(.v-btn--icon) {
+  --v-btn-height: 32px;
+  font-size: 13px;
+}
+
+.v-btn.v-btn--size-default:not(.v-btn--icon) {
+  --v-btn-height: 40px;
+  font-size: 14px;
+}
+
+.v-btn__overlay {
+  display: none;
+}
+
+.v-btn--variant-flat.bg-primary:hover,
+.v-btn--variant-elevated.bg-primary:hover {
+  background-color: var(--rq-action-primary-hover) !important;
+}
+
+.v-btn--variant-tonal.text-primary .v-btn__underlay {
+  display: none;
+}
+
+.v-btn--variant-tonal.text-primary {
+  background: var(--rq-surface-hover);
+}
+
+.v-btn--variant-tonal.text-primary:hover {
+  background: var(--rq-surface-tint);
+}
+
+/* Success tonal: status tint fill, green text (same tokens as the success badge) */
+.v-btn--variant-tonal.text-success .v-btn__underlay {
+  display: none;
+}
+
+.v-btn--variant-tonal.text-success {
+  background: var(--rq-success-tint);
+  color: var(--rq-success) !important;
+}
+
+.v-btn--variant-tonal.text-success:hover {
+  background: color-mix(in srgb, var(--rq-success) 18%, var(--rq-surface));
+}
+
+.v-btn--variant-outlined {
+  border-color: var(--rq-line-strong);
+}
+
+.v-btn--variant-outlined:hover,
+.v-btn--variant-text:hover {
+  background: var(--rq-surface-hover);
+}
+
+.v-btn:focus-visible {
+  box-shadow: var(--rq-focus-ring);
+}
+
+.v-btn.rq-pill {
+  border-radius: var(--rq-radius-pill);
+  box-shadow: var(--rq-shadow-cta);
+}
+
+.v-btn--disabled {
+  opacity: .45;
+}
+
+/* ---------- Chips: outlined pills for tags/filters; tonal chips are status label badges ---------- */
+.v-chip {
+  font-family: var(--rq-font-display);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.v-chip__overlay {
+  display: none;
+}
+
+.v-chip--variant-outlined {
+  border-color: var(--rq-line-strong);
+}
+
+/* Status badge: 4px label, tint fill, status-coloured text (Badge in the spec) */
+.v-chip.v-chip--variant-tonal,
+.v-chip.v-chip--label {
+  border-radius: var(--rq-radius-sm) !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.v-chip.v-chip--variant-tonal.v-chip--size-small,
+.v-chip.v-chip--variant-tonal.v-chip--size-default {
+  --v-chip-height: 24px;
+  padding-inline: 10px;
+}
+
+.v-chip.v-chip--variant-tonal.v-chip--size-x-small {
+  --v-chip-height: 20px;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+
+.v-chip.v-chip--variant-tonal .v-chip__underlay {
+  display: none;
+}
+
+.v-chip.v-chip--variant-tonal.text-success { background: var(--rq-success-tint); color: var(--rq-success) !important; }
+.v-chip.v-chip--variant-tonal.text-warning { background: var(--rq-warning-tint); color: var(--rq-warning) !important; }
+.v-chip.v-chip--variant-tonal.text-error { background: var(--rq-danger-tint); color: var(--rq-danger) !important; }
+.v-chip.v-chip--variant-tonal.text-info,
+.v-chip.v-chip--variant-tonal.text-secondary { background: var(--rq-info-tint); color: var(--rq-info) !important; }
+.v-chip.v-chip--variant-tonal.text-primary { background: var(--rq-surface-hover); color: var(--rq-text-heading) !important; }
+.v-chip.v-chip--variant-tonal:not([class*="text-"]) { background: var(--rq-surface-chrome); color: var(--rq-text-muted) !important; }
+
+/* Accent tonal chip: rose (e.g. the female gender badge) */
+.v-chip.v-chip--variant-tonal.rq-chip-rose { background: var(--rq-accent-rose-tint); color: var(--rq-accent-rose) !important; }
+
+/* Status dot before the label (spec Badge); chips that carry their own icon keep just the icon */
+.v-chip.v-chip--variant-tonal:is(.text-success, .text-warning, .text-error, .text-info):not(:has(.v-chip__prepend, .v-icon)) .v-chip__content::before,
+.v-chip.v-chip--variant-flat:is(.bg-success, .bg-warning, .bg-error, .bg-info):not(:has(.v-chip__prepend, .v-icon)) .v-chip__content::before {
+  content: '';
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Solid (flat) status chips read as the same label badges: tint + coloured text, not a filled block */
+.v-chip.v-chip--variant-flat.bg-success { background: var(--rq-success-tint) !important; color: var(--rq-success) !important; }
+.v-chip.v-chip--variant-flat.bg-warning { background: var(--rq-warning-tint) !important; color: var(--rq-warning) !important; }
+.v-chip.v-chip--variant-flat.bg-error { background: var(--rq-danger-tint) !important; color: var(--rq-danger) !important; }
+.v-chip.v-chip--variant-flat.bg-info { background: var(--rq-info-tint) !important; color: var(--rq-info) !important; }
+.v-chip.v-chip--variant-flat:is(.bg-success, .bg-warning, .bg-error, .bg-info) {
+  border-radius: var(--rq-radius-sm) !important;
+  font-size: 12px;
+}
+
+/* ---------- Cards: white, 8px, 1px hairline, no shadow ---------- */
+.v-card {
+  border-color: var(--rq-line) !important;
+}
+
+.v-card--variant-elevated,
+.v-card--variant-flat {
+  box-shadow: none;
+}
+
+.v-application .v-card-title {
+  font-size: var(--rq-text-card-title);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--rq-text-heading);
+}
+
+.v-application .v-card-subtitle {
+  font-size: 13px;
+  opacity: 1;
+  color: var(--rq-text-muted);
+}
+
+.v-divider {
+  border-color: var(--rq-line-soft);
+  opacity: 1;
+}
+
+/* ---------- Tables (plain v-table; AppDataTable styles itself) ---------- */
+.v-table {
+  font-size: 14px;
+}
+
+.v-table > .v-table__wrapper > table > thead > tr > th {
+  background: var(--rq-bg-page);
+  font-family: var(--rq-font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rq-text-muted) !important;
+  border-bottom: 1px solid var(--rq-line) !important;
+}
+
+.v-table > .v-table__wrapper > table > tbody > tr > td {
+  border-bottom: 1px solid var(--rq-line-soft) !important;
+}
+
+.v-table > .v-table__wrapper > table > tbody > tr:hover > td {
+  background: var(--rq-surface-hover);
+}
+
+/* ---------- Tabs: 2px green rule under the active tab, hairline under the rail ---------- */
+.v-tab.v-btn {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  min-width: 0;
+}
+
+.v-tab.v-tab--selected {
+  font-weight: 600;
+}
+
+.v-tab__slider {
+  height: 2px;
+}
+
+/* ---------- Menus / popovers: hairline frame, soft navy shadow ---------- */
+.v-menu > .v-overlay__content > :is(.v-card, .v-list, .v-sheet) {
+  border: 1px solid var(--rq-line);
+  border-radius: var(--rq-radius-md) !important;
+  box-shadow: var(--rq-shadow-frame-sm) !important;
+}
+
+.v-list-item__overlay {
+  opacity: 0 !important;
+}
+
+.v-menu .v-list-item:hover {
+  background: var(--rq-surface-hover);
+}
+
+/* ---------- Dialogs: navy overlay, 8px card, lifted shadow ---------- */
+.v-overlay__scrim {
+  background: var(--rq-surface-overlay) !important;
+  opacity: 1 !important;
+}
+
+.v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--rq-radius-card) !important;
+  box-shadow: var(--rq-shadow-lifted) !important;
+}
+
+.v-dialog .v-card-actions {
+  gap: 10px;
+}
+
+/* ---------- Switch: flat grey-green track off, primary on ---------- */
+.v-application .v-switch .v-selection-control:not(.v-selection-control--dirty):not(.v-selection-control--error) .v-switch__track {
+  opacity: 1;
+  background-color: var(--rq-ink-300);
+}
+
+.v-theme--dark .v-switch .v-selection-control:not(.v-selection-control--dirty):not(.v-selection-control--error) .v-switch__track {
+  background-color: var(--rq-line-strong) !important;
+}
+
+.v-selection-control__input::before {
+  display: none;
+}
+
+/* ---------- Alerts, tooltips, progress ---------- */
+.v-alert {
+  border-radius: var(--rq-radius-md) !important;
+  font-size: 14px;
+}
+
+.v-tooltip > .v-overlay__content {
+  background: var(--rq-brand-800);
+  color: var(--rq-white);
+  font-family: var(--rq-font-display);
+  font-size: 12px;
+  border-radius: var(--rq-radius-sm);
+}
+
+/* ---------- Toasts (vue3-toastify): white card, hairline, mid shadow, status icon colour ---------- */
+.Toastify__toast {
+  border: 1px solid var(--rq-line);
+  border-radius: var(--rq-radius-card);
+  background: var(--rq-surface);
+  color: var(--rq-text-body);
+  box-shadow: var(--rq-shadow-frame-md);
+  font-family: var(--rq-font-display);
+  font-size: 14px;
+}
+
+.Toastify__toast-theme--dark,
+.Toastify__toast-theme--light,
+.Toastify__toast-theme--colored {
+  background: var(--rq-surface);
+  color: var(--rq-text-body);
+}
+
+.Toastify__progress-bar {
+  height: 2px;
+}
+
+/* Button toggles (view switch, type/mode pickers): one segmented control — hairline frame,
+   4px corners, 2px inset; segments without borders, the active one on a soft tint */
+.v-btn-group.v-btn-toggle {
+  height: 36px !important;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--rq-line-strong) !important;
+  border-radius: var(--rq-radius-sm) !important;
+  background: var(--rq-surface);
+  overflow: hidden;
+}
+
+.v-btn-group.v-btn-toggle > .v-btn {
+  height: 30px !important;
+  min-width: 34px;
+  padding-inline: 10px !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  background: transparent;
+  color: var(--rq-text-subtle) !important;
+  font-family: var(--rq-font-display);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.v-btn-group.v-btn-toggle > .v-btn .v-btn__overlay,
+.v-btn-group.v-btn-toggle > .v-btn .v-btn__underlay {
+  display: none;
+}
+
+.v-btn-group.v-btn-toggle > .v-btn .v-icon {
+  font-size: 18px;
+}
+
+.v-btn-group.v-btn-toggle > .v-btn:hover {
+  color: var(--rq-text-body) !important;
+}
+
+.v-btn-group.v-btn-toggle > .v-btn.v-btn--active {
+  background: var(--rq-surface-hover);
+  color: var(--rq-action-primary) !important;
+}
+
+/* Switches (spec forms/Switch): 40×22 pill with 2px inset; off = --rq-switch-off, on = brand green;
+   18px white knob with a soft navy shadow. In RTL "on" slides the knob to the logical end (left). */
+.v-switch .v-selection-control {
+  min-height: 22px;
+}
+
+.v-switch .v-selection-control__wrapper {
+  position: relative;
+  flex: none;
+  width: 40px !important;
+  height: 22px !important;
+}
+
+.v-switch .v-switch__track {
+  position: absolute;
+  inset: 0;
+  width: 40px !important;
+  min-width: 0 !important;
+  height: 22px !important;
+  padding: 0 !important;
+  border-radius: var(--rq-radius-pill) !important;
+  background: var(--rq-switch-off) !important;
+  opacity: 1 !important;
+  transition: background-color var(--rq-dur) var(--rq-ease);
+}
+
+.v-switch .v-selection-control__input {
+  position: absolute !important;
+  inset: 0;
+  width: 40px !important;
+  height: 22px !important;
+  padding: 2px;
+  justify-content: flex-start !important;
+  transform: none !important;
+}
+
+.v-switch .v-selection-control__input::before {
+  display: none !important;
+}
+
+.v-switch .v-switch__thumb {
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  transform: none !important;
+  background: #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(7, 92, 58, .25) !important;
+  transition: margin-inline-start var(--rq-dur) var(--rq-ease);
+}
+
+.v-switch .v-selection-control--dirty .v-switch__track {
+  background: var(--rq-action-primary) !important;
+}
+
+.v-switch .v-selection-control--dirty .v-switch__thumb {
+  margin-inline-start: 18px !important;
+}
+
+.v-switch .v-selection-control--focus-visible .v-switch__track {
+  box-shadow: var(--rq-focus-ring);
+}
+
+.v-switch.v-input--disabled .v-selection-control {
+  opacity: .5;
+}
