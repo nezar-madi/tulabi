@@ -1140,9 +1140,6 @@ function cancelClass() {
     overscroll-behavior: contain;
 }
 
-.cf-preview__media {
-    max-height: 170px;
-}
 
 .cf-preview {
     overflow: hidden;
@@ -1155,7 +1152,9 @@ function cancelClass() {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     aspect-ratio: 16 / 10;
+    overflow: hidden;
     background: var(--rq-surface-tint);
     color: var(--rq-text-subtle);
 }
