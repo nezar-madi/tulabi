@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\AboutSections;
 use Database\Factories\InstructorFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,6 +34,7 @@ class Instructor extends Model
         'specialty',
         'city',
         'bio',
+        'bio_sections',
         'whatsapp',
         'links',
     ];
@@ -41,7 +43,18 @@ class Instructor extends Model
     {
         return [
             'links' => 'array',
+            'bio_sections' => 'array',
         ];
+    }
+
+    /**
+     * The «نبذة» sections (the first is «من أنا»); an old plain bio counts as that first section.
+     *
+     * @return list<array{title: string, body: string}>
+     */
+    public function aboutSections(): array
+    {
+        return AboutSections::from($this->bio_sections, $this->bio);
     }
 
     /** @return BelongsTo<User, $this> */

@@ -7,6 +7,7 @@ use App\Http\Controllers\Teach\Concerns\FindsOwnClass;
 use App\Http\Requests\Teach\InstructorActionRequest;
 use App\Http\Requests\Teach\UpdateProfileRequest;
 use App\Http\Requests\Teach\UploadPhotoRequest;
+use App\Support\AboutSections;
 use App\Support\InstructorPhoto;
 use App\Support\InstructorSlug;
 use App\Support\LibyanPhone;
@@ -34,13 +35,15 @@ class ProfileController extends Controller
                 'display_name' => $instructor->display_name,
                 'specialty' => $instructor->specialty,
                 'city' => $instructor->city,
-                'bio' => $instructor->bio,
+                'sections' => $instructor->aboutSections(),
                 'whatsapp' => $instructor->whatsapp === null ? '' : (string) LibyanPhone::display($instructor->whatsapp),
                 'links' => ProfileLinks::clean($instructor->links),
                 'slug' => $instructor->slug,
                 'photo_url' => $instructor->photoUrl(),
                 'public_url' => $instructor->publicUrl(),
             ],
+            'defaultSectionTitle' => AboutSections::DEFAULT_TITLE,
+            'sectionSuggestions' => AboutSections::SUGGESTIONS,
             'baseUrl' => rtrim(url('/'), '/').'/',
             'slugRules' => [
                 'min' => InstructorSlug::MIN_LENGTH,
@@ -54,11 +57,15 @@ class ProfileController extends Controller
         $instructor = $this->instructor($request);
         $data = $request->validated();
 
+        $sections = AboutSections::clean($data['sections']);
+
         $instructor->fill([
             'display_name' => trim($data['display_name']),
             'specialty' => trim($data['specialty']),
             'city' => trim($data['city']),
-            'bio' => trim((string) ($data['bio'] ?? '')) ?: null,
+            'bio_sections' => $sections,
+            // The plain text of «من أنا»: the page's lead line, its description and the setup step.
+            'bio' => AboutSections::plain($sections),
             'whatsapp' => $data['whatsapp'] ?? null,
             'links' => ProfileLinks::clean($data['links'] ?? []),
         ]);

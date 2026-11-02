@@ -76,15 +76,77 @@
                     :error-messages="form.errors.city"
                     class="mb-3"
                 />
-                <FormPlainTextarea
-                    v-model="form.bio"
-                    :label="$t('fields.bio')"
-                    :placeholder="$t('fields.bio_hint')"
-                    :rows="4"
-                    :maxlength="2000"
-                    :error-messages="form.errors.bio"
-                    class="mb-3"
-                />
+                <!-- «نبذة» as sections: «من أنا» first, then whatever the instructor adds -->
+                <p class="form-plain-field__label font-weight-medium mb-1">{{ $t('teach.profile.about') }}</p>
+                <p class="teach-hint mt-0">{{ $t('teach.profile.about_hint') }}</p>
+                <div v-for="(section, index) in form.sections" :key="section.uid" class="about-section">
+                    <div class="about-section__head">
+                        <FormPlainTextField
+                            v-model="section.title"
+                            :label="$t('teach.profile.section_title')"
+                            hide-placeholder
+                            :field-attrs="{ name: `sections.${index}.title`, maxlength: 60 }"
+                            :error-messages="form.errors[`sections.${index}.title`]"
+                            class="about-section__title"
+                        />
+                        <div class="about-section__tools">
+                            <v-btn
+                                icon
+                                variant="text"
+                                size="small"
+                                :disabled="index === 0"
+                                :aria-label="$t('teach.profile.section_up')"
+                                @click="move(index, -1)"
+                            >
+                                <v-icon icon="tabler:chevron-up" />
+                            </v-btn>
+                            <v-btn
+                                icon
+                                variant="text"
+                                size="small"
+                                :disabled="index === form.sections.length - 1"
+                                :aria-label="$t('teach.profile.section_down')"
+                                @click="move(index, 1)"
+                            >
+                                <v-icon icon="tabler:chevron-down" />
+                            </v-btn>
+                            <v-btn
+                                v-if="index > 0"
+                                icon
+                                variant="text"
+                                size="small"
+                                color="error"
+                                :aria-label="$t('teach.profile.section_remove')"
+                                @click="removeSection(index)"
+                            >
+                                <v-icon icon="tabler:trash" />
+                            </v-btn>
+                        </div>
+                    </div>
+                    <FormPlainRichText
+                        v-model="section.body"
+                        :label="$t('teach.profile.section_body')"
+                        :placeholder="index === 0 ? $t('fields.bio_hint') : $t('teach.profile.section_body_hint')"
+                        :error-messages="form.errors[`sections.${index}.body`]"
+                    />
+                </div>
+                <div v-if="form.sections.length < maxSections" class="about-add">
+                    <v-btn class="rq-btn" variant="tonal" color="primary" @click="addSection('')">
+                        <v-icon icon="tabler:plus" start />
+                        {{ $t('teach.profile.add_section') }}
+                    </v-btn>
+                    <button
+                        v-for="title in freeSuggestions"
+                        :key="title"
+                        type="button"
+                        class="about-add__chip"
+                        @click="addSection(title)"
+                    >
+                        + {{ title }}
+                    </button>
+                </div>
+                <small v-if="form.errors.sections" class="text-error d-block mb-3">{{ form.errors.sections }}</small>
+                <div class="mb-3" />
                 <FormPlainTextField
                     v-model="form.whatsapp"
                     :label="$t('teach.profile.whatsapp')"
@@ -141,31 +203,67 @@
 import PageIntro from '@/Components/PageIntro.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
+import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
 const props = defineProps({
     profile: { type: Object, required: true },
     baseUrl: { type: String, required: true },
+    sectionSuggestions: { type: Array, default: () => [] },
 });
 
 const fileInput = ref(null);
 const initial = computed(() => (props.profile.display_name || '؟').trim().charAt(0));
+
+const maxSections = 8;
+let uidCounter = 0;
+const nextUid = () => {
+    uidCounter += 1;
+
+    return uidCounter;
+};
 
 const form = useForm({
     slug: props.profile.slug || '',
     display_name: props.profile.display_name,
     specialty: props.profile.specialty,
     city: props.profile.city,
-    bio: props.profile.bio || '',
+    sections: (props.profile.sections || []).map((section) => ({ uid: nextUid(), ...section })),
     whatsapp: props.profile.whatsapp || '',
     links: [...(props.profile.links || [])],
 });
 
 const photoForm = useForm({ photo: null });
 
+// Titles offered as one-click additions, minus the ones already used.
+const freeSuggestions = computed(() => (props.sectionSuggestions || [])
+    .filter((title) => !form.sections.some((section) => section.title.trim() === title)));
+
+function addSection(title) {
+    form.sections.push({ uid: nextUid(), title, body: '' });
+}
+
+function removeSection(index) {
+    form.sections.splice(index, 1);
+}
+
+function move(index, step) {
+    const target = index + step;
+
+    if (target < 0 || target >= form.sections.length) {
+        return;
+    }
+
+    const [section] = form.sections.splice(index, 1);
+    form.sections.splice(target, 0, section);
+}
+
 function save() {
-    form.put(route('teach.profile.update'), { preserveScroll: true });
+    // The key that keeps each editor with its section is for the page only.
+    form.transform((data) => ({
+        ...data,
+        sections: data.sections.map(({ title, body }) => ({ title, body })),
+    })).put(route('teach.profile.update'), { preserveScroll: true });
 }
 
 function upload(event) {
@@ -234,6 +332,55 @@ function removePhoto() {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.about-section {
+    margin-bottom: 14px;
+    padding: 16px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface-chrome);
+}
+
+.about-section__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.about-section__title {
+    flex: 1 1 auto;
+}
+
+.about-section__tools {
+    display: flex;
+    flex-shrink: 0;
+    margin-top: 26px;
+}
+
+.about-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.about-add__chip {
+    padding: 6px 12px;
+    border: 1px dashed var(--rq-line-strong);
+    border-radius: var(--rq-radius-pill);
+    background: none;
+    color: var(--rq-text-body);
+    font-family: var(--rq-font-body);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.about-add__chip:hover {
+    border-color: var(--rq-text-link);
+    color: var(--rq-text-link);
 }
 
 .profile__hint {

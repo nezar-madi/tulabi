@@ -12,6 +12,77 @@ use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
+    public function test_the_about_is_sections_starting_with_who_i_am(): void
+    {
+        $user = User::factory()->instructor()->create();
+        $user->instructor->forceFill(['slug' => 'sara', 'bio' => "سطر أول.\nسطر ثان."])->save();
+        $this->actingAs($user);
+
+        // An old plain bio shows as the first section.
+        $this->get('/teach/profile')->assertInertia(fn (Assert $page) => $page
+            ->where('profile.sections.0.title', 'من أنا')
+            ->where('profile.sections.0.body', "<p>سطر أول.<br>\nسطر ثان.</p>")
+            ->where('defaultSectionTitle', 'من أنا')
+            ->has('sectionSuggestions'));
+
+        $this->put('/teach/profile', $this->data(['sections' => [
+            ['title' => 'من أنا', 'body' => '<p onclick="x()">أحب التدريس <script>alert(1)</script></p>'],
+            ['title' => 'مؤهلاتي', 'body' => '<ul><li>بكالوريوس فيزياء</li></ul>'],
+            ['title' => 'فارغ', 'body' => '<p> </p>'],
+        ]]))->assertSessionHasErrors('sections.2.body');
+
+        $this->put('/teach/profile', $this->data(['slug' => 'sara', 'sections' => [
+            ['title' => 'من أنا', 'body' => '<p onclick="x()">أحب التدريس <script>alert(1)</script></p><p>سطر ثان</p>'],
+            ['title' => 'مؤهلاتي', 'body' => '<ul><li>بكالوريوس فيزياء</li></ul>'],
+            ['title' => 'الخبرة العملية', 'body' => '<p>عشر سنوات</p>'],
+        ]]))->assertSessionHasNoErrors();
+
+        $instructor = $user->instructor->fresh();
+        $this->assertCount(3, $instructor->bio_sections);
+        $this->assertSame(['من أنا', 'مؤهلاتي', 'الخبرة العملية'], array_column($instructor->bio_sections, 'title'));
+        // The tag is gone (its text stays as plain text, as everywhere SafeHtml is used).
+        $this->assertStringNotContainsString('<script', $instructor->bio_sections[0]['body']);
+        $this->assertStringNotContainsString('onclick', $instructor->bio_sections[0]['body']);
+        // «bio» keeps the plain text of the first section.
+        $this->assertSame("أحب التدريس alert(1)\nسطر ثان", $instructor->bio);
+    }
+
+    public function test_section_rules(): void
+    {
+        $this->actingAs(User::factory()->instructor()->create());
+
+        $this->put('/teach/profile', $this->data(['sections' => []]))->assertSessionHasErrors('sections');
+        $this->put('/teach/profile', $this->data(['sections' => [['title' => '', 'body' => 'x']]]))->assertSessionHasErrors('sections.0.title');
+        $this->put('/teach/profile', $this->data(['sections' => [['title' => str_repeat('ا', 61), 'body' => 'x']]]))->assertSessionHasErrors('sections.0.title');
+
+        $tooMany = array_fill(0, 9, ['title' => 'قسم', 'body' => '<p>نص</p>']);
+        $this->put('/teach/profile', $this->data(['sections' => $tooMany]))->assertSessionHasErrors('sections');
+
+        // The first section may be empty; the page then has no «نبذة».
+        $this->put('/teach/profile', $this->data(['sections' => [['title' => 'من أنا', 'body' => '']]]))->assertSessionHasNoErrors();
+    }
+
+    public function test_the_public_page_shows_the_sections_in_order_and_hides_empty_ones(): void
+    {
+        $user = User::factory()->instructor()->create();
+        $user->instructor->forceFill([
+            'slug' => 'sara',
+            'bio' => 'أحب التدريس',
+            'bio_sections' => [
+                ['title' => 'من أنا', 'body' => '<p>أحب التدريس</p>'],
+                ['title' => 'مؤهلاتي', 'body' => '<ul><li>بكالوريوس فيزياء</li></ul>'],
+                ['title' => 'قسم فارغ', 'body' => ''],
+            ],
+        ])->save();
+
+        $this->get('/sara')->assertOk()
+            ->assertSeeInOrder(['من أنا', 'أحب التدريس', 'مؤهلاتي', 'بكالوريوس فيزياء'])
+            ->assertDontSee('قسم فارغ');
+
+        $user->instructor->forceFill(['bio' => null, 'bio_sections' => [['title' => 'من أنا', 'body' => '']]])->save();
+        $this->get('/sara')->assertOk()->assertDontSee('id="about"', false);
+    }
+
     public function test_only_instructors_reach_the_instructor_area(): void
     {
         $this->get('/teach')->assertRedirect('/login');
@@ -154,7 +225,7 @@ class ProfileTest extends TestCase
             'display_name' => 'أحمد المدرّس',
             'specialty' => 'فيزياء',
             'city' => 'بنغازي',
-            'bio' => 'خبرة عشر سنوات.',
+            'sections' => [['title' => 'من أنا', 'body' => '<p>خبرة عشر سنوات.</p>']],
             'whatsapp' => '',
             'links' => [],
             'slug' => '',

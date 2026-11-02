@@ -12,6 +12,7 @@ return [
     'welcome_whatsapp' => "مرحبًا :name،\nقُبل طلب انضمامك إلى طلابي كمدرّس. ادخل برقم هاتفك وكلمة مرورك من هنا:\n:url",
 
     'profile_saved' => 'حُفظت صفحتك.',
+    'section_body_required' => 'اكتب محتوى هذا القسم أو احذفه.',
     'photo_saved' => 'حُفظت الصورة.',
     'photo_removed' => 'أُزيلت الصورة.',
     'photo_unreadable' => 'تعذّرت قراءة الصورة. جرّب صورة JPG أو PNG أخرى.',

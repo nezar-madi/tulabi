@@ -110,7 +110,15 @@
                         <img class="tl-about-photo" src="{{ $site['photo_url'] }}" alt="{{ $site['name'] }}">
                     @endif
                 </div>
-                <p class="rq-about-text">{{ $site['about'] }}</p>
+                <div class="tl-about-sections">
+                    @foreach ($site['about_sections'] as $section)
+                        <div class="tl-about-section">
+                            <h3 class="rq-h3">{{ $section['title'] }}</h3>
+                            {{-- Filtered on save by App\Support\SafeHtml::description(). --}}
+                            <div class="rq-prose">{!! $section['body'] !!}</div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </section>
     @endif

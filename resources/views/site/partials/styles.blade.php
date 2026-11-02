@@ -234,6 +234,9 @@ a{color:inherit}
 .tl-owner-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding:10px 16px;background:#FBF1E0;color:#A45F00;font-size:15px}
 .tl-owner-bar a{color:inherit;font-weight:700}
 .rq-brand img.tl-brand-photo{width:44px;height:44px;max-width:none;border-radius:50%;object-fit:cover}
+.tl-about-sections{display:flex;flex-direction:column;gap:28px}
+.tl-about-section+.tl-about-section{padding-top:28px;border-top:1px solid var(--rq-line)}
+.tl-about-section .rq-h3{margin:0 0 10px}
 .tl-about-photo{width:160px;height:160px;border-radius:50%;object-fit:cover;border:1px solid var(--rq-line)}
 .tl-placeholder-mark{display:flex;align-items:center;justify-content:center;width:120px;height:120px;border-radius:50%;background:var(--rq-plate);color:var(--rq-primary);font-family:var(--rq-heading);font-size:56px;font-weight:700}
 .tl-powered-mark{display:inline-flex;align-items:center;gap:6px;font-family:var(--rq-heading);font-weight:700;color:#fff}

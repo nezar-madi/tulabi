@@ -25,7 +25,9 @@ class InstructorSite
             'url' => $instructor->publicUrl(),
             'specialty' => $instructor->specialty,
             'city' => $instructor->city,
-            'about' => $instructor->bio,
+            // Sections with text: «من أنا» first, then the ones the instructor added.
+            'about_sections' => AboutSections::visible($instructor->aboutSections()),
+            'about' => AboutSections::visible($instructor->aboutSections()) !== [],
             'photo_url' => $instructor->photoUrl(),
             'links' => ProfileLinks::present($instructor->links),
             'whatsapp_number' => $instructor->whatsapp === null ? null : LibyanPhone::display($instructor->whatsapp),
