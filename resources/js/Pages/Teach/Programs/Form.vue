@@ -104,7 +104,7 @@ const form = useForm({
     name: props.item?.name || '',
     description: props.item?.description || '',
     is_active: props.item ? props.item.is_active : true,
-    is_published: props.item ? props.item.is_published : true,
+    is_published: props.item ? props.item.is_published : false,
     is_featured: props.item ? props.item.is_featured : false,
     image: null,
     remove_image: false,
