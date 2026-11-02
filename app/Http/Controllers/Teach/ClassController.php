@@ -8,6 +8,7 @@ use App\Http\Requests\Teach\CancelClassRequest;
 use App\Http\Requests\Teach\InstructorActionRequest;
 use App\Http\Requests\Teach\ReactivateClassRequest;
 use App\Http\Requests\Teach\SaveClassRequest;
+use App\Models\Enrollment;
 use App\Models\Instructor;
 use App\Models\Program;
 use App\Models\TeachingClass;
@@ -52,17 +53,27 @@ class ClassController extends Controller
 
         $classes = $instructor->classes()
             ->whereIn('status', $statuses)
+            // The card shows the seats taken and the requests waiting.
+            ->withCount([
+                'enrollments as accepted_count' => fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED),
+                'enrollments as requested_count' => fn ($query) => $query->where('status', Enrollment::STATUS_REQUESTED),
+            ])
             ->orderByDesc('starts_on')
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString()
-            ->through(fn (TeachingClass $class) => ClassPresenter::forOwner($class));
+            ->through(fn (TeachingClass $class) => [
+                ...ClassPresenter::forOwner($class),
+                'accepted_count' => $class->accepted_count,
+                'requested_count' => $class->requested_count,
+            ]);
 
         return Inertia::render('Teach/Classes/Index', [
             'filter' => $filter,
             'classes' => $classes,
             'hasSlug' => $instructor->slug !== null,
             'slug' => $instructor->slug,
+            'today' => TulabiClock::today(),
         ]);
     }
 

@@ -455,6 +455,21 @@
                     "price": "السعر"
                 },
                 "ready_short": "جاهزية النشر {done}/{total}"
+            },
+            "card": {
+                "no_image": "بلا صورة دعائية",
+                "view": "عرض في صفحتي",
+                "in_days": "يبدأ بعد {count} يومًا",
+                "tomorrow": "يبدأ غدًا",
+                "today": "يبدأ اليوم",
+                "running": "جارٍ الآن",
+                "ended": "انتهى",
+                "seats_of": "{count} من {seats} مقعد",
+                "seats_open": "{count} طالب مقبول",
+                "requests": "{count} طلب جديد",
+                "min": "الحد الأدنى: {count}",
+                "in_days_few": "يبدأ بعد {count} أيام",
+                "in_two_days": "يبدأ بعد يومين"
             }
         },
         "requests": {

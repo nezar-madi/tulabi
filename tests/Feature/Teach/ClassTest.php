@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Teach;
 
+use App\Models\Enrollment;
 use App\Models\TeachingClass;
 use App\Models\User;
+use App\Support\TulabiClock;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -335,6 +337,20 @@ class ClassTest extends TestCase
 
         $this->post('/teach/classes', $this->data(['promo_video_url' => 'https://vimeo.com/123456789']))->assertSessionHasNoErrors();
         $this->assertSame('https://vimeo.com/123456789', TeachingClass::query()->sole()->promo_video_url);
+    }
+
+    public function test_the_list_counts_accepted_students_and_waiting_requests(): void
+    {
+        $user = $this->instructor();
+        $class = TeachingClass::factory()->published()->for($user->instructor)->create(['seats' => 10]);
+        Enrollment::factory()->count(3)->accepted()->create(['class_id' => $class->id]);
+        Enrollment::factory()->count(2)->create(['class_id' => $class->id]);
+        Enrollment::factory()->create(['class_id' => $class->id, 'status' => Enrollment::STATUS_REJECTED]);
+
+        $this->actingAs($user)->get('/teach/classes')->assertInertia(fn (Assert $page) => $page
+            ->where('classes.data.0.accepted_count', 3)
+            ->where('classes.data.0.requested_count', 2)
+            ->where('today', TulabiClock::today()));
     }
 
     public function test_close_reopen_cancel_and_delete(): void
