@@ -1,5 +1,6 @@
 <script>
 import { mapActions, mapState } from 'pinia';
+import { Link } from '@inertiajs/vue3';
 import FlashStatus from '@/Components/FlashStatus.vue';
 import Sidebar from '@/Components/Sidebar.vue';
 import ThemeToggler from '@/Components/ThemeToggler.vue';
@@ -13,6 +14,7 @@ import { useAppStore } from '@/stores/app';
 export default {
     components: {
         FlashStatus,
+        Link,
         Sidebar,
         ThemeToggler,
         UserMenu,
@@ -24,6 +26,17 @@ export default {
         },
         appBarHeight() {
             return this.$vuetify?.display?.mdAndUp ? 64 : 56;
+        },
+        isInstructor() {
+            return Boolean(this.$page.props.auth?.user?.isInstructor);
+        },
+        pendingRequests() {
+            return this.$page.props.auth?.user?.pendingRequests || 0;
+        },
+        requestsLabel() {
+            return this.pendingRequests > 0
+                ? `${this.$t('teach.nav.requests')} (${this.pendingRequests})`
+                : this.$t('teach.nav.requests');
         },
         // Errors of actions that have no form field (publish twice, accept a decided request...).
         actionErrors() {
@@ -75,6 +88,21 @@ export default {
 
             <v-spacer />
             <div class="app-bar-actions d-flex align-center">
+                <!-- Join requests (instructors): the number waiting shows on the icon -->
+                <Link v-if="isInstructor" :href="route('teach.requests.index')" class="main-bar__requests">
+                    <v-btn
+                        variant="text"
+                        size="small"
+                        icon
+                        :aria-label="requestsLabel"
+                        :title="requestsLabel"
+                    >
+                        <span class="main-bar__inbox">
+                            <v-icon icon="tabler:inbox" />
+                            <span v-if="pendingRequests > 0" class="main-bar__count">{{ pendingRequests > 99 ? '99+' : pendingRequests }}</span>
+                        </span>
+                    </v-btn>
+                </Link>
                 <span class="main-bar__desktop-only">
                     <ThemeToggler />
                 </span>
@@ -127,6 +155,34 @@ export default {
 
 .app-bar-actions {
     gap: 4px;
+}
+
+.main-bar__requests {
+    display: inline-flex;
+    text-decoration: none;
+}
+
+.main-bar__inbox {
+    position: relative;
+    display: inline-flex;
+}
+
+/* The number of requests waiting, on the icon's corner */
+.main-bar__count {
+    position: absolute;
+    top: -8px;
+    inset-inline-end: -10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--rq-warning);
+    font-family: var(--rq-font-display);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    color: #fff;
+    text-align: center;
 }
 
 /* ---------- Top bar (spec Topbar): white, 64px, 1px hairline underneath ---------- */

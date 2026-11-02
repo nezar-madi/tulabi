@@ -3,25 +3,16 @@
  * One menu for an account (the instructor part only for instructors) and one for the admin.
  */
 
-/** @param {{ isInstructor?: boolean, pendingRequests?: number } | null} user */
+/** @param {{ isInstructor?: boolean } | null} user */
 export function accountSidebarItems(user) {
     const items = [];
 
     if (user?.isInstructor) {
-        const pending = user.pendingRequests || 0;
-
+        // The join requests are not here: they are the inbox icon in the top bar (AppShell).
         items.push(
             { id: 'teach-dashboard', titleKey: 'teach.nav.dashboard', icon: 'tabler:layout-dashboard', routeName: 'teach.dashboard', sectionKey: 'sidebar.sections.teaching' },
-            {
-                id: 'teach-requests',
-                titleKey: 'teach.nav.requests',
-                icon: 'tabler:inbox',
-                routeName: 'teach.requests.index',
-                sectionKey: 'sidebar.sections.teaching',
-                label: pending > 0 ? { text: String(pending), color: 'warning' } : null,
-            },
-            { id: 'teach-classes', titleKey: 'teach.nav.classes', icon: 'tabler:chalkboard', routeName: 'teach.classes.index', sectionKey: 'sidebar.sections.teaching' },
             { id: 'teach-programs', titleKey: 'teach.nav.programs', icon: 'tabler:layout-grid', routeName: 'teach.programs.index', sectionKey: 'sidebar.sections.teaching' },
+            { id: 'teach-classes', titleKey: 'teach.nav.classes', icon: 'tabler:chalkboard', routeName: 'teach.classes.index', sectionKey: 'sidebar.sections.teaching' },
             { id: 'teach-students', titleKey: 'teach.nav.students', icon: 'tabler:users', routeName: 'teach.students.index', sectionKey: 'sidebar.sections.teaching' },
             { id: 'teach-profile', titleKey: 'teach.nav.profile', icon: 'tabler:id-badge-2', routeName: 'teach.profile.edit', sectionKey: 'sidebar.sections.teaching' },
         );
