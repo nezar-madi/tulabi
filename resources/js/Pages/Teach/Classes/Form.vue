@@ -3,7 +3,7 @@
 
     <PageIntro
         :title="cls ? cls.title : $t('teach.classes.create_title')"
-        :eyebrow="cls ? $t('teach.classes.edit_title') : $t('teach.classes.create_title')"
+        :description="cls ? '' : $t('teach.classes.form.lead')"
     >
         <template #title>
             {{ cls ? cls.title : $t('teach.classes.create_title') }}
@@ -12,61 +12,56 @@
 
         <!-- Status actions -->
         <template v-if="cls" #actions>
-        <div class="d-flex flex-wrap ga-2">
-            <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
-                <v-btn class="rq-btn" variant="tonal" color="primary">
-                    <v-icon icon="tabler:users" start />
-                    {{ $t('teach.students.open') }}
+            <div class="d-flex flex-wrap ga-2">
+                <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
+                    <v-btn class="text-none" variant="tonal" color="primary" prepend-icon="tabler:users">
+                        {{ $t('teach.students.open') }}
+                    </v-btn>
+                </Link>
+                <v-btn
+                    v-if="publicUrl"
+                    class="text-none"
+                    variant="text"
+                    color="primary"
+                    prepend-icon="tabler:external-link"
+                    :href="publicUrl"
+                    target="_blank"
+                    rel="noopener"
+                >
+                    {{ $t('teach.classes.view') }}
                 </v-btn>
-            </Link>
-            <v-btn
-                v-if="publicUrl"
-                class="rq-btn"
-                variant="text"
-                color="primary"
-                :href="publicUrl"
-                target="_blank"
-                rel="noopener"
-            >
-                <v-icon icon="tabler:external-link" start />
-                {{ $t('teach.classes.view') }}
-            </v-btn>
-            <v-btn v-if="cls.status === 'draft'" class="rq-btn rq-btn--primary" :disabled="!cls.image_url" @click="act('publish')">
-                {{ $t('teach.classes.publish') }}
-            </v-btn>
-            <v-btn v-if="cls.status === 'suspended'" class="rq-btn rq-btn--primary" @click="openRestart">
-                {{ $t('teach.classes.restart') }}
-            </v-btn>
-            <v-btn v-if="cls.status === 'closed'" class="rq-btn rq-btn--primary" @click="act('publish')">
-                {{ $t('teach.classes.reopen') }}
-            </v-btn>
-            <v-btn v-if="cls.status === 'published'" class="rq-btn" variant="outlined" color="primary" @click="act('close')">
-                {{ $t('teach.classes.close') }}
-            </v-btn>
-            <v-btn v-if="cls.status === 'draft'" class="rq-btn" variant="text" color="error" @click="destroy">
-                {{ $t('teach.classes.delete') }}
-            </v-btn>
-            <v-btn
-                v-if="cls.status !== 'canceled'"
-                class="rq-btn"
-                variant="outlined"
-                color="error"
-                @click="cancelDialog = true"
-            >
-                {{ $t('teach.classes.cancel') }}
-            </v-btn>
-        </div>
+                <v-btn v-if="cls.status === 'draft'" class="text-none" variant="flat" color="primary" :disabled="!cls.image_url" @click="act('publish')">
+                    {{ $t('teach.classes.publish') }}
+                </v-btn>
+                <v-btn v-if="cls.status === 'suspended'" class="text-none" variant="flat" color="primary" @click="openRestart">
+                    {{ $t('teach.classes.restart') }}
+                </v-btn>
+                <v-btn v-if="cls.status === 'closed'" class="text-none" variant="flat" color="primary" @click="act('publish')">
+                    {{ $t('teach.classes.reopen') }}
+                </v-btn>
+                <v-btn v-if="cls.status === 'published'" class="text-none" variant="outlined" color="primary" @click="act('close')">
+                    {{ $t('teach.classes.close') }}
+                </v-btn>
+                <v-menu v-if="cls.status !== 'canceled'" location="bottom end">
+                    <template #activator="{ props: menuProps }">
+                        <v-btn v-bind="menuProps" icon variant="text" size="small" :aria-label="$t('teach.money.more')">
+                            <v-icon icon="tabler:dots-vertical" />
+                        </v-btn>
+                    </template>
+                    <v-list density="compact">
+                        <v-list-item v-if="cls.status === 'draft'" :title="$t('teach.classes.delete')" base-color="error" @click="destroy" />
+                        <v-list-item :title="$t('teach.classes.cancel')" base-color="error" @click="cancelDialog = true" />
+                    </v-list>
+                </v-menu>
+            </div>
         </template>
     </PageIntro>
 
     <v-alert v-if="cls && cls.status === 'suspended'" type="warning" variant="tonal" class="mb-4" rounded="lg">
         {{ $t('teach.classes.suspended_note', { min: cls.min_seats }) }}
         <div class="mt-2">
-            <v-btn class="rq-btn" variant="flat" color="primary" size="small" @click="openRestart">{{ $t('teach.classes.restart') }}</v-btn>
+            <v-btn class="text-none" variant="flat" color="primary" size="small" @click="openRestart">{{ $t('teach.classes.restart') }}</v-btn>
         </div>
-    </v-alert>
-    <v-alert v-if="cls && cls.status === 'draft' && !cls.image_url" type="info" variant="tonal" class="mb-4" rounded="lg">
-        {{ $t('teach.classes.image_needed_to_publish') }}
     </v-alert>
 
     <v-alert v-if="readOnly" type="warning" variant="tonal" class="mb-4" rounded="lg">
@@ -74,66 +69,108 @@
         <div v-if="cls.cancel_reason" class="mt-1">{{ cls.cancel_reason }}</div>
     </v-alert>
 
-    <form @submit.prevent="save">
-        <fieldset :disabled="readOnly" class="class-form">
-            <section class="rq-card teach-section">
-                <!-- As in rqmana: a new class, or one made from a training program (its template) -->
-                <p class="form-plain-field__label font-weight-medium mb-2">{{ $t('teach.classes.fields.how') }}</p>
-                <v-btn-toggle v-model="mode" mandatory class="mb-3" :disabled="readOnly">
-                    <v-btn value="new">
-                        <v-icon icon="tabler:plus" start />
-                        {{ $t('teach.classes.fields.mode_new') }}
-                    </v-btn>
-                    <v-btn value="program" :disabled="programs.length === 0">
-                        <v-icon icon="tabler:layout-grid" start />
-                        {{ $t('teach.classes.fields.mode_program') }}
-                    </v-btn>
-                </v-btn-toggle>
-                <p v-if="programs.length === 0" class="teach-hint mt-0">
-                    {{ $t('teach.classes.fields.no_programs') }}
-                    <Link :href="route('teach.programs.create')">{{ $t('teach.programs.new') }}</Link>
-                </p>
-                <FormPlainSelect
-                    v-if="mode === 'program'"
-                    v-model="form.program_id"
-                    :label="$t('teach.classes.fields.program')"
-                    :items="programItems"
-                    item-title="name"
-                    item-value="id"
-                    :placeholder="$t('teach.classes.fields.program_placeholder')"
-                    required
-                    :hint="$t('teach.classes.fields.program_hint')"
-                    persistent-hint
-                    :error-messages="form.errors.program_id"
-                    class="mb-3"
-                />
-                <FormPlainTextField
-                    v-model="form.title"
-                    :label="$t('teach.classes.fields.title')"
-                    :placeholder="$t('teach.classes.fields.title_hint')"
-                    required
-                    :field-attrs="{ name: 'title' }"
-                    :error-messages="form.errors.title"
-                    class="mb-3"
-                />
-            </section>
+    <div class="cf">
+        <form id="class-form" class="cf__main" @submit.prevent="save">
+            <fieldset :disabled="readOnly" class="cf__fieldset">
+                <!-- 1. Basics: how the class is made, and its title -->
+                <section id="cf-basics" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num">1</span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.form.basics') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.form.basics_hint') }}</p>
+                        </div>
+                    </header>
+                    <div class="cf-section__body">
+                        <!-- As in rqmana: a new class, or one made from a training program (its template) -->
+                        <div class="cf-choices" role="radiogroup" :aria-label="$t('teach.classes.fields.how')">
+                            <button
+                                type="button"
+                                role="radio"
+                                class="cf-choice"
+                                :class="{ 'cf-choice--on': mode === 'new' }"
+                                :aria-checked="mode === 'new'"
+                                @click="mode = 'new'"
+                            >
+                                <span class="rq-icon-tile cf-choice__tile"><v-icon icon="tabler:plus" /></span>
+                                <span class="cf-choice__text">
+                                    <strong>{{ $t('teach.classes.fields.mode_new') }}</strong>
+                                    <small>{{ $t('teach.classes.form.mode_new_hint') }}</small>
+                                </span>
+                                <v-icon v-if="mode === 'new'" icon="tabler:circle-check" class="cf-choice__check" />
+                            </button>
+                            <button
+                                type="button"
+                                role="radio"
+                                class="cf-choice"
+                                :class="{ 'cf-choice--on': mode === 'program' }"
+                                :aria-checked="mode === 'program'"
+                                :disabled="programs.length === 0"
+                                @click="mode = 'program'"
+                            >
+                                <span class="rq-icon-tile rq-icon-tile--violet cf-choice__tile"><v-icon icon="tabler:layout-grid" /></span>
+                                <span class="cf-choice__text">
+                                    <strong>{{ $t('teach.classes.fields.mode_program') }}</strong>
+                                    <small v-if="programs.length">{{ $t('teach.classes.form.mode_program_hint') }}</small>
+                                    <small v-else>{{ $t('teach.classes.fields.no_programs') }}</small>
+                                </span>
+                                <v-icon v-if="mode === 'program'" icon="tabler:circle-check" class="cf-choice__check" />
+                            </button>
+                        </div>
+                        <p v-if="programs.length === 0" class="teach-hint mt-2">
+                            <Link :href="route('teach.programs.create')">{{ $t('teach.programs.new') }}</Link>
+                        </p>
 
-            <!-- The content, in fixed sections: description and the three bullet lists -->
-            <section class="rq-card teach-section">
-                <CourseContentFields :form="form" :description-label="$t('teach.classes.fields.description')" />
-            </section>
-
-            <!-- Promotional image -->
-            <section class="rq-card teach-section">
-                <p class="form-plain-field__label font-weight-medium mb-1">{{ $t('teach.classes.fields.image') }}</p>
-                <p class="teach-hint">{{ $t('teach.classes.fields.image_hint') }}</p>
-                <p class="teach-hint mt-0">{{ $t('teach.classes.fields.image_required') }}</p>
-                <div class="class-image">
-                    <div class="class-image__frame" :class="{ 'class-image__frame--empty': !imagePreview }">
-                        <img v-if="imagePreview" :src="imagePreview" alt="">
-                        <v-icon v-else icon="tabler:photo" size="36" />
+                        <FormPlainSelect
+                            v-if="mode === 'program'"
+                            v-model="form.program_id"
+                            :label="$t('teach.classes.fields.program')"
+                            :items="programItems"
+                            item-title="name"
+                            item-value="id"
+                            :placeholder="$t('teach.classes.fields.program_placeholder')"
+                            required
+                            :hint="$t('teach.classes.fields.program_hint')"
+                            persistent-hint
+                            :error-messages="form.errors.program_id"
+                            class="mt-5"
+                        />
+                        <FormPlainTextField
+                            v-model="form.title"
+                            :label="$t('teach.classes.fields.title')"
+                            :placeholder="$t('teach.classes.fields.title_hint')"
+                            required
+                            :field-attrs="{ name: 'title', maxlength: 150 }"
+                            :error-messages="form.errors.title"
+                            class="mt-5"
+                        />
                     </div>
-                    <div class="d-flex flex-wrap ga-2">
+                </section>
+
+                <!-- 2. Content: description, the three lists and the video -->
+                <section id="cf-content" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num">2</span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.form.content') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.form.content_hint') }}</p>
+                        </div>
+                    </header>
+                    <div class="cf-section__body">
+                        <CourseContentFields :form="form" :description-label="$t('teach.classes.fields.description')" />
+                    </div>
+                </section>
+
+                <!-- 3. Promotional image -->
+                <section id="cf-image" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num">3</span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.fields.image') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.fields.image_required') }}</p>
+                        </div>
+                    </header>
+                    <div class="cf-section__body">
                         <input
                             ref="imageInput"
                             type="file"
@@ -141,197 +178,315 @@
                             class="d-none"
                             @change="pickImage"
                         >
-                        <v-btn class="rq-btn" variant="tonal" color="primary" :disabled="readOnly" @click="imageInput.click()">
-                            <v-icon icon="tabler:upload" start />
-                            {{ imagePreview ? $t('teach.classes.fields.image_change') : $t('teach.classes.fields.image_upload') }}
-                        </v-btn>
-                        <v-btn v-if="imagePreview" class="rq-btn" variant="text" color="error" :disabled="readOnly" @click="clearImage">
-                            {{ $t('teach.classes.fields.image_remove') }}
-                        </v-btn>
-                    </div>
-                </div>
-                <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
-            </section>
-
-            <section class="rq-card teach-section">
-                <p class="form-plain-field__label font-weight-medium mb-2">{{ $t('teach.classes.fields.type') }}</p>
-                <v-btn-toggle v-model="form.type" mandatory class="mb-4">
-                    <v-btn value="in_person">
-                        <v-icon icon="tabler:map-pin" start />
-                        {{ $t('class.type.in_person') }}
-                    </v-btn>
-                    <v-btn value="online">
-                        <v-icon icon="tabler:video" start />
-                        {{ $t('class.type.online') }}
-                    </v-btn>
-                </v-btn-toggle>
-
-                <template v-if="form.type === 'in_person'">
-                    <FormPlainTextField
-                        v-model="form.map_url"
-                        :label="$t('teach.classes.fields.map_url')"
-                        placeholder="https://maps.app.goo.gl/..."
-                        required
-                        :field-attrs="{ name: 'map_url', dir: 'ltr', inputmode: 'url' }"
-                        :error-messages="form.errors.map_url"
-                        class="mb-3"
-                    />
-                    <p class="teach-hint mb-3">{{ $t('teach.classes.fields.map_url_hint') }}</p>
-                    <FormPlainTextField
-                        v-model="form.location"
-                        :label="`${$t('teach.classes.fields.location')} (${$t('common.optional')})`"
-                        :placeholder="$t('teach.classes.fields.location_hint')"
-                        :field-attrs="{ name: 'location' }"
-                        :error-messages="form.errors.location"
-                    />
-                </template>
-                <template v-else>
-                    <FormPlainTextField
-                        v-model="form.meeting_url"
-                        :label="$t('teach.classes.fields.meeting_url')"
-                        placeholder="https://"
-                        :field-attrs="{ name: 'meeting_url', dir: 'ltr', inputmode: 'url' }"
-                        :error-messages="form.errors.meeting_url"
-                    />
-                    <p class="teach-hint mt-1">{{ $t('teach.classes.fields.meeting_url_hint') }}</p>
-                </template>
-            </section>
-
-            <section class="rq-card teach-section">
-                <div class="class-form__row">
-                    <FormPlainDatePicker
-                        v-model="form.starts_on"
-                        :label="$t('teach.classes.fields.starts_on')"
-                        required
-                        :disabled="readOnly"
-                        :error-messages="form.errors.starts_on"
-                    />
-                    <FormPlainDatePicker
-                        v-model="form.ends_on"
-                        :label="$t('teach.classes.fields.ends_on')"
-                        :min="form.starts_on || undefined"
-                        :disabled="readOnly"
-                        :error-messages="form.errors.ends_on"
-                    />
-                </div>
-
-                <!-- Days of study, as in rqmana: every day, chosen weekdays, or dates picked by hand -->
-                <FormPlainSelect
-                    v-model="form.schedule_type"
-                    :label="$t('teach.classes.fields.schedule_type')"
-                    :items="scheduleItems"
-                    item-title="title"
-                    item-value="value"
-                    required
-                    :disabled="readOnly"
-                    :error-messages="form.errors.schedule_type"
-                    class="mt-2 mb-3"
-                />
-
-                <template v-if="form.schedule_type === 'weekly'">
-                    <p class="form-plain-field__label font-weight-medium mb-2">{{ $t('teach.classes.fields.days') }}</p>
-                    <div class="class-form__days mb-1">
-                        <button
-                            v-for="day in WEEK_ORDER"
-                            :key="day"
-                            type="button"
-                            class="class-form__day"
-                            :class="{ 'class-form__day--on': form.days.includes(day) }"
-                            :aria-pressed="form.days.includes(day)"
-                            @click="toggleDay(day)"
-                        >
-                            {{ $t(`days.${day}`) }}
+                        <div v-if="imagePreview" class="cf-image">
+                            <img :src="imagePreview" alt="">
+                            <div class="cf-image__tools">
+                                <v-btn class="text-none" variant="flat" color="surface" size="small" prepend-icon="tabler:upload" :disabled="readOnly" @click="imageInput.click()">
+                                    {{ $t('teach.classes.fields.image_change') }}
+                                </v-btn>
+                                <v-btn class="text-none" variant="flat" color="surface" size="small" :disabled="readOnly" @click="clearImage">
+                                    <v-icon icon="tabler:trash" color="error" />
+                                </v-btn>
+                            </div>
+                        </div>
+                        <button v-else type="button" class="cf-drop" :disabled="readOnly" @click="imageInput.click()">
+                            <span class="rq-icon-tile cf-drop__tile"><v-icon icon="tabler:photo" /></span>
+                            <strong>{{ $t('teach.classes.fields.image_upload') }}</strong>
+                            <small>{{ $t('teach.classes.fields.image_hint') }}</small>
                         </button>
+                        <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
                     </div>
-                    <small v-if="form.errors.days || form.errors['days.0']" class="text-error d-block mb-3">{{ form.errors.days || form.errors['days.0'] }}</small>
-                    <div v-else class="mb-3" />
-                </template>
+                </section>
 
-                <FormPlainDatesPicker
-                    v-else-if="form.schedule_type === 'manual'"
-                    v-model="form.manual_dates"
-                    :label="$t('teach.classes.fields.manual_dates')"
-                    :hint="$t('teach.classes.fields.manual_dates_hint')"
-                    persistent-hint
-                    required
-                    :min="form.starts_on || undefined"
-                    :max="form.ends_on || undefined"
-                    :disabled="readOnly"
-                    :error-messages="form.errors.manual_dates"
-                    class="mb-4"
-                />
+                <!-- 4. Where: in person (map link) or online (meeting link) -->
+                <section id="cf-place" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num">4</span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.form.place') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.form.place_hint') }}</p>
+                        </div>
+                    </header>
+                    <div class="cf-section__body">
+                        <div class="cf-choices" role="radiogroup" :aria-label="$t('teach.classes.fields.type')">
+                            <button
+                                type="button"
+                                role="radio"
+                                class="cf-choice cf-choice--compact"
+                                :class="{ 'cf-choice--on': form.type === 'in_person' }"
+                                :aria-checked="form.type === 'in_person'"
+                                @click="form.type = 'in_person'"
+                            >
+                                <span class="rq-icon-tile rq-icon-tile--teal cf-choice__tile"><v-icon icon="tabler:map-pin" /></span>
+                                <span class="cf-choice__text"><strong>{{ $t('class.type.in_person') }}</strong></span>
+                                <v-icon v-if="form.type === 'in_person'" icon="tabler:circle-check" class="cf-choice__check" />
+                            </button>
+                            <button
+                                type="button"
+                                role="radio"
+                                class="cf-choice cf-choice--compact"
+                                :class="{ 'cf-choice--on': form.type === 'online' }"
+                                :aria-checked="form.type === 'online'"
+                                @click="form.type = 'online'"
+                            >
+                                <span class="rq-icon-tile rq-icon-tile--sky cf-choice__tile"><v-icon icon="tabler:video" /></span>
+                                <span class="cf-choice__text"><strong>{{ $t('class.type.online') }}</strong></span>
+                                <v-icon v-if="form.type === 'online'" icon="tabler:circle-check" class="cf-choice__check" />
+                            </button>
+                        </div>
 
-                <div class="class-form__row">
-                    <FormPlainTimePicker
-                        v-model="form.start_time"
-                        :label="$t('teach.classes.fields.start_time')"
-                        :disabled="readOnly"
-                        :error-messages="form.errors.start_time"
-                    />
-                    <FormPlainTimePicker
-                        v-model="form.end_time"
-                        :label="$t('teach.classes.fields.end_time')"
-                        :min="form.start_time || undefined"
-                        :disabled="readOnly"
-                        :error-messages="form.errors.end_time"
-                    />
-                </div>
-            </section>
+                        <div v-if="form.type === 'in_person'" class="mt-5">
+                            <FormPlainTextField
+                                v-model="form.map_url"
+                                :label="$t('teach.classes.fields.map_url')"
+                                placeholder="https://maps.app.goo.gl/..."
+                                required
+                                :field-attrs="{ name: 'map_url', dir: 'ltr', inputmode: 'url' }"
+                                :error-messages="form.errors.map_url"
+                            />
+                            <p class="teach-hint mt-1">{{ $t('teach.classes.fields.map_url_hint') }}</p>
+                            <FormPlainTextField
+                                v-model="form.location"
+                                :label="`${$t('teach.classes.fields.location')} (${$t('common.optional')})`"
+                                :placeholder="$t('teach.classes.fields.location_hint')"
+                                :field-attrs="{ name: 'location' }"
+                                :error-messages="form.errors.location"
+                                class="mt-4"
+                            />
+                        </div>
+                        <div v-else class="mt-5">
+                            <FormPlainTextField
+                                v-model="form.meeting_url"
+                                :label="$t('teach.classes.fields.meeting_url')"
+                                placeholder="https://"
+                                :field-attrs="{ name: 'meeting_url', dir: 'ltr', inputmode: 'url' }"
+                                :error-messages="form.errors.meeting_url"
+                            />
+                            <p class="teach-hint mt-1">{{ $t('teach.classes.fields.meeting_url_hint') }}</p>
+                        </div>
+                    </div>
+                </section>
 
-            <section class="rq-card teach-section">
-                <div class="class-form__row">
-                    <div>
-                        <FormPlainTextField
-                            v-model="form.price"
-                            :label="`${$t('teach.classes.fields.price')} (${currency === 'LYD' ? 'د.ل' : currency})`"
-                            :placeholder="$t('teach.classes.fields.price_hint')"
+                <!-- 5. When: period, days of study and time -->
+                <section id="cf-schedule" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num">5</span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.form.schedule') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.form.schedule_hint') }}</p>
+                        </div>
+                    </header>
+                    <div class="cf-section__body">
+                        <div class="cf-row">
+                            <FormPlainDatePicker
+                                v-model="form.starts_on"
+                                :label="$t('teach.classes.fields.starts_on')"
+                                required
+                                :disabled="readOnly"
+                                :error-messages="form.errors.starts_on"
+                            />
+                            <FormPlainDatePicker
+                                v-model="form.ends_on"
+                                :label="$t('teach.classes.fields.ends_on')"
+                                :min="form.starts_on || undefined"
+                                :disabled="readOnly"
+                                :error-messages="form.errors.ends_on"
+                            />
+                        </div>
+
+                        <!-- Days of study, as in rqmana: every day, chosen weekdays, or dates picked by hand -->
+                        <FormPlainSelect
+                            v-model="form.schedule_type"
+                            :label="$t('teach.classes.fields.schedule_type')"
+                            :items="scheduleItems"
+                            item-title="title"
+                            item-value="value"
                             required
-                            :field-attrs="{ name: 'price', inputmode: 'decimal', dir: 'ltr' }"
-                            :error-messages="form.errors.price"
+                            :disabled="readOnly"
+                            :error-messages="form.errors.schedule_type"
+                            class="mt-5"
                         />
+
+                        <div v-if="form.schedule_type === 'weekly'" class="mt-4">
+                            <p class="form-plain-field__label font-weight-medium mb-2">{{ $t('teach.classes.fields.days') }}</p>
+                            <div class="cf-days">
+                                <button
+                                    v-for="day in WEEK_ORDER"
+                                    :key="day"
+                                    type="button"
+                                    class="cf-day"
+                                    :class="{ 'cf-day--on': form.days.includes(day) }"
+                                    :aria-pressed="form.days.includes(day)"
+                                    @click="toggleDay(day)"
+                                >
+                                    {{ $t(`days.${day}`) }}
+                                </button>
+                            </div>
+                            <small v-if="form.errors.days || form.errors['days.0']" class="text-error d-block mt-2">{{ form.errors.days || form.errors['days.0'] }}</small>
+                        </div>
+
+                        <FormPlainDatesPicker
+                            v-else-if="form.schedule_type === 'manual'"
+                            v-model="form.manual_dates"
+                            :label="$t('teach.classes.fields.manual_dates')"
+                            :hint="$t('teach.classes.fields.manual_dates_hint')"
+                            persistent-hint
+                            required
+                            :min="form.starts_on || undefined"
+                            :max="form.ends_on || undefined"
+                            :disabled="readOnly"
+                            :error-messages="form.errors.manual_dates"
+                            class="mt-4"
+                        />
+
+                        <div class="cf-row mt-5">
+                            <FormPlainTimePicker
+                                v-model="form.start_time"
+                                :label="$t('teach.classes.fields.start_time')"
+                                :disabled="readOnly"
+                                :error-messages="form.errors.start_time"
+                            />
+                            <FormPlainTimePicker
+                                v-model="form.end_time"
+                                :label="$t('teach.classes.fields.end_time')"
+                                :min="form.start_time || undefined"
+                                :disabled="readOnly"
+                                :error-messages="form.errors.end_time"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <FormPlainTextField
-                            v-model="form.seats"
-                            :label="$t('teach.classes.fields.seats')"
-                            :placeholder="$t('teach.classes.fields.seats_hint')"
-                            :field-attrs="{ name: 'seats', inputmode: 'numeric', dir: 'ltr' }"
-                            :error-messages="form.errors.seats"
-                        />
+                </section>
+
+                <!-- 6. Price and seats, and «تعليق البدء تلقائيًا» -->
+                <section id="cf-seats" class="cf-section">
+                    <header class="cf-section__head">
+                        <span class="cf-section__num">6</span>
+                        <div>
+                            <h2 class="cf-section__title">{{ $t('teach.classes.form.price') }}</h2>
+                            <p class="cf-section__hint">{{ $t('teach.classes.form.price_hint') }}</p>
+                        </div>
+                    </header>
+                    <div class="cf-section__body">
+                        <div class="cf-row">
+                            <FormPlainTextField
+                                v-model="form.price"
+                                :label="`${$t('teach.classes.fields.price')} (${currencyLabel})`"
+                                :placeholder="$t('teach.classes.fields.price_hint')"
+                                required
+                                :field-attrs="{ name: 'price', inputmode: 'decimal', dir: 'ltr' }"
+                                :error-messages="form.errors.price"
+                            />
+                            <FormPlainTextField
+                                v-model="form.seats"
+                                :label="`${$t('teach.classes.fields.seats')} (${$t('common.optional')})`"
+                                :placeholder="$t('teach.classes.fields.seats_hint')"
+                                :field-attrs="{ name: 'seats', inputmode: 'numeric', dir: 'ltr' }"
+                                :error-messages="form.errors.seats"
+                            />
+                        </div>
+
+                        <div class="cf-option mt-5" :class="{ 'cf-option--on': form.auto_suspend }">
+                            <div class="cf-option__head">
+                                <span class="rq-icon-tile rq-icon-tile--amber cf-option__tile"><v-icon icon="tabler:hourglass" /></span>
+                                <div class="cf-option__text">
+                                    <strong>{{ $t('teach.classes.fields.auto_suspend') }}</strong>
+                                    <small>{{ $t('teach.classes.fields.auto_suspend_hint') }}</small>
+                                </div>
+                                <v-switch
+                                    v-model="form.auto_suspend"
+                                    color="primary"
+                                    density="compact"
+                                    hide-details
+                                    inset
+                                    class="cf-option__switch"
+                                    :aria-label="$t('teach.classes.fields.auto_suspend')"
+                                    :disabled="readOnly"
+                                />
+                            </div>
+                            <FormPlainTextField
+                                v-if="form.auto_suspend"
+                                v-model="form.min_seats"
+                                :label="$t('teach.classes.fields.min_seats')"
+                                :placeholder="$t('teach.classes.fields.min_seats_hint')"
+                                required
+                                :field-attrs="{ name: 'min_seats', inputmode: 'numeric', dir: 'ltr' }"
+                                :error-messages="form.errors.min_seats"
+                                class="cf-option__field"
+                            />
+                        </div>
+                    </div>
+                </section>
+            </fieldset>
+        </form>
+
+        <!-- Side panel: a live preview, what is still missing, and the save button -->
+        <aside class="cf__side">
+            <div class="cf-side">
+                <div class="cf-preview">
+                    <div class="cf-preview__media">
+                        <img v-if="imagePreview" :src="imagePreview" alt="">
+                        <v-icon v-else icon="tabler:photo" size="32" />
+                    </div>
+                    <div class="cf-preview__body">
+                        <span class="cf-preview__kicker">{{ $t(`class.type.${form.type}`) }}</span>
+                        <strong class="cf-preview__title">{{ form.title || $t('teach.classes.form.untitled') }}</strong>
+                        <span class="cf-preview__meta">
+                            <v-icon icon="tabler:calendar-event" size="15" />
+                            {{ form.starts_on ? formatDay(form.starts_on) : $t('teach.classes.form.no_date') }}
+                        </span>
+                        <span class="cf-preview__price rq-number">{{ previewPrice }}</span>
                     </div>
                 </div>
 
-                <!-- «تعليق البدء تلقائيًا»: suspend the class when it starts below the minimum -->
-                <v-switch
-                    v-model="form.auto_suspend"
+                <v-btn
+                    v-if="!readOnly"
+                    type="submit"
+                    form="class-form"
+                    class="text-none cf-side__save"
+                    variant="flat"
                     color="primary"
-                    density="comfortable"
-                    hide-details
-                    inset
-                    :label="$t('teach.classes.fields.auto_suspend')"
-                    class="mt-3"
-                    :disabled="readOnly"
-                />
-                <p class="teach-hint mt-0">{{ $t('teach.classes.fields.auto_suspend_hint') }}</p>
-                <FormPlainTextField
-                    v-if="form.auto_suspend"
-                    v-model="form.min_seats"
-                    :label="$t('teach.classes.fields.min_seats')"
-                    :placeholder="$t('teach.classes.fields.min_seats_hint')"
-                    required
-                    :field-attrs="{ name: 'min_seats', inputmode: 'numeric', dir: 'ltr' }"
-                    :error-messages="form.errors.min_seats"
-                    class="mt-1"
-                />
-            </section>
-
-            <div v-if="!readOnly">
-                <v-btn type="submit" class="rq-btn rq-btn--primary" size="large" :loading="form.processing">
+                    size="large"
+                    block
+                    :loading="form.processing"
+                >
                     {{ cls ? $t('teach.classes.save') : $t('teach.classes.create') }}
                 </v-btn>
+                <p v-if="!cls && !readOnly" class="cf-side__hint">{{ $t('teach.classes.form.draft_note') }}</p>
+                <div class="cf-ready">
+                    <div class="cf-ready__head">
+                        <strong>{{ $t('teach.classes.form.ready_title') }}</strong>
+                        <span class="rq-number">{{ readyDone }}/{{ readiness.length }}</span>
+                    </div>
+                    <span class="cf-ready__bar" aria-hidden="true"><span :style="{ width: `${Math.round((readyDone / readiness.length) * 100)}%` }" /></span>
+                    <ul class="cf-ready__list">
+                        <li v-for="item in readiness" :key="item.key" :class="{ 'cf-ready__item--done': item.done }">
+                            <button type="button" @click="scrollTo(item.section)">
+                                <v-icon :icon="item.done ? 'tabler:circle-check' : 'tabler:circle'" size="18" />
+                                {{ $t(`teach.classes.form.ready.${item.key}`) }}
+                            </button>
+                        </li>
+                    </ul>
+                    <p class="cf-ready__note">{{ $t('teach.classes.form.ready_note') }}</p>
+                </div>
+
             </div>
-        </fieldset>
-    </form>
+        </aside>
+    </div>
+
+    <!-- Phones: the save button stays in reach at the bottom -->
+    <div v-if="!readOnly" class="cf-bar">
+        <span class="cf-bar__status">{{ $t('teach.classes.form.ready_short', { done: readyDone, total: readiness.length }) }}</span>
+        <v-btn
+            type="submit"
+            form="class-form"
+            class="text-none"
+            variant="flat"
+            color="primary"
+            :loading="form.processing"
+        >
+            {{ cls ? $t('teach.classes.save') : $t('teach.classes.create') }}
+        </v-btn>
+    </div>
 
     <v-dialog v-model="restartOpen" max-width="480" scrollable>
         <v-card v-if="cls" class="app-form-dialog">
@@ -393,7 +548,7 @@ import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
-import { WEEK_ORDER } from '@/utils/classFormat';
+import { WEEK_ORDER, formatDay, formatPrice } from '@/utils/classFormat';
 
 const props = defineProps({
     item: { type: Object, default: null },
@@ -602,6 +757,39 @@ function save() {
     }
 }
 
+// ---------- Side panel: a live preview and what is still missing to publish ----------
+const currencyLabel = computed(() => (props.currency === 'LYD' ? 'د.ل' : props.currency));
+
+const previewPrice = computed(() => (form.price === '' || form.price === null
+    ? t('teach.classes.form.no_price')
+    : formatPrice({ price: String(form.price), currency: props.currency }, t)));
+
+const readiness = computed(() => [
+    { key: 'title', section: 'cf-basics', done: form.title.trim().length >= 3 },
+    { key: 'description', section: 'cf-content', done: form.description.trim() !== '' },
+    { key: 'learn', section: 'cf-content', done: form.learn.some((item) => item.trim() !== '') },
+    { key: 'image', section: 'cf-image', done: Boolean(imagePreview.value) },
+    {
+        key: form.type === 'in_person' ? 'map' : 'meeting',
+        section: 'cf-place',
+        done: form.type === 'in_person' ? form.map_url.trim() !== '' : true,
+    },
+    { key: 'starts_on', section: 'cf-schedule', done: Boolean(form.starts_on) },
+    {
+        key: 'days',
+        section: 'cf-schedule',
+        done: form.schedule_type === 'daily'
+            || (form.schedule_type === 'weekly' && form.days.length > 0)
+            || (form.schedule_type === 'manual' && form.manual_dates.length > 0),
+    },
+    { key: 'price', section: 'cf-seats', done: form.price !== '' && form.price !== null },
+]);
+const readyDone = computed(() => readiness.value.filter((item) => item.done).length);
+
+function scrollTo(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function act(action) {
     router.post(route(`teach.classes.${action}`, cls.value.id), {}, { preserveScroll: true });
 }
@@ -625,57 +813,239 @@ function cancelClass() {
 <style scoped src="../teach.css"></style>
 
 <style scoped>
-.class-form {
-    border: 0;
+/* ---------- Layout: the form, and a side panel that stays in view on wide screens ---------- */
+.cf {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--rq-space-6);
+    align-items: start;
+    padding-bottom: 72px; /* room for the phone save bar */
+}
+
+@media (min-width: 1100px) {
+    .cf {
+        grid-template-columns: minmax(0, 1fr) 320px;
+        padding-bottom: 0;
+    }
+}
+
+.cf__fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rq-space-5);
+    min-width: 0;
     margin: 0;
     padding: 0;
+    border: 0;
+}
+
+/* ---------- Sections: numbered card with a header strip ---------- */
+.cf-section {
     min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+    background: var(--rq-surface);
+    scroll-margin-top: 88px;
 }
 
-.class-image {
+.cf-section__head {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid var(--rq-line-soft);
 }
 
-.class-image__frame {
+.cf-section__num {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 240px;
-    max-width: 100%;
-    aspect-ratio: 16 / 10;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--rq-icon-tile);
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--rq-action-primary);
+}
+
+.cf-section__title {
+    margin: 2px 0 0;
+    font-family: var(--rq-font-display);
+    font-size: var(--rq-text-card-title);
+    font-weight: 600;
+    color: var(--rq-text-heading);
+}
+
+.cf-section__hint {
+    margin: 2px 0 0;
+    font-size: var(--rq-text-label);
+    line-height: 1.6;
+    color: var(--rq-text-muted);
+}
+
+.cf-section__body {
+    padding: 22px 24px 24px;
+}
+
+.cf-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+}
+
+/* ---------- Choice cards (how the class is made, in person / online) ---------- */
+.cf-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.cf-choice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--rq-line-strong);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface);
+    color: var(--rq-text-body);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: border-color var(--rq-dur-fast) var(--rq-ease), background-color var(--rq-dur-fast) var(--rq-ease);
+}
+
+.cf-choice:hover:not(:disabled) {
+    border-color: var(--rq-line-emphasis);
+}
+
+.cf-choice:focus-visible {
+    outline: none;
+    box-shadow: var(--rq-focus-ring);
+}
+
+.cf-choice:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.cf-choice--on {
+    border-color: var(--rq-action-primary);
+    background: var(--rq-surface-hover);
+    box-shadow: inset 0 0 0 1px var(--rq-action-primary);
+}
+
+.cf-choice--compact {
+    padding-block: 10px;
+}
+
+.cf-choice__tile {
+    width: 38px;
+    height: 38px;
+}
+
+.cf-choice__text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cf-choice__text strong {
+    font-family: var(--rq-font-display);
+    font-size: 15px;
+    color: var(--rq-text-heading);
+}
+
+.cf-choice__text small {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--rq-text-muted);
+}
+
+.cf-choice__check {
+    flex-shrink: 0;
+    color: var(--rq-action-primary);
+}
+
+/* ---------- Image: a wide drop area, or the image with its tools ---------- */
+.cf-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    padding: 20px;
+    border: 1.5px dashed var(--rq-line-strong);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface-hover);
+    color: var(--rq-text-muted);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--rq-dur-fast) var(--rq-ease);
+}
+
+.cf-drop:hover:not(:disabled) {
+    border-color: var(--rq-action-primary);
+}
+
+.cf-drop strong {
+    font-family: var(--rq-font-display);
+    color: var(--rq-text-link);
+}
+
+.cf-drop small {
+    max-width: 420px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.cf-drop__tile {
+    margin-bottom: 4px;
+}
+
+.cf-image {
+    position: relative;
     overflow: hidden;
+    aspect-ratio: 16 / 10;
+    max-height: 380px;
     border: 1px solid var(--rq-line);
     border-radius: var(--rq-radius-md);
     background: var(--rq-surface-tint);
 }
 
-.class-image__frame--empty {
-    border-style: dashed;
-    color: var(--rq-text-subtle);
-}
-
-.class-image__frame img {
+.cf-image img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.class-form__row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
+.cf-image__tools {
+    position: absolute;
+    bottom: 12px;
+    inset-inline-end: 12px;
+    display: flex;
+    gap: 6px;
 }
 
-.class-form__days {
+/* ---------- Days ---------- */
+.cf-days {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.class-form__day {
+.cf-day {
+    min-width: 64px;
     padding: 8px 14px;
     border: 1px solid var(--rq-line-strong);
     border-radius: var(--rq-radius-pill);
@@ -686,14 +1056,267 @@ function cancelClass() {
     cursor: pointer;
 }
 
-.class-form__day--on {
+.cf-day--on {
     border-color: var(--rq-action-primary);
     background: var(--rq-action-primary);
     color: var(--rq-text-on-primary);
 }
 
-.class-form__day:focus-visible {
+.cf-day:focus-visible {
     outline: none;
     box-shadow: var(--rq-focus-ring);
+}
+
+/* ---------- An option box with a switch (auto suspend) ---------- */
+.cf-option {
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface-hover);
+}
+
+.cf-option--on {
+    border-color: var(--rq-line-emphasis);
+}
+
+.cf-option__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.cf-option__tile {
+    width: 38px;
+    height: 38px;
+}
+
+.cf-option__text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cf-option__text strong {
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--rq-text-heading);
+}
+
+.cf-option__text small {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--rq-text-muted);
+}
+
+.cf-option__switch {
+    flex: 0 0 auto;
+}
+
+.cf-option__field {
+    padding: 0 16px 16px;
+}
+
+/* ---------- Side panel ---------- */
+.cf__side {
+    display: none;
+}
+
+@media (min-width: 1100px) {
+    .cf__side {
+        display: block;
+        position: sticky;
+        top: 88px;
+    }
+}
+
+.cf-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100vh - 104px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.cf-preview__media {
+    max-height: 170px;
+}
+
+.cf-preview {
+    overflow: hidden;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+    background: var(--rq-surface);
+}
+
+.cf-preview__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 10;
+    background: var(--rq-surface-tint);
+    color: var(--rq-text-subtle);
+}
+
+.cf-preview__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cf-preview__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px 16px;
+}
+
+.cf-preview__kicker {
+    font-size: 12px;
+    color: var(--rq-text-muted);
+}
+
+.cf-preview__title {
+    overflow: hidden;
+    font-family: var(--rq-font-display);
+    font-size: 16px;
+    color: var(--rq-text-heading);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cf-preview__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--rq-text-muted);
+}
+
+.cf-preview__price {
+    margin-top: 6px;
+    font-family: var(--rq-font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--rq-text-number);
+}
+
+.cf-ready {
+    padding: 16px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+    background: var(--rq-surface);
+}
+
+.cf-ready__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    color: var(--rq-text-heading);
+}
+
+.cf-ready__bar {
+    display: block;
+    height: 6px;
+    margin: 10px 0 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--rq-surface-tint);
+}
+
+.cf-ready__bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--rq-success);
+    transition: width var(--rq-dur) var(--rq-ease);
+}
+
+.cf-ready__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cf-ready__list button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 0;
+    border: 0;
+    background: none;
+    color: var(--rq-text-body);
+    font: inherit;
+    font-size: 13px;
+    text-align: start;
+    cursor: pointer;
+}
+
+.cf-ready__list button:hover {
+    color: var(--rq-text-link);
+}
+
+.cf-ready__list .v-icon {
+    color: var(--rq-text-subtle);
+}
+
+.cf-ready__item--done button {
+    color: var(--rq-text-muted);
+}
+
+.cf-ready__item--done .v-icon {
+    color: var(--rq-success);
+}
+
+.cf-ready__note {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--rq-text-subtle);
+}
+
+.cf-side__hint {
+    margin: -6px 0 0;
+    font-size: 12px;
+    text-align: center;
+    color: var(--rq-text-subtle);
+}
+
+/* ---------- Phones: a save bar fixed at the bottom ---------- */
+.cf-bar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--rq-line);
+    background: var(--rq-surface);
+}
+
+.cf-bar__status {
+    font-size: 13px;
+    color: var(--rq-text-muted);
+}
+
+@media (min-width: 1100px) {
+    .cf-bar {
+        display: none;
+    }
+}
+
+@media (max-width: 599.98px) {
+    .cf-section__head,
+    .cf-section__body {
+        padding-inline: 16px;
+    }
 }
 </style>
