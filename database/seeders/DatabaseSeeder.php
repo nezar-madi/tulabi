@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
         TeachingClass::factory()->published()->online()->for($teacher->instructor)->create([
             'title' => 'لغة إنجليزية للمبتدئين',
             'price' => '150',
+            'schedule_type' => 'weekly',
             'days' => [0, 2],
         ]);
         TeachingClass::factory()->for($teacher->instructor)->create(['title' => 'فيزياء (مسودة)']);

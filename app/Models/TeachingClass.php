@@ -27,6 +27,13 @@ class TeachingClass extends Model
 
     public const TYPE_ONLINE = 'online';
 
+    /** How a course meets: every day, on chosen weekdays (days), or on dates picked by hand (manual_dates). */
+    public const SCHEDULE_DAILY = 'daily';
+
+    public const SCHEDULE_WEEKLY = 'weekly';
+
+    public const SCHEDULE_MANUAL = 'manual';
+
     public const STATUS_DRAFT = 'draft';
 
     public const STATUS_PUBLISHED = 'published';
@@ -52,7 +59,9 @@ class TeachingClass extends Model
         'meeting_url',
         'starts_on',
         'ends_on',
+        'schedule_type',
         'days',
+        'manual_dates',
         'start_time',
         'end_time',
         'price',
@@ -65,6 +74,7 @@ class TeachingClass extends Model
             'starts_on' => 'date:Y-m-d',
             'ends_on' => 'date:Y-m-d',
             'days' => 'array',
+            'manual_dates' => 'array',
             'price' => 'decimal:3',
             'seats' => 'integer',
             'published_at' => 'datetime',

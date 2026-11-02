@@ -128,6 +128,29 @@ class PublicPagesTest extends TestCase
         }
     }
 
+    public function test_the_public_page_says_when_a_course_meets_for_each_schedule_type(): void
+    {
+        $instructor = $this->instructor('sara');
+        $base = ['starts_on' => '2026-11-09', 'ends_on' => '2026-12-31', 'start_time' => null, 'end_time' => null];
+
+        $daily = TeachingClass::factory()->published()->for($instructor)->create([...$base, 'schedule_type' => 'daily', 'days' => null]);
+        $weekly = TeachingClass::factory()->published()->for($instructor)->create([...$base, 'schedule_type' => 'weekly', 'days' => [6, 1]]);
+        $manual = TeachingClass::factory()->published()->for($instructor)->create([
+            ...$base,
+            'schedule_type' => 'manual',
+            'days' => null,
+            'manual_dates' => ['2026-11-12', '2026-11-19', '2026-11-26', '2026-12-03', '2026-12-10', '2026-12-17'],
+        ]);
+
+        $this->get("/sara/classes/{$daily->id}")->assertOk()->assertSee('يوميًا');
+        $this->get("/sara/classes/{$weekly->id}")->assertOk()->assertSee('السبت، الإثنين');
+        $this->get("/sara/classes/{$manual->id}")->assertOk()
+            ->assertSee('12 نوفمبر 2026')
+            ->assertSee('3 ديسمبر 2026')
+            ->assertSee('و2 تواريخ أخرى')
+            ->assertDontSee('17 ديسمبر 2026');
+    }
+
     private function instructor(?string $slug): Instructor
     {
         $user = User::factory()->instructor()->create();

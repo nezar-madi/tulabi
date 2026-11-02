@@ -40,6 +40,32 @@ class ClassText
         ));
     }
 
+    /**
+     * When the course meets: "يوميًا", "السبت، الإثنين" or the picked dates ("5 نوفمبر، 12 نوفمبر ...").
+     */
+    public static function schedule(TeachingClass $class): string
+    {
+        return match ($class->schedule_type) {
+            TeachingClass::SCHEDULE_DAILY => 'يوميًا',
+            TeachingClass::SCHEDULE_MANUAL => self::manualDates($class->manual_dates ?? []),
+            default => self::days($class->days),
+        };
+    }
+
+    /**
+     * Hand-picked dates, in order: the first few in full, then how many more.
+     *
+     * @param  list<string>  $dates  Y-m-d
+     */
+    public static function manualDates(array $dates, int $show = 4): string
+    {
+        sort($dates);
+        $shown = array_map(fn (string $date) => self::date(Carbon::parse($date)), array_slice($dates, 0, $show));
+        $more = count($dates) - $show;
+
+        return implode('، ', $shown).($more > 0 ? ' و'.$more.' '.($more === 1 ? 'تاريخ آخر' : 'تواريخ أخرى') : '');
+    }
+
     /** "17:00" -> "5:00 م" */
     public static function time(?string $value): string
     {

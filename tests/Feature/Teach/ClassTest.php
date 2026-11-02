@@ -59,6 +59,59 @@ class ClassTest extends TestCase
         $this->assertSame(0, TeachingClass::query()->count());
     }
 
+    public function test_daily_weekly_and_manual_schedules(): void
+    {
+        $this->actingAs($this->instructor());
+
+        // Daily: no days kept, whatever was sent.
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'daily', 'days' => [1, 2], 'manual_dates' => ['2026-12-05']]))
+            ->assertSessionHasNoErrors();
+        $daily = TeachingClass::query()->latest('id')->first();
+        $this->assertSame('daily', $daily->schedule_type);
+        $this->assertNull($daily->days);
+        $this->assertNull($daily->manual_dates);
+
+        // Weekly needs at least one weekday.
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'weekly', 'days' => []]))->assertSessionHasErrors('days');
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'weekly', 'days' => [6, 1]]))->assertSessionHasNoErrors();
+        $weekly = TeachingClass::query()->latest('id')->first();
+        $this->assertSame([1, 6], $weekly->days);
+        $this->assertNull($weekly->manual_dates);
+
+        // Manual needs dates inside the period; they are sorted and de-duplicated; the end follows the last date.
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'manual', 'manual_dates' => []]))->assertSessionHasErrors('manual_dates');
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'manual', 'manual_dates' => ['2026-11-30']]))
+            ->assertSessionHasErrors(['manual_dates' => __('classes.manual_dates_outside_range')]);
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'manual', 'manual_dates' => ['2027-02-01']]))
+            ->assertSessionHasErrors(['manual_dates' => __('classes.manual_dates_outside_range')]);
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'manual', 'manual_dates' => ['12/05/2026']]))
+            ->assertSessionHasErrors('manual_dates.0');
+        $this->post('/teach/classes', $this->data([
+            'schedule_type' => 'manual',
+            'days' => [1],
+            'ends_on' => '',
+            'manual_dates' => ['2026-12-20', '2026-12-05', '2026-12-05'],
+        ]))->assertSessionHasNoErrors();
+        $manual = TeachingClass::query()->latest('id')->first();
+        $this->assertSame(['2026-12-05', '2026-12-20'], $manual->manual_dates);
+        $this->assertNull($manual->days);
+        $this->assertSame('2026-12-20', $manual->ends_on->toDateString());
+
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'weekend']))->assertSessionHasErrors('schedule_type');
+        $this->post('/teach/classes', $this->data(['schedule_type' => '']))->assertSessionHasErrors('schedule_type');
+    }
+
+    public function test_a_short_course_must_meet_on_the_chosen_weekdays(): void
+    {
+        $this->actingAs($this->instructor());
+
+        // 1 Dec 2026 is a Tuesday; a three-day course never meets on a Friday (5).
+        $this->post('/teach/classes', $this->data(['starts_on' => '2026-12-01', 'ends_on' => '2026-12-03', 'days' => [5]]))
+            ->assertSessionHasErrors(['days' => __('classes.days_outside_range')]);
+        $this->post('/teach/classes', $this->data(['starts_on' => '2026-12-01', 'ends_on' => '2026-12-03', 'days' => [2, 3]]))
+            ->assertSessionHasNoErrors();
+    }
+
     public function test_the_place_text_is_optional_but_the_map_link_must_be_google_maps(): void
     {
         $this->actingAs($this->instructor());
@@ -296,6 +349,7 @@ class ClassTest extends TestCase
             'meeting_url' => '',
             'starts_on' => '2026-12-01',
             'ends_on' => '2027-01-31',
+            'schedule_type' => 'weekly',
             'days' => [6, 1],
             'start_time' => '17:00',
             'end_time' => '19:00',

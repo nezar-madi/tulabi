@@ -7,6 +7,7 @@ use App\Models\TeachingClass;
 use App\Rules\GoogleMapsUrl;
 use App\Support\SafeHtml;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -26,6 +27,10 @@ class SaveClassRequest extends InstructorRequest
     {
         $this->merge([
             'days' => array_values(array_unique(array_map('intval', (array) $this->input('days', [])))),
+            'manual_dates' => array_values(array_unique(array_filter(array_map(
+                fn ($date) => is_string($date) ? trim($date) : '',
+                (array) $this->input('manual_dates', []),
+            )))),
             'seats' => $this->filled('seats') ? $this->input('seats') : null,
             'remove_image' => $this->boolean('remove_image'),
             'no_template_image' => $this->boolean('no_template_image'),
@@ -57,8 +62,14 @@ class SaveClassRequest extends InstructorRequest
             'meeting_url' => ['nullable', 'string', 'max:500', 'url:https,http'],
             'starts_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:2020-01-01', 'before:2100-01-01'],
             'ends_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:starts_on', 'before:2100-01-01'],
-            'days' => ['array', 'max:7'],
+            // Daily needs no days; weekly needs at least one weekday; manual needs at least one date.
+            'schedule_type' => ['required', Rule::in([
+                TeachingClass::SCHEDULE_DAILY, TeachingClass::SCHEDULE_WEEKLY, TeachingClass::SCHEDULE_MANUAL,
+            ])],
+            'days' => ['array', 'max:7', Rule::requiredIf($this->input('schedule_type') === TeachingClass::SCHEDULE_WEEKLY)],
             'days.*' => ['integer', 'between:0,6'],
+            'manual_dates' => ['array', 'max:200', Rule::requiredIf($this->input('schedule_type') === TeachingClass::SCHEDULE_MANUAL)],
+            'manual_dates.*' => ['date_format:Y-m-d', 'after_or_equal:2020-01-01', 'before:2100-01-01'],
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i', 'required_with:start_time'],
             'price' => ['required', 'numeric', 'min:0', 'max:1000000', 'decimal:0,3'],
@@ -95,6 +106,8 @@ class SaveClassRequest extends InstructorRequest
                 }
             }
 
+            $this->checkSchedule($validator);
+
             $start = $this->input('start_time');
             $end = $this->input('end_time');
 
@@ -102,6 +115,50 @@ class SaveClassRequest extends InstructorRequest
                 $validator->errors()->add('end_time', __('classes.end_time_after'));
             }
         }];
+    }
+
+    /**
+     * Hand-picked dates must fall inside the course's period, and the chosen weekdays must
+     * each occur in it (a short course that never meets on a chosen day is a mistake).
+     */
+    private function checkSchedule(Validator $validator): void
+    {
+        $startsOn = (string) $this->input('starts_on');
+        $endsOn = $this->filled('ends_on') ? (string) $this->input('ends_on') : null;
+
+        if ($validator->errors()->hasAny(['starts_on', 'ends_on'])) {
+            return;
+        }
+
+        $type = $this->input('schedule_type');
+
+        if ($type === TeachingClass::SCHEDULE_MANUAL && ! $validator->errors()->hasAny(['manual_dates', 'manual_dates.*'])) {
+            foreach ((array) $this->input('manual_dates', []) as $date) {
+                if ($date < $startsOn || ($endsOn !== null && $date > $endsOn)) {
+                    $validator->errors()->add('manual_dates', __('classes.manual_dates_outside_range'));
+
+                    return;
+                }
+            }
+        }
+
+        if ($type === TeachingClass::SCHEDULE_WEEKLY && $endsOn !== null && ! $validator->errors()->has('days')) {
+            $start = Carbon::parse($startsOn);
+            $end = Carbon::parse($endsOn);
+
+            // A period of a week or more always has every weekday in it.
+            if ($start->diffInDays($end) < 6) {
+                $present = [];
+
+                for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
+                    $present[] = $day->dayOfWeek;
+                }
+
+                if (array_diff((array) $this->input('days', []), $present) !== []) {
+                    $validator->errors()->add('days', __('classes.days_outside_range'));
+                }
+            }
+        }
     }
 
     public function newImage(): ?UploadedFile
@@ -122,8 +179,11 @@ class SaveClassRequest extends InstructorRequest
         $online = $data['type'] === TeachingClass::TYPE_ONLINE;
 
         $description = SafeHtml::description($data['description'] ?? null);
-        $days = $data['days'] ?? [];
+        $type = $data['schedule_type'];
+        $days = $type === TeachingClass::SCHEDULE_WEEKLY ? ($data['days'] ?? []) : [];
         sort($days);
+        $dates = $type === TeachingClass::SCHEDULE_MANUAL ? ($data['manual_dates'] ?? []) : [];
+        sort($dates);
 
         unset($data['image'], $data['remove_image'], $data['no_template_image']);
         $location = trim((string) ($data['location'] ?? ''));
@@ -137,6 +197,9 @@ class SaveClassRequest extends InstructorRequest
             'map_url' => $online ? null : trim((string) $data['map_url']),
             'meeting_url' => $online ? (($data['meeting_url'] ?? null) ?: null) : null,
             'days' => $days === [] ? null : $days,
+            'manual_dates' => $dates === [] ? null : $dates,
+            // Picked dates define the period's end when none was given.
+            'ends_on' => $data['ends_on'] ?? ($dates === [] ? null : end($dates)),
         ];
     }
 }

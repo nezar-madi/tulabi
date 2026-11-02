@@ -31,6 +31,7 @@ class TeachingClassFactory extends Factory
             'meeting_url' => null,
             'starts_on' => $start->toDateString(),
             'ends_on' => $start->addWeeks(8)->toDateString(),
+            'schedule_type' => TeachingClass::SCHEDULE_WEEKLY,
             'days' => [6, 1, 3],
             'start_time' => '17:00',
             'end_time' => '19:00',

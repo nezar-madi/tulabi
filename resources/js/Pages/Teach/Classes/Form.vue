@@ -187,20 +187,51 @@
                     />
                 </div>
 
-                <p class="form-plain-field__label font-weight-medium mb-2 mt-2">{{ $t('teach.classes.fields.days') }}</p>
-                <div class="class-form__days mb-4">
-                    <button
-                        v-for="day in WEEK_ORDER"
-                        :key="day"
-                        type="button"
-                        class="class-form__day"
-                        :class="{ 'class-form__day--on': form.days.includes(day) }"
-                        :aria-pressed="form.days.includes(day)"
-                        @click="toggleDay(day)"
-                    >
-                        {{ $t(`days.${day}`) }}
-                    </button>
-                </div>
+                <!-- Days of study, as in rqmana: every day, chosen weekdays, or dates picked by hand -->
+                <FormPlainSelect
+                    v-model="form.schedule_type"
+                    :label="$t('teach.classes.fields.schedule_type')"
+                    :items="scheduleItems"
+                    item-title="title"
+                    item-value="value"
+                    required
+                    :disabled="readOnly"
+                    :error-messages="form.errors.schedule_type"
+                    class="mt-2 mb-3"
+                />
+
+                <template v-if="form.schedule_type === 'weekly'">
+                    <p class="form-plain-field__label font-weight-medium mb-2">{{ $t('teach.classes.fields.days') }}</p>
+                    <div class="class-form__days mb-1">
+                        <button
+                            v-for="day in WEEK_ORDER"
+                            :key="day"
+                            type="button"
+                            class="class-form__day"
+                            :class="{ 'class-form__day--on': form.days.includes(day) }"
+                            :aria-pressed="form.days.includes(day)"
+                            @click="toggleDay(day)"
+                        >
+                            {{ $t(`days.${day}`) }}
+                        </button>
+                    </div>
+                    <small v-if="form.errors.days || form.errors['days.0']" class="text-error d-block mb-3">{{ form.errors.days || form.errors['days.0'] }}</small>
+                    <div v-else class="mb-3" />
+                </template>
+
+                <FormPlainDatesPicker
+                    v-else-if="form.schedule_type === 'manual'"
+                    v-model="form.manual_dates"
+                    :label="$t('teach.classes.fields.manual_dates')"
+                    :hint="$t('teach.classes.fields.manual_dates_hint')"
+                    persistent-hint
+                    required
+                    :min="form.starts_on || undefined"
+                    :max="form.ends_on || undefined"
+                    :disabled="readOnly"
+                    :error-messages="form.errors.manual_dates"
+                    class="mb-4"
+                />
 
                 <div class="class-form__row">
                     <FormPlainTimePicker
@@ -282,6 +313,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
 import FormPlainDatePicker from '@/Components/formFields/FormPlainDatePicker.vue';
+import FormPlainDatesPicker from '@/Components/formFields/FormPlainDatesPicker.vue';
 import FormPlainRichText from '@/Components/formFields/FormPlainRichText.vue';
 import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
@@ -316,7 +348,9 @@ const form = useForm({
     meeting_url: cls.value?.meeting_url || '',
     starts_on: cls.value?.starts_on || '',
     ends_on: cls.value?.ends_on || '',
+    schedule_type: cls.value?.schedule_type || 'weekly',
     days: [...(cls.value?.days || [])],
+    manual_dates: [...(cls.value?.manual_dates || [])],
     start_time: cls.value?.start_time || '',
     end_time: cls.value?.end_time || '',
     price: cls.value?.price ?? '',
@@ -350,6 +384,22 @@ watch(() => form.program_id, (_, previousId) => {
 
 const cancelDialog = ref(false);
 const cancelForm = useForm({ reason: '' });
+
+const scheduleItems = computed(() => ['daily', 'weekly', 'manual'].map((value) => ({
+    value,
+    title: t(`teach.classes.fields.schedule.${value}`),
+})));
+
+// Switching the type drops what belongs to the other types.
+watch(() => form.schedule_type, (type) => {
+    if (type !== 'weekly') {
+        form.days = [];
+    }
+
+    if (type !== 'manual') {
+        form.manual_dates = [];
+    }
+});
 
 function toggleDay(day) {
     const index = form.days.indexOf(day);

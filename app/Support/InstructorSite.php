@@ -91,7 +91,7 @@ class InstructorSite
             'starts_on' => $class->starts_on,
             'starting_date' => ClassText::date($class->starts_on),
             'ending_date' => ClassText::date($class->ends_on),
-            'schedule' => ClassText::days($class->days),
+            'schedule' => ClassText::schedule($class),
             'time' => ClassText::timeRange($class),
             'price' => ClassText::price($class),
             'is_free' => (float) $class->price === 0.0,

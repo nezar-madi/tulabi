@@ -224,6 +224,7 @@ class ProgramTest extends TestCase
             'title' => 'دورة رياضيات',
             'description' => '<p>شرح.</p>',
             'type' => 'online',
+            'schedule_type' => 'daily',
             'meeting_url' => '',
             'starts_on' => '2026-12-01',
             'price' => '100',

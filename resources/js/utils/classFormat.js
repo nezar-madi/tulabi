@@ -31,6 +31,26 @@ export function formatDays(days, t) {
 }
 
 /**
+ * When a course meets: daily, the chosen weekdays, or the dates picked by hand
+ * (the first few, then how many more).
+ */
+export function formatScheduleDays(cls, t, show = 4) {
+    if (cls.schedule_type === 'daily') {
+        return t('class.daily');
+    }
+
+    if (cls.schedule_type === 'manual') {
+        const dates = [...(cls.manual_dates || [])].sort();
+        const shown = dates.slice(0, show).map((date) => formatDay(date)).join('، ');
+        const more = dates.length - show;
+
+        return more > 0 ? `${shown} ${t('class.more_dates', { count: more })}` : shown;
+    }
+
+    return formatDays(cls.days, t);
+}
+
+/**
  * A date as written in Libya, from "Y-m-d" (a calendar date, no time zone).
  * @param {string|null} value
  */
@@ -60,7 +80,7 @@ export function formatPrice(cls, t) {
  */
 export function formatSchedule(cls, t) {
     const parts = [];
-    const days = formatDays(cls.days, t);
+    const days = formatScheduleDays(cls, t);
 
     if (days) {
         parts.push(days);
