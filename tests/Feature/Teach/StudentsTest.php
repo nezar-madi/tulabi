@@ -73,7 +73,7 @@ class StudentsTest extends TestCase
         [$owner, $math, $physics] = $this->owner();
         $active = User::factory()->create(['name' => 'حالي']);
         $removed = User::factory()->create(['name' => 'مُخرَج']);
-        $inCanceled = User::factory()->create(['name' => 'دورة ملغاة']);
+        $inCanceled = User::factory()->create(['name' => 'فصل ملغاة']);
 
         $this->accept($active, $math);
         $this->accept($removed, $math)->forceFill(['status' => Enrollment::STATUS_CANCELED])->save();

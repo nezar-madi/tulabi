@@ -53,16 +53,16 @@ class ProgramPagesTest extends TestCase
     {
         $program = Program::factory()->for($this->instructor)->published()->create(['name' => 'رياضيات']);
         $other = Program::factory()->for($this->instructor)->published()->create(['name' => 'فيزياء']);
-        TeachingClass::factory()->published()->for($this->instructor)->create(['program_id' => $program->id, 'title' => 'دورة داخل البرنامج']);
+        TeachingClass::factory()->published()->for($this->instructor)->create(['program_id' => $program->id, 'title' => 'فصل داخل البرنامج']);
         TeachingClass::factory()->for($this->instructor)->create(['program_id' => $program->id, 'title' => 'مسودة داخله']);
-        TeachingClass::factory()->published()->for($this->instructor)->create(['program_id' => $other->id, 'title' => 'دورة برنامج آخر']);
-        TeachingClass::factory()->published()->for($this->instructor)->create(['title' => 'دورة بلا برنامج']);
+        TeachingClass::factory()->published()->for($this->instructor)->create(['program_id' => $other->id, 'title' => 'فصل برنامج آخر']);
+        TeachingClass::factory()->published()->for($this->instructor)->create(['title' => 'فصل بلا برنامج']);
 
         $this->get("/sara/programs/{$program->id}")->assertOk()
-            ->assertSee('دورة داخل البرنامج')
+            ->assertSee('فصل داخل البرنامج')
             ->assertDontSee('مسودة داخله')
-            ->assertDontSee('دورة برنامج آخر')
-            ->assertDontSee('دورة بلا برنامج');
+            ->assertDontSee('فصل برنامج آخر')
+            ->assertDontSee('فصل بلا برنامج');
     }
 
     public function test_a_hidden_or_stopped_program_is_not_found_for_visitors_but_the_owner_sees_it(): void

@@ -221,7 +221,7 @@ class ProgramTest extends TestCase
     private function classData(array $overrides = []): array
     {
         return [
-            'title' => 'دورة رياضيات',
+            'title' => 'فصل رياضيات',
             'description' => '<p>شرح.</p>',
             'type' => 'online',
             'schedule_type' => 'daily',
