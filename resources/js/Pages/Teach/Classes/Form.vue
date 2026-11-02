@@ -277,7 +277,7 @@
 
 <script setup>
 import PageIntro from '@/Components/PageIntro.vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import ClassStatusBadge from '@/Components/ClassStatusBadge.vue';
@@ -292,7 +292,7 @@ import { WEEK_ORDER } from '@/utils/classFormat';
 const props = defineProps({
     item: { type: Object, default: null },
     currency: { type: String, default: 'LYD' },
-    // The programs a course may be put in: [{ id, name }].
+    // The programs (course templates) a course may be put in: [{ id, name, description, image_url }].
     programs: { type: Array, default: () => [] },
     publicUrl: { type: String, default: null },
 });
@@ -312,6 +312,7 @@ const form = useForm({
     map_url: cls.value?.map_url || '',
     image: null,
     remove_image: false,
+    no_template_image: false,
     meeting_url: cls.value?.meeting_url || '',
     starts_on: cls.value?.starts_on || '',
     ends_on: cls.value?.ends_on || '',
@@ -320,6 +321,31 @@ const form = useForm({
     end_time: cls.value?.end_time || '',
     price: cls.value?.price ?? '',
     seats: cls.value?.seats ?? '',
+});
+
+// A program is the template of a course: on a new course, choosing one fills in the title,
+// the description and the image, and the instructor edits them from there. A field the
+// instructor already changed is not overwritten.
+const template = computed(() => props.programs.find((program) => program.id === form.program_id) || null);
+const emptyHtml = (value) => !String(value || '').replace(/<[^>]*>/g, '').trim();
+
+watch(() => form.program_id, (_, previousId) => {
+    if (cls.value) {
+        return;
+    }
+
+    const previous = props.programs.find((program) => program.id === previousId) || null;
+    const next = template.value;
+
+    if (!form.title || form.title === previous?.name) {
+        form.title = next?.name || '';
+    }
+
+    if (emptyHtml(form.description) || form.description === previous?.description) {
+        form.description = next?.description || '';
+    }
+
+    form.no_template_image = false;
 });
 
 const cancelDialog = ref(false);
@@ -338,7 +364,9 @@ function toggleDay(day) {
 // The promotional image: the saved one, or the file just chosen (shown before saving).
 const imageInput = ref(null);
 const chosenPreview = ref(null);
-const imagePreview = computed(() => chosenPreview.value || (form.remove_image ? null : cls.value?.image_url || null));
+const imagePreview = computed(() => chosenPreview.value
+    || (form.remove_image ? null : cls.value?.image_url || null)
+    || (!cls.value && !form.no_template_image ? template.value?.image_url || null : null));
 
 function pickImage(event) {
     const file = event.target.files?.[0];
@@ -364,6 +392,8 @@ function clearImage() {
 
     form.image = null;
     form.remove_image = Boolean(cls.value?.image_url);
+    // Letting go of the image a program brought: the server then does not copy it.
+    form.no_template_image = !cls.value && Boolean(template.value?.image_url);
     chosenPreview.value = null;
 }
 

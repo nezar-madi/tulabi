@@ -28,6 +28,7 @@ class SaveClassRequest extends InstructorRequest
             'days' => array_values(array_unique(array_map('intval', (array) $this->input('days', [])))),
             'seats' => $this->filled('seats') ? $this->input('seats') : null,
             'remove_image' => $this->boolean('remove_image'),
+            'no_template_image' => $this->boolean('no_template_image'),
             'ends_on' => $this->filled('ends_on') ? $this->input('ends_on') : null,
             'start_time' => $this->filled('start_time') ? $this->input('start_time') : null,
             'end_time' => $this->filled('end_time') ? $this->input('end_time') : null,
@@ -67,6 +68,7 @@ class SaveClassRequest extends InstructorRequest
                 'dimensions:min_width=600,min_height=300,max_width=6000,max_height=6000',
             ],
             'remove_image' => ['boolean'],
+            'no_template_image' => ['boolean'],
         ];
     }
 
@@ -123,7 +125,7 @@ class SaveClassRequest extends InstructorRequest
         $days = $data['days'] ?? [];
         sort($days);
 
-        unset($data['image'], $data['remove_image']);
+        unset($data['image'], $data['remove_image'], $data['no_template_image']);
         $location = trim((string) ($data['location'] ?? ''));
 
         return [

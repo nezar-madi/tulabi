@@ -94,6 +94,16 @@ class ClassImage
         return $path;
     }
 
+    /** A new course starts with its program's image (its own copy, so changing either leaves the other alone). */
+    public function copyFromProgram(TeachingClass $class, Program $program): void
+    {
+        $disk = Storage::disk('public');
+
+        if ($program->image_path !== null && $disk->exists($program->image_path)) {
+            $this->attach($class, (string) $disk->get($program->image_path));
+        }
+    }
+
     public function delete(TeachingClass|Program $model): void
     {
         if ($model->image_path !== null) {

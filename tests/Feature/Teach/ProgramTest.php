@@ -155,6 +155,31 @@ class ProgramTest extends TestCase
         $this->assertNull($class->fresh()->program_id);
     }
 
+    public function test_a_new_course_starts_with_its_programs_image_unless_told_not_to(): void
+    {
+        Storage::fake('public');
+        $user = $this->instructor();
+        $this->actingAs($user);
+        $this->post('/teach/programs', $this->data(['image' => UploadedFile::fake()->image('p.png', 1600, 900)]));
+        $program = Program::query()->sole();
+
+        $this->post('/teach/classes', $this->classData(['program_id' => $program->id]))->assertSessionHasNoErrors();
+        $copied = TeachingClass::query()->latest('id')->first();
+        $this->assertStringStartsWith('class-images/', $copied->image_path);
+        $this->assertNotSame($program->image_path, $copied->image_path);
+        Storage::disk('public')->assertExists($copied->image_path);
+
+        // An image of its own wins; asking for none skips the copy.
+        $this->post('/teach/classes', $this->classData(['program_id' => $program->id, 'image' => UploadedFile::fake()->image('own.png', 900, 900)]));
+        $this->post('/teach/classes', $this->classData(['program_id' => $program->id, 'no_template_image' => true]));
+        $this->assertNull(TeachingClass::query()->latest('id')->first()->image_path);
+        $this->assertNotNull(TeachingClass::query()->where('id', '!=', $copied->id)->orderBy('id')->first()->image_path);
+
+        // Deleting the course's image leaves the program's alone.
+        $this->put("/teach/classes/{$copied->id}", $this->classData(['program_id' => $program->id, 'remove_image' => true]));
+        Storage::disk('public')->assertExists($program->fresh()->image_path);
+    }
+
     public function test_the_course_form_offers_active_programs_and_the_current_one(): void
     {
         $user = $this->instructor();
@@ -164,7 +189,11 @@ class ProgramTest extends TestCase
         $class = TeachingClass::factory()->for($user->instructor)->create(['program_id' => $stopped->id]);
 
         $this->actingAs($user)->get('/teach/classes/create')->assertInertia(fn (Assert $page) => $page
-            ->where('programs', [['id' => $active->id, 'name' => 'نشط']]));
+            ->has('programs', 1)
+            ->where('programs.0.id', $active->id)
+            ->where('programs.0.name', 'نشط')
+            ->where('programs.0.description', $active->description)
+            ->where('programs.0.image_url', null));
         $this->get("/teach/classes/{$class->id}/edit")->assertInertia(fn (Assert $page) => $page
             ->has('programs', 2));
     }

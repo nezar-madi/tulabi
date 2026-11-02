@@ -86,6 +86,9 @@ class ClassController extends Controller
 
         if ($jpeg !== null) {
             $this->images->attach($class, $jpeg);
+        } elseif ($class->program?->image_path !== null && ! $request->boolean('no_template_image')) {
+            // The program is the course's template: with no image of its own, it starts with the program's.
+            $this->images->copyFromProgram($class, $class->program);
         }
 
         return redirect()->route('teach.classes.edit', $class)->with('status', __('classes.created'));
@@ -152,15 +155,20 @@ class ClassController extends Controller
     /**
      * The programs a course may be put in: the active ones, and the one it is already in.
      *
-     * @return list<array{id: int, name: string}>
+     * @return list<array{id: int, name: string, description: string, image_url: string|null}>
      */
     private function programOptions(Instructor $instructor, ?int $current): array
     {
         return $instructor->programs()
             ->where(fn ($query) => $query->where('is_active', true)->when($current, fn ($q) => $q->orWhere('id', $current)))
             ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (Program $program) => ['id' => $program->id, 'name' => $program->name])
+            ->get(['id', 'name', 'description', 'image_path'])
+            ->map(fn (Program $program) => [
+                'id' => $program->id,
+                'name' => $program->name,
+                'description' => $program->description,
+                'image_url' => $program->imageUrl(),
+            ])
             ->all();
     }
 
