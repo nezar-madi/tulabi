@@ -661,9 +661,12 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+    <ClassCreatedDialog v-if="cls" v-model="createdOpen" :title="cls.title" />
 </template>
 
 <script setup>
+import ClassCreatedDialog from '@/Components/ClassCreatedDialog.vue';
 import PageIntro from '@/Components/PageIntro.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -687,6 +690,8 @@ const props = defineProps({
     // wa.me message with the saved meeting link (online class), and whether this save changed it.
     meetingShareUrl: { type: String, default: null },
     meetingChanged: { type: Boolean, default: false },
+    // The class was saved a moment ago: show the «تم إنشاء الفصل» dialog.
+    justCreated: { type: Boolean, default: false },
     // A program chosen on the way in (a new class from this program).
     selectedProgram: { type: Number, default: null },
     // Libya's today, the earliest date a suspended class may restart on.
@@ -780,6 +785,7 @@ if (!cls.value && form.program_id) {
 
 // A suspended class starts again on a new date
 const restartOpen = ref(false);
+const createdOpen = ref(props.justCreated);
 const restartForm = useForm({ starts_on: '' });
 
 function openRestart() {

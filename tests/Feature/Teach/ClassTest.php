@@ -31,7 +31,13 @@ class ClassTest extends TestCase
         ]));
 
         $class = TeachingClass::query()->sole();
-        $response->assertRedirect("/teach/classes/{$class->id}/edit");
+        $response->assertRedirect("/teach/classes/{$class->id}/edit")->assertSessionHas('classCreated', true);
+
+        // The draft page opens once with the «تم إنشاء الفصل» dialog.
+        $this->get("/teach/classes/{$class->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page->where('justCreated', true));
+        $this->get("/teach/classes/{$class->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page->where('justCreated', false));
 
         $this->assertSame(TeachingClass::STATUS_DRAFT, $class->status);
         $this->assertSame($user->instructor->id, $class->instructor_id);

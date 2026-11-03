@@ -110,7 +110,8 @@ class ClassController extends Controller
             $this->images->copyFromProgram($class, $class->program);
         }
 
-        return redirect()->route('teach.classes.edit', $class)->with('status', __('classes.created'));
+        // The draft page opens with the «تم إنشاء الفصل» dialog (once).
+        return redirect()->route('teach.classes.edit', $class)->with('classCreated', true);
     }
 
     public function edit(Request $request, TeachingClass $class): Response
@@ -125,6 +126,7 @@ class ClassController extends Controller
             'today' => TulabiClock::today(),
             'meetingShareUrl' => ClassPresenter::meetingShareUrl($class),
             'meetingChanged' => (bool) $request->session()->get('meetingChanged'),
+            'justCreated' => (bool) $request->session()->get('classCreated'),
             'publicUrl' => $class->isPubliclyVisible() || $class->status === TeachingClass::STATUS_DRAFT
                 ? $this->publicUrl($class)
                 : null,
