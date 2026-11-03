@@ -46,7 +46,7 @@
             <div v-if="cls.status !== 'draft' && cls.status !== 'canceled'" class="tcard__seats">
                 <div class="tcard__seats-head">
                     <span>
-                        <v-icon icon="tabler:users" size="15" />
+                        <v-icon icon="tabler:users" size="15" class="tcard__students-icon" />
                         {{ seatsText }}
                     </span>
                     <Link
@@ -73,7 +73,7 @@
         <div class="tcard__tear" aria-hidden="true" />
 
         <footer class="tcard__foot">
-            <strong class="tcard__price rq-number">{{ formatPrice(cls, t) }}</strong>
+            <strong class="tcard__price rq-number" :class="{ 'tcard__price--paid': Number(cls.price) > 0 }">{{ formatPrice(cls, t) }}</strong>
 
             <div class="tcard__tools">
                 <v-btn
@@ -81,7 +81,7 @@
                     icon
                     variant="text"
                     size="small"
-                    class="tcard__tool"
+                    class="tcard__tool tcard__tool--students"
                     :aria-label="$t('teach.students.open')"
                     @click="router.visit(route('teach.classes.students', cls.id))"
                 >
@@ -243,7 +243,7 @@ const seatsText = computed(() => (props.cls.seats
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 2 / 1;
     overflow: hidden;
     background: var(--rq-surface-tint);
     color: var(--rq-text-subtle);
@@ -307,35 +307,28 @@ const seatsText = computed(() => (props.cls.seats
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 58px;
+    width: 50px;
+    padding: 4px 0 3px;
     overflow: hidden;
-    border: 1px solid var(--rq-line);
     border-radius: 10px;
     background: var(--rq-surface);
-    box-shadow: 0 6px 16px -8px rgb(15 23 42 / 0.4);
+    box-shadow: 0 6px 16px -8px rgb(15 23 42 / 0.45);
     transform: translateY(-50%);
 }
 
 .tcard__leaf-month {
-    width: 100%;
-    padding: 2px 0 3px;
-    background: var(--tcard-accent);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
+    line-height: 1.4;
     text-align: center;
-    color: #fff;
-}
-
-.tcard--neutral .tcard__leaf-month {
-    background: var(--rq-action-primary);
+    color: var(--rq-text-muted);
 }
 
 .tcard__leaf-day {
-    padding: 2px 0 4px;
     font-family: var(--rq-font-display);
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.15;
     color: var(--rq-text-heading);
 }
 
@@ -345,8 +338,8 @@ const seatsText = computed(() => (props.cls.seats
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 8px;
-    padding: 14px 18px 16px;
+    gap: 6px;
+    padding: 12px 16px 14px;
 }
 
 .tcard__countdown {
@@ -365,9 +358,9 @@ const seatsText = computed(() => (props.cls.seats
 
 .tcard__title {
     margin: 0;
-    padding-inline-end: 66px;
+    padding-inline-end: 58px;
     font-family: var(--rq-font-display);
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
     line-height: 1.5;
 }
@@ -496,15 +489,26 @@ const seatsText = computed(() => (props.cls.seats
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding-block: 8px;
-    padding-inline: 18px 8px;
+    padding-block: 6px;
+    padding-inline: 16px 6px;
 }
 
 .tcard__price {
     font-family: var(--rq-font-display);
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--rq-text-number);
+}
+
+/* A paid class: the amount in green («مجاني» stays plain). */
+.tcard__price--paid {
+    color: var(--rq-success);
+}
+
+/* Students, in the violet of «من برنامج تدريبي» on the class form. */
+.tcard__students-icon,
+.tcard__tool.tcard__tool--students {
+    color: var(--rq-accent-violet);
 }
 
 .tcard__tools {
