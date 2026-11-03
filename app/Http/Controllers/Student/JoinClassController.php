@@ -19,8 +19,9 @@ class JoinClassController extends Controller
      */
     public function create(TeachingClass $class): RedirectResponse
     {
+        // Only a class visitors can see: a draft, or a hidden instructor's page address, is never revealed.
         $slug = $class->instructor->slug;
-        abort_if($slug === null, 404);
+        abort_unless($slug !== null && $class->isPubliclyVisible() && $class->instructor->isPublic(), 404);
 
         return redirect()->route('classes.show', ['slug' => $slug, 'class' => $class->id, 'request' => 1]);
     }

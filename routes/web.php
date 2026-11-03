@@ -92,9 +92,9 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
 
         Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
         Route::get('/classes/create', [ClassController::class, 'create'])->name('classes.create');
-        Route::post('/classes', [ClassController::class, 'store'])->name('classes.store');
+        Route::post('/classes', [ClassController::class, 'store'])->middleware('throttle:class-save')->name('classes.store');
         Route::get('/classes/{class}/edit', [ClassController::class, 'edit'])->name('classes.edit');
-        Route::put('/classes/{class}', [ClassController::class, 'update'])->name('classes.update');
+        Route::put('/classes/{class}', [ClassController::class, 'update'])->middleware('throttle:class-save')->name('classes.update');
         Route::post('/classes/{class}/publish', [ClassController::class, 'publish'])->name('classes.publish');
         Route::post('/classes/{class}/close', [ClassController::class, 'close'])->name('classes.close');
         Route::post('/classes/{class}/reactivate', [ClassController::class, 'reactivate'])->name('classes.reactivate');

@@ -124,11 +124,27 @@ class TeachingClass extends Model
      */
     public function priceIsLocked(): bool
     {
-        return $this->exists && $this->enrollments()
-            ->where(fn ($query) => $query
-                ->whereIn('status', [Enrollment::STATUS_REQUESTED, Enrollment::STATUS_ACCEPTED])
-                ->orWhereNotNull('accepted_at'))
-            ->exists();
+        // A list loads it for every class at once: withCount(['enrollments as price_lock_count' => ...]).
+        if (array_key_exists('price_lock_count', $this->attributes)) {
+            return (int) $this->attributes['price_lock_count'] > 0;
+        }
+
+        return $this->exists && self::lockingPrice($this->enrollments())->exists();
+    }
+
+    /**
+     * The enrollments that fix the price: waiting or accepted, or accepted before.
+     *
+     * @template TQuery of \Illuminate\Contracts\Database\Query\Builder
+     *
+     * @param  TQuery  $query
+     * @return TQuery
+     */
+    public static function lockingPrice($query)
+    {
+        return $query->where(fn ($inner) => $inner
+            ->whereIn('status', [Enrollment::STATUS_REQUESTED, Enrollment::STATUS_ACCEPTED])
+            ->orWhereNotNull('accepted_at'));
     }
 
     /** Accepted students right now. */

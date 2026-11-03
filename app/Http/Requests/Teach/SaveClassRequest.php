@@ -259,8 +259,12 @@ class SaveClassRequest extends InstructorRequest
     {
         $class = $this->route('class');
 
-        if (! $class instanceof TeachingClass || $validator->errors()->has('price')
-            || bccomp((string) $this->input('price'), (string) $class->price, 3) === 0) {
+        if (! $class instanceof TeachingClass || $validator->errors()->has('price')) {
+            return;
+        }
+
+        // Compared at three decimals ("120" and "120.000" are the same price); no bcmath needed.
+        if (number_format((float) $this->input('price'), 3, '.', '') === number_format((float) $class->price, 3, '.', '')) {
             return;
         }
 

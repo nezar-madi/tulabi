@@ -7,6 +7,7 @@ use App\Models\TeachingClass;
 use App\Models\User;
 use App\Notifications\EnrollmentDecided;
 use App\Notifications\EnrollmentRequested;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -34,7 +35,21 @@ class Enrollments
 
         $note = self::text($note);
 
-        $enrollment = DB::transaction(function () use ($user, $class, $note) {
+        try {
+            $enrollment = $this->saveRequest($user, $class, $note);
+        } catch (UniqueConstraintViolationException) {
+            // Two requests at the same moment (a double click): the first one made the row.
+            throw ValidationException::withMessages(['enrollment' => __('enrollments.already_requested')]);
+        }
+
+        $this->notify($class->instructor->user, new EnrollmentRequested($enrollment));
+
+        return $enrollment;
+    }
+
+    private function saveRequest(User $user, TeachingClass $class, ?string $note): Enrollment
+    {
+        return DB::transaction(function () use ($user, $class, $note) {
             /** @var Enrollment|null $existing */
             $existing = Enrollment::query()
                 ->where('class_id', $class->getKey())
@@ -61,10 +76,6 @@ class Enrollments
 
             return $enrollment;
         });
-
-        $this->notify($class->instructor->user, new EnrollmentRequested($enrollment));
-
-        return $enrollment;
     }
 
     /**

@@ -60,7 +60,8 @@
                     <p v-else class="detail__muted">{{ $t('student.classes.meeting_missing') }}</p>
                 </section>
 
-                <div v-if="cls.description" class="detail__description" v-html="cls.description" />
+                <!-- Plain text, kept as the instructor typed it: shown as text (never as HTML), line breaks kept. -->
+                <p v-if="cls.description" class="detail__description">{{ cls.description }}</p>
 
                 <p v-if="enrollment.note" class="detail__note">
                     <strong>{{ $t('student.classes.your_note') }}:</strong> {{ enrollment.note }}
@@ -252,8 +253,10 @@ function withdraw(question) {
 }
 
 .detail__description {
-    margin-top: 20px;
+    margin: 20px 0 0;
     line-height: var(--rq-lh-body);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
 }
 
 .detail__facts {

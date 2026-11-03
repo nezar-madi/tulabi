@@ -86,6 +86,7 @@ class ClassController extends Controller
             ->withCount([
                 'enrollments as accepted_count' => fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED),
                 'enrollments as requested_count' => fn ($query) => $query->where('status', Enrollment::STATUS_REQUESTED),
+                'enrollments as price_lock_count' => fn ($query) => TeachingClass::lockingPrice($query),
             ])
             ->orderByDesc('starts_on')
             ->orderByDesc('id')
@@ -218,9 +219,11 @@ class ClassController extends Controller
     /** A suspended class starts again on a new date. */
     public function reactivate(ReactivateClassRequest $request, TeachingClass $class): RedirectResponse
     {
-        $this->lifecycle->reactivate($this->ownClass($request, $class), (string) $request->validated('starts_on'));
+        $class = $this->ownClass($request, $class);
+        $this->lifecycle->reactivate($class, (string) $request->validated('starts_on'));
 
-        return back()->with('status', __('classes.reactivated'));
+        // The dates moved: with students, the edit page offers the new schedule on WhatsApp.
+        return back()->with('status', __('classes.reactivated'))->with('scheduleChanged', $class->hasAcceptedStudents());
     }
 
     public function close(InstructorActionRequest $request, TeachingClass $class): RedirectResponse
