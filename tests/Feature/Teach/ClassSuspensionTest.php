@@ -218,6 +218,13 @@ class ClassSuspensionTest extends TestCase
             'schedule_type' => 'daily',
             'starts_on' => '2026-12-01',
             'price' => '100',
+            'ends_on' => '2027-01-31',
+            'start_time' => '17:00',
+            'end_time' => '19:00',
+            'seats' => '0',
+            'learn' => ['الجبر'],
+            'requirements' => ['قلم ودفتر'],
+            'audience' => ['طلاب الثانوي'],
             ...$overrides,
         ];
     }

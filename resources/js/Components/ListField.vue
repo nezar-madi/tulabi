@@ -1,6 +1,9 @@
 <template>
     <div class="list-field">
-        <p class="form-plain-field__label font-weight-medium mb-1">{{ label }}</p>
+        <p class="form-plain-field__label font-weight-medium mb-1">
+            <span class="me-1">{{ label }}</span>
+            <span v-if="required" class="text-error">*</span>
+        </p>
         <p v-if="hint" class="teach-hint mt-0">{{ hint }}</p>
 
         <ul v-if="modelValue.length" class="list-field__items">
@@ -54,6 +57,7 @@ const props = defineProps({
     modelValue: { type: Array, default: () => [] },
     name: { type: String, required: true },
     label: { type: String, required: true },
+    required: { type: Boolean, default: false },
     hint: { type: String, default: '' },
     placeholder: { type: String, default: '' },
     addLabel: { type: String, default: '' },

@@ -19,6 +19,7 @@
             v-model="form[list]"
             :name="list"
             :label="$t(`content.${list}`)"
+            :required="listsRequired"
             :hint="$t(`content.${list}_hint`)"
             :placeholder="$t(`content.${list}_placeholder`)"
             :add-label="$t('content.add_item')"
@@ -51,6 +52,8 @@ import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 defineProps({
     form: { type: Object, required: true },
     descriptionLabel: { type: String, required: true },
+    // A class needs at least one item in each list; a program may leave them empty.
+    listsRequired: { type: Boolean, default: false },
 });
 
 const lists = ['learn', 'requirements', 'audience'];

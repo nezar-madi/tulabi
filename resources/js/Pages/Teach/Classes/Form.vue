@@ -185,7 +185,7 @@
                         </div>
                     </header>
                     <div class="cf-section__body">
-                        <CourseContentFields :form="form" :description-label="$t('teach.classes.fields.description')" />
+                        <CourseContentFields :form="form" :description-label="$t('teach.classes.fields.description')" lists-required />
                     </div>
                 </section>
 
@@ -316,6 +316,7 @@
                             <FormPlainDatePicker
                                 v-model="form.ends_on"
                                 :label="$t('teach.classes.fields.ends_on')"
+                                required
                                 :min="form.starts_on || undefined"
                                 :disabled="readOnly"
                                 :error-messages="form.errors.ends_on"
@@ -371,12 +372,14 @@
                             <FormPlainTimePicker
                                 v-model="form.start_time"
                                 :label="$t('teach.classes.fields.start_time')"
+                                required
                                 :disabled="readOnly"
                                 :error-messages="form.errors.start_time"
                             />
                             <FormPlainTimePicker
                                 v-model="form.end_time"
                                 :label="$t('teach.classes.fields.end_time')"
+                                required
                                 :min="form.start_time || undefined"
                                 :disabled="readOnly"
                                 :error-messages="form.errors.end_time"
@@ -406,8 +409,9 @@
                             />
                             <FormPlainTextField
                                 v-model="form.seats"
-                                :label="`${$t('teach.classes.fields.seats')} (${$t('common.optional')})`"
+                                :label="$t('teach.classes.fields.seats')"
                                 :placeholder="$t('teach.classes.fields.seats_hint')"
+                                required
                                 :field-attrs="{ name: 'seats', inputmode: 'numeric', dir: 'ltr' }"
                                 :error-messages="form.errors.seats"
                             />
@@ -699,8 +703,9 @@ const form = useForm({
     manual_dates: [...(cls.value?.manual_dates || [])],
     start_time: cls.value?.start_time || '',
     end_time: cls.value?.end_time || '',
-    price: cls.value?.price ?? '',
-    seats: cls.value?.seats ?? '',
+    // 0 = free, and 0 seats = no limit.
+    price: cls.value?.price ?? '0',
+    seats: cls.value?.seats ?? '0',
 });
 
 // How the class is made: new, or from a program (its template). Going back to «جديد» lets go of the program.
@@ -843,7 +848,7 @@ function save() {
     const send = (data) => {
         const { image, ...rest } = data;
 
-        return { ...rest, ...(image ? { image } : {}) };
+        return { ...rest, from_program: mode.value === 'program', ...(image ? { image } : {}) };
     };
     // The saved image comes back with the page, so the chosen file is let go.
     const saved = () => {
@@ -869,7 +874,7 @@ function save() {
 // A new class is filled one step at a time («التالي» checks the step first); an existing one
 // opens any step as a tab. Each field belongs to one step, so a server error opens its step.
 const steps = [
-    { key: 'class', sections: ['cf-basics'], fields: ['program_id', 'title'] },
+    { key: 'class', sections: ['cf-basics'], fields: ['from_program', 'program_id', 'title'] },
     { key: 'content', sections: ['cf-content', 'cf-image'], fields: ['description', 'learn', 'requirements', 'audience', 'promo_video_url', 'image', 'remove_image'] },
     {
         key: 'when',
@@ -903,14 +908,22 @@ function missing(index) {
         if (!form.description.trim()) {
             need.description = required;
         }
+
+        ['learn', 'requirements', 'audience'].forEach((list) => {
+            if (!form[list].some((item) => item.trim() !== '')) {
+                need[list] = t('teach.classes.wizard.pick_item');
+            }
+        });
     } else if (index === 2) {
         if (form.type === 'in_person' && !form.map_url.trim()) {
             need.map_url = required;
         }
 
-        if (!form.starts_on) {
-            need.starts_on = required;
-        }
+        ['starts_on', 'ends_on', 'start_time', 'end_time'].forEach((field) => {
+            if (!form[field]) {
+                need[field] = required;
+            }
+        });
 
         if (form.schedule_type === 'weekly' && form.days.length === 0) {
             need.days = t('teach.classes.wizard.pick_days');
@@ -920,9 +933,11 @@ function missing(index) {
             need.manual_dates = t('teach.classes.wizard.pick_dates');
         }
     } else if (index === 3) {
-        if (form.price === '' || form.price === null) {
-            need.price = required;
-        }
+        ['price', 'seats'].forEach((field) => {
+            if (String(form[field] ?? '').trim() === '') {
+                need[field] = required;
+            }
+        });
 
         if (form.auto_suspend && (form.min_seats === '' || form.min_seats === null)) {
             need.min_seats = required;
@@ -1003,7 +1018,7 @@ const summary = computed(() => {
         { key: 'period', step: 2, value: form.starts_on ? formatPeriod(form, t) : '' },
         { key: 'schedule', step: 2, value: formatSchedule(form, t) },
         { key: 'price', step: 3, value: form.price === '' || form.price === null ? '' : previewPrice.value },
-        { key: 'seats', step: 3, value: form.seats ? String(form.seats) : t('teach.classes.wizard.no_limit') },
+        { key: 'seats', step: 3, value: Number(form.seats) > 0 ? String(form.seats) : t('teach.classes.wizard.no_limit') },
     ];
 
     return rows.map((row) => ({ ...row, empty: row.empty || row.value === '', value: row.value || '—' }));

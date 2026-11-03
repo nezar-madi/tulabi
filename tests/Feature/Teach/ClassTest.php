@@ -23,7 +23,7 @@ class ClassTest extends TestCase
             'description' => "<script>alert(1)</script>\r\nسطر ثان\r\n\r\n\r\n\r\nفقرة",
             'learn' => ['  حل المعادلات  ', '', 'التفاضل', '   '],
             'requirements' => ['جبر أساسي'],
-            'audience' => [],
+            'audience' => ['', 'طلاب الثانوي'],
             'status' => TeachingClass::STATUS_PUBLISHED,
             'instructor_id' => 999,
             'currency_code' => 'USD',
@@ -41,7 +41,7 @@ class ClassTest extends TestCase
         $this->assertSame("<script>alert(1)</script>\nسطر ثان\n\nفقرة", $class->description);
         $this->assertSame(['حل المعادلات', 'التفاضل'], $class->learn);
         $this->assertSame(['جبر أساسي'], $class->requirements);
-        $this->assertNull($class->audience);
+        $this->assertSame(['طلاب الثانوي'], $class->audience);
         $this->assertSame('2026-12-01', $class->starts_on->toDateString());
     }
 
@@ -69,6 +69,37 @@ class ClassTest extends TestCase
         $this->assertSame(0, TeachingClass::query()->count());
     }
 
+    public function test_the_required_fields_of_a_class(): void
+    {
+        $this->actingAs($this->instructor());
+
+        // Each list needs one real item (blank items are dropped first).
+        foreach (['learn', 'requirements', 'audience'] as $list) {
+            $this->post('/teach/classes', $this->data([$list => []]))
+                ->assertSessionHasErrors([$list => __('classes.list_required')]);
+            $this->post('/teach/classes', $this->data([$list => ['  ', '']]))
+                ->assertSessionHasErrors([$list => __('classes.list_required')]);
+        }
+
+        foreach (['ends_on', 'start_time', 'end_time', 'seats', 'price'] as $field) {
+            $this->post('/teach/classes', $this->data([$field => '']))->assertSessionHasErrors($field);
+        }
+
+        $this->post('/teach/classes', $this->data(['seats' => '-1']))->assertSessionHasErrors('seats');
+        // «من برنامج تدريبي» without a program.
+        $this->post('/teach/classes', $this->data(['from_program' => '1', 'program_id' => '']))
+            ->assertSessionHasErrors('program_id');
+        $this->assertSame(0, TeachingClass::query()->count());
+
+        // 0 seats = no limit, 0 = free; the video and the written place stay optional.
+        $this->post('/teach/classes', $this->data([
+            'from_program' => '0', 'seats' => '0', 'price' => '0', 'promo_video_url' => '', 'location' => '',
+        ]))->assertSessionHasNoErrors();
+        $class = TeachingClass::query()->sole();
+        $this->assertNull($class->seats);
+        $this->assertSame('0.000', (string) $class->price);
+    }
+
     public function test_daily_weekly_and_manual_schedules(): void
     {
         $this->actingAs($this->instructor());
@@ -88,7 +119,7 @@ class ClassTest extends TestCase
         $this->assertSame([1, 6], $weekly->days);
         $this->assertNull($weekly->manual_dates);
 
-        // Manual needs dates inside the period; they are sorted and de-duplicated; the end follows the last date.
+        // Manual needs dates inside the period; they are sorted and de-duplicated.
         $this->post('/teach/classes', $this->data(['schedule_type' => 'manual', 'manual_dates' => []]))->assertSessionHasErrors('manual_dates');
         $this->post('/teach/classes', $this->data(['schedule_type' => 'manual', 'manual_dates' => ['2026-11-30']]))
             ->assertSessionHasErrors(['manual_dates' => __('classes.manual_dates_outside_range')]);
@@ -99,13 +130,12 @@ class ClassTest extends TestCase
         $this->post('/teach/classes', $this->data([
             'schedule_type' => 'manual',
             'days' => [1],
-            'ends_on' => '',
             'manual_dates' => ['2026-12-20', '2026-12-05', '2026-12-05'],
         ]))->assertSessionHasNoErrors();
         $manual = TeachingClass::query()->latest('id')->first();
         $this->assertSame(['2026-12-05', '2026-12-20'], $manual->manual_dates);
         $this->assertNull($manual->days);
-        $this->assertSame('2026-12-20', $manual->ends_on->toDateString());
+        $this->assertSame('2027-01-31', $manual->ends_on->toDateString());
 
         $this->post('/teach/classes', $this->data(['schedule_type' => 'weekend']))->assertSessionHasErrors('schedule_type');
         $this->post('/teach/classes', $this->data(['schedule_type' => '']))->assertSessionHasErrors('schedule_type');
@@ -457,6 +487,9 @@ class ClassTest extends TestCase
             'end_time' => '19:00',
             'price' => '300',
             'seats' => '20',
+            'learn' => ['الجبر'],
+            'requirements' => ['قلم ودفتر'],
+            'audience' => ['طلاب الثانوي'],
             ...$overrides,
         ];
     }

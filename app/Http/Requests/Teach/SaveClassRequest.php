@@ -32,7 +32,7 @@ class SaveClassRequest extends InstructorRequest
                 fn ($date) => is_string($date) ? trim($date) : '',
                 (array) $this->input('manual_dates', []),
             )))),
-            'seats' => $this->filled('seats') ? $this->input('seats') : null,
+            'from_program' => $this->boolean('from_program'),
             'description' => CourseContent::cleanDescription($this->input('description')),
             'learn' => CourseContent::cleanList($this->input('learn', [])),
             'requirements' => CourseContent::cleanList($this->input('requirements', [])),
@@ -57,8 +57,14 @@ class SaveClassRequest extends InstructorRequest
 
         return [
             ...CourseContent::rules(),
-            // Optional: the course belongs to one of the instructor's own programs.
+            // A class needs at least one item in each list (a program may leave them empty).
+            ...collect(CourseContent::LISTS)->mapWithKeys(fn (string $list) => [
+                $list => ['required', 'array', 'min:1', 'max:'.CourseContent::ITEMS_MAX],
+            ])->all(),
+            // «من برنامج تدريبي» needs the program; «فصل جديد» may have none.
+            'from_program' => ['boolean'],
             'program_id' => [
+                Rule::requiredIf($this->boolean('from_program')),
                 'nullable', 'integer',
                 Rule::exists('programs', 'id')->where('instructor_id', $this->instructor()?->getKey()),
             ],
@@ -69,7 +75,8 @@ class SaveClassRequest extends InstructorRequest
             'map_url' => [$inPerson ? 'required' : 'nullable', 'string', 'max:500', new GoogleMapsUrl],
             'meeting_url' => ['nullable', 'string', 'max:500', 'url:https,http'],
             'starts_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:2020-01-01', 'before:2100-01-01'],
-            'ends_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:starts_on', 'before:2100-01-01'],
+            // As in rqmana: both dates and both times are required, the end not before the start.
+            'ends_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:starts_on', 'before:2100-01-01'],
             // Daily needs no days; weekly needs at least one weekday; manual needs at least one date.
             'schedule_type' => ['required', Rule::in([
                 TeachingClass::SCHEDULE_DAILY, TeachingClass::SCHEDULE_WEEKLY, TeachingClass::SCHEDULE_MANUAL,
@@ -78,10 +85,12 @@ class SaveClassRequest extends InstructorRequest
             'days.*' => ['integer', 'between:0,6'],
             'manual_dates' => ['array', 'max:200', Rule::requiredIf($this->input('schedule_type') === TeachingClass::SCHEDULE_MANUAL)],
             'manual_dates.*' => ['date_format:Y-m-d', 'after_or_equal:2020-01-01', 'before:2100-01-01'],
-            'start_time' => ['nullable', 'date_format:H:i'],
-            'end_time' => ['nullable', 'date_format:H:i', 'required_with:start_time'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i'],
+            // 0 = free.
             'price' => ['required', 'numeric', 'min:0', 'max:1000000', 'decimal:0,3'],
-            'seats' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            // 0 = no limit (saved as null).
+            'seats' => ['required', 'integer', 'min:0', 'max:10000'],
             // A promotional video, embedded on the class page (YouTube, Vimeo or Dailymotion).
             'promo_video_url' => ['nullable', 'string', 'max:500', new EmbeddableVideoUrl],
             // «تعليق البدء تلقائيًا»: needs a minimum, which cannot be more than the seats.
@@ -89,7 +98,7 @@ class SaveClassRequest extends InstructorRequest
             'min_seats' => [
                 Rule::requiredIf($this->boolean('auto_suspend')),
                 'nullable', 'integer', 'min:1', 'max:10000',
-                $this->filled('seats') ? 'lte:seats' : 'nullable',
+                (int) $this->input('seats') > 0 ? 'lte:seats' : 'nullable',
             ],
             'image' => [
                 'nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096',
@@ -98,6 +107,17 @@ class SaveClassRequest extends InstructorRequest
             'remove_image' => ['boolean'],
             'no_template_image' => ['boolean'],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return collect(CourseContent::LISTS)->flatMap(fn (string $list) => [
+            "{$list}.required" => __('classes.list_required'),
+            "{$list}.min" => __('classes.list_required'),
+        ])->all();
     }
 
     /**
@@ -207,7 +227,7 @@ class SaveClassRequest extends InstructorRequest
         $dates = $type === TeachingClass::SCHEDULE_MANUAL ? ($data['manual_dates'] ?? []) : [];
         sort($dates);
 
-        unset($data['image'], $data['remove_image'], $data['no_template_image']);
+        unset($data['image'], $data['remove_image'], $data['no_template_image'], $data['from_program']);
         $lists = CourseContent::listsFrom($data);
         $location = trim((string) ($data['location'] ?? ''));
 
@@ -224,8 +244,7 @@ class SaveClassRequest extends InstructorRequest
             'meeting_url' => $online ? (($data['meeting_url'] ?? null) ?: null) : null,
             'days' => $days === [] ? null : $days,
             'manual_dates' => $dates === [] ? null : $dates,
-            // Picked dates define the period's end when none was given.
-            'ends_on' => $data['ends_on'] ?? ($dates === [] ? null : end($dates)),
+            'seats' => (int) $data['seats'] > 0 ? (int) $data['seats'] : null,
         ];
     }
 }
