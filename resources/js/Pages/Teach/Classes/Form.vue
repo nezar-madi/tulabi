@@ -15,7 +15,7 @@
         <template v-if="cls" #actions>
             <div class="d-flex flex-wrap ga-2">
                 <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
-                    <v-btn class="text-none cf-intro__students" variant="tonal" prepend-icon="tabler:users">
+                    <v-btn class="text-none cf-intro__students" variant="text" prepend-icon="tabler:users">
                         {{ $t('teach.students.open') }}
                     </v-btn>
                 </Link>
@@ -40,7 +40,7 @@
                 <v-btn v-if="cls.status === 'closed'" class="text-none" variant="flat" color="primary" @click="act('publish')">
                     {{ $t('teach.classes.reopen') }}
                 </v-btn>
-                <v-btn v-if="cls.status === 'published'" class="text-none" variant="tonal" color="error" prepend-icon="tabler:lock" @click="act('close')">
+                <v-btn v-if="cls.status === 'published'" class="text-none" variant="text" color="error" prepend-icon="tabler:lock" @click="act('close')">
                     {{ $t('teach.classes.close') }}
                 </v-btn>
                 <v-menu v-if="cls.status !== 'canceled'" location="bottom end">

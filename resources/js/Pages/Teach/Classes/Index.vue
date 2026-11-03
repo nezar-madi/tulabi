@@ -14,93 +14,97 @@
         <Link :href="route('teach.profile.edit')">{{ $t('teach.nav.profile') }}</Link>
     </v-alert>
 
-    <div class="teach-tabs classes-tabs">
-        <button
-            v-for="tab in tabs"
-            :key="tab"
-            type="button"
-            class="teach-tabs__tab"
-            :class="{ 'teach-tabs__tab--active': filter === tab }"
-            @click="apply({ filter: tab })"
-        >
-            {{ $t(`teach.classes.filters.${tab}`) }}
-        </button>
+    <!-- Tabs, with the search on the same line. Filters live in the address, so a filtered list can be reloaded or shared. -->
+    <div class="cl-head">
+        <div class="teach-tabs classes-tabs">
+            <button
+                v-for="tab in tabs"
+                :key="tab"
+                type="button"
+                class="teach-tabs__tab"
+                :class="{ 'teach-tabs__tab--active': filter === tab }"
+                @click="apply({ filter: tab })"
+            >
+                {{ $t(`teach.classes.filters.${tab}`) }}
+            </button>
+        </div>
+
+        <div class="cl-search">
+            <v-icon icon="tabler:search" size="17" class="cl-search__icon" />
+            <input
+                v-model="search"
+                type="search"
+                class="cl-search__input"
+                :placeholder="$t('teach.classes.narrow.search')"
+                :aria-label="$t('teach.classes.narrow.search')"
+                @input="searchSoon(search)"
+            >
+        </div>
     </div>
 
-    <!-- Filters: they live in the address, so a filtered list can be reloaded or shared as it is -->
-    <div class="rq-card classes-filters">
-        <v-text-field
-            v-model="search"
-            :label="$t('teach.classes.narrow.search')"
-            prepend-inner-icon="tabler:search"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            clearable
-            class="classes-filters__search"
-            @update:model-value="searchSoon"
-        />
-        <v-select
-            :model-value="narrow.when || null"
-            :items="whenItems"
-            :label="$t('teach.classes.narrow.when')"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            @update:model-value="apply({ when: $event })"
-        />
-        <v-select
-            :model-value="narrow.price || null"
-            :items="priceItems"
-            :label="$t('teach.classes.narrow.price')"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            @update:model-value="apply({ price: $event })"
-        />
-        <v-select
-            :model-value="narrow.type || null"
-            :items="typeItems"
-            :label="$t('teach.classes.narrow.type')"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            @update:model-value="apply({ type: $event })"
-        />
-        <v-select
-            v-if="programs.length"
-            :model-value="narrow.program || null"
-            :items="programItems"
-            :label="$t('teach.classes.narrow.program')"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            @update:model-value="apply({ program: $event })"
-        />
-        <FormPlainDatePicker
-            :model-value="narrow.from || ''"
-            :placeholder="$t('teach.classes.narrow.from')"
-            :max="narrow.to || undefined"
-            class="classes-filters__date"
-            @update:model-value="apply({ from: $event })"
-        />
-        <FormPlainDatePicker
-            :model-value="narrow.to || ''"
-            :placeholder="$t('teach.classes.narrow.to')"
-            :min="narrow.from || undefined"
-            class="classes-filters__date"
-            @update:model-value="apply({ to: $event })"
-        />
-        <v-btn
-            v-if="filtering"
-            class="text-none classes-filters__clear"
-            variant="text"
-            color="primary"
-            prepend-icon="tabler:x"
-            @click="clearAll"
-        >
-            {{ $t('teach.classes.narrow.clear') }}
-        </v-btn>
+    <!-- Filter chips, then the number of classes found -->
+    <div class="cl-toolbar">
+        <div class="cl-chips">
+            <FilterChip
+                :label="$t('teach.classes.narrow.when')"
+                icon="tabler:hourglass"
+                :items="whenItems"
+                :model-value="narrow.when || null"
+                @update:model-value="apply({ when: $event })"
+            />
+            <FilterChip
+                :label="$t('teach.classes.narrow.dates')"
+                icon="tabler:calendar-event"
+                :display="datesText"
+            >
+                <div class="cl-dates">
+                    <FormPlainDatePicker
+                        :model-value="narrow.from || ''"
+                        :label="$t('teach.classes.narrow.from')"
+                        :max="narrow.to || undefined"
+                        @update:model-value="apply({ from: $event })"
+                    />
+                    <FormPlainDatePicker
+                        :model-value="narrow.to || ''"
+                        :label="$t('teach.classes.narrow.to')"
+                        :min="narrow.from || undefined"
+                        @update:model-value="apply({ to: $event })"
+                    />
+                    <button v-if="narrow.from || narrow.to" type="button" class="cl-link" @click="apply({ from: undefined, to: undefined })">
+                        {{ $t('teach.classes.narrow.clear_dates') }}
+                    </button>
+                </div>
+            </FilterChip>
+            <FilterChip
+                :label="$t('teach.classes.narrow.price')"
+                icon="tabler:cash"
+                :items="priceItems"
+                :model-value="narrow.price || null"
+                @update:model-value="apply({ price: $event })"
+            />
+            <FilterChip
+                :label="$t('teach.classes.narrow.type')"
+                icon="tabler:map-pin"
+                :items="typeItems"
+                :model-value="narrow.type || null"
+                @update:model-value="apply({ type: $event })"
+            />
+            <FilterChip
+                v-if="programs.length"
+                :label="$t('teach.classes.narrow.program')"
+                icon="tabler:layout-grid"
+                :items="programItems"
+                :model-value="narrow.program || null"
+                @update:model-value="apply({ program: $event })"
+            />
+
+            <button v-if="filtering" type="button" class="cl-link" @click="clearAll">
+                <v-icon icon="tabler:x" size="15" />
+                {{ $t('teach.classes.narrow.clear') }}
+            </button>
+        </div>
+
+        <span class="cl-count">{{ countText }}</span>
     </div>
 
     <p v-if="classes.data.length === 0" class="rq-card teach-empty">
@@ -122,7 +126,9 @@ import PageIntro from '@/Components/PageIntro.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import TeachClassCard from '@/Components/TeachClassCard.vue';
 import Pager from '@/Components/Pager.vue';
+import FilterChip from '@/Components/FilterChip.vue';
 import FormPlainDatePicker from '@/Components/formFields/FormPlainDatePicker.vue';
+import { formatDay } from '@/utils/classFormat';
 
 const props = defineProps({
     filter: { type: String, required: true },
@@ -140,15 +146,37 @@ const { t } = useI18n();
 const tabs = ['active', 'draft', 'canceled'];
 const KEYS = ['q', 'when', 'from', 'to', 'price', 'type', 'program'];
 
-const all = (key) => ({ title: t(`teach.classes.narrow.all_${key}`), value: null });
-const whenItems = computed(() => [all('when'), ...['upcoming', 'running', 'ended'].map((value) => ({ title: t(`teach.classes.narrow.when_${value}`), value }))]);
-const priceItems = computed(() => [all('price'), ...['paid', 'free'].map((value) => ({ title: t(`teach.classes.narrow.price_${value}`), value }))]);
-const typeItems = computed(() => [all('type'), ...['in_person', 'online'].map((value) => ({ title: t(`class.type.${value}`), value }))]);
+// Each chip lists its choices; picking the chosen one again clears it.
+const whenItems = computed(() => ['upcoming', 'running', 'ended'].map((value) => ({ title: t(`teach.classes.narrow.when_${value}`), value })));
+const priceItems = computed(() => ['paid', 'free'].map((value) => ({ title: t(`teach.classes.narrow.price_${value}`), value })));
+const typeItems = computed(() => ['in_person', 'online'].map((value) => ({ title: t(`class.type.${value}`), value })));
 const programItems = computed(() => [
-    all('program'),
     ...props.programs.map((program) => ({ title: program.name, value: String(program.id) })),
     { title: t('teach.classes.narrow.no_program'), value: 'none' },
 ]);
+
+// Arabic counting: لا فصول، فصل واحد، فصلان، 3-10 فصول، 11+ فصلًا.
+const countText = computed(() => {
+    const count = props.classes.total ?? 0;
+    const key = count <= 2 ? `count_${count}` : (count <= 10 ? 'count_few' : 'count_many');
+
+    return t(`teach.classes.narrow.${key}`, { count });
+});
+
+// "1 ديسمبر – 31 يناير", "من 1 ديسمبر" or "حتى 31 يناير".
+const datesText = computed(() => {
+    const { from, to } = props.narrow;
+
+    if (from && to) {
+        return `${formatDay(from)} – ${formatDay(to)}`;
+    }
+
+    if (from) {
+        return t('teach.classes.narrow.since', { date: formatDay(from) });
+    }
+
+    return to ? t('teach.classes.narrow.until', { date: formatDay(to) }) : '';
+});
 
 const filtering = computed(() => KEYS.some((key) => props.narrow[key]));
 
@@ -190,38 +218,125 @@ onBeforeUnmount(() => clearTimeout(timer));
     cursor: pointer;
 }
 
-.classes-filters {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+/* ---------- Tabs and search on one line, under it the chips and the count ---------- */
+.cl-head {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 10px 16px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--rq-line-soft);
+}
+
+.cl-head .teach-tabs {
+    flex: 1 1 auto;
+    margin-bottom: -1px;
+    border-bottom: 0;
+}
+
+.cl-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
     margin-bottom: var(--rq-space-5);
-    padding: 12px;
-    border-radius: var(--rq-radius-card);
 }
 
-.classes-filters__search {
-    grid-column: span 2;
+.cl-search {
+    position: relative;
+    flex: 0 1 280px;
+    min-width: 200px;
+    margin-bottom: 6px;
 }
 
-/* The date fields come without a label or messages, and as tall as the selects beside them. */
-.classes-filters__date :deep(.form-plain-field__label),
-.classes-filters__date :deep(.v-input__details) {
-    display: none;
+.cl-search__icon {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: 12px;
+    color: var(--rq-text-subtle);
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
-.classes-filters__date :deep(.v-field),
-.classes-filters__date :deep(.v-field__input) {
-    min-height: 48px;
+.cl-search__input {
+    width: 100%;
+    height: 36px;
+    padding-inline: 36px 14px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-surface);
+    font: inherit;
+    font-size: 14px;
+    color: var(--rq-text-body);
+    transition: border-color var(--rq-dur-fast) var(--rq-ease), box-shadow var(--rq-dur-fast) var(--rq-ease);
 }
 
-.classes-filters__clear {
-    justify-self: start;
+.cl-search__input::placeholder {
+    color: var(--rq-text-subtle);
+}
+
+.cl-search__input:hover {
+    border-color: var(--rq-line-strong);
+}
+
+.cl-search__input:focus {
+    outline: none;
+    border-color: var(--rq-action-primary);
+    box-shadow: var(--rq-focus-ring);
+}
+
+.cl-chips {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.cl-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    font-family: var(--rq-font-display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rq-text-link);
+    cursor: pointer;
+}
+
+.cl-link:hover {
+    background: var(--rq-surface-hover);
+}
+
+.cl-count {
+    margin-inline-start: auto;
+    font-size: 13px;
+    color: var(--rq-text-muted);
+    white-space: nowrap;
+}
+
+/* The dates chip's panel */
+.cl-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 260px;
+    padding: 8px 6px 4px;
+}
+
+.cl-dates .cl-link {
+    align-self: flex-start;
 }
 
 @media (max-width: 599.98px) {
-    .classes-filters {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .cl-search {
+        flex-basis: 100%;
+        margin-bottom: 12px;
     }
 }
 </style>
