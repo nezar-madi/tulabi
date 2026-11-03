@@ -45,17 +45,16 @@
 
     <v-alert v-if="form.errors.program" type="error" variant="tonal" class="mb-4" rounded="lg">{{ form.errors.program }}</v-alert>
 
-    <div class="cf pf">
+    <div class="cf">
         <form id="program-form" class="cf__main" @submit.prevent="submit">
             <!-- The steps: one at a time on a new program; tabs to open in any order on an existing one -->
-            <nav class="cf-steps pf-track" :class="{ 'cf-steps--tabs': item }" :style="{ '--cf-steps': steps.length }" :aria-label="$t('teach.programs.wizard.label')">
+            <nav class="cf-steps" :class="{ 'cf-steps--tabs': item }" :style="{ '--cf-steps': steps.length }" :aria-label="$t('teach.programs.wizard.label')">
                 <button
                     v-for="(entry, index) in steps"
                     :key="entry.key"
                     type="button"
                     class="cf-step"
                     :class="{
-                        'pf-track__passed': index <= step,
                         'cf-step--on': step === index,
                         'cf-step--done': stepDone(index),
                         'cf-step--error': stepHasErrors(index),
@@ -217,19 +216,13 @@
         <!-- Side panel: a live preview, the save button, and what is still missing -->
         <aside class="cf__side">
             <div class="cf-side">
-                <div class="cf-preview pf-cover">
-                    <div class="cf-preview__media pf-cover__media" :class="{ 'pf-cover__media--empty': !imagePreview }">
+                <div class="cf-preview">
+                    <div class="cf-preview__media">
                         <img v-if="imagePreview" :src="imagePreview" alt="">
-                        <span v-else class="pf-cover__mark"><v-icon icon="tabler:layout-grid" size="34" /></span>
-                        <span class="pf-cover__ribbon">
-                            <v-icon icon="tabler:layout-grid" size="13" />
-                            {{ $t('teach.programs.form.kicker') }}
-                        </span>
-                        <span v-if="form.is_featured" class="pf-cover__star" :title="$t('teach.programs.featured')">
-                            <v-icon icon="tabler:star" size="14" />
-                        </span>
+                        <v-icon v-else icon="tabler:photo" size="32" />
                     </div>
                     <div class="cf-preview__body">
+                        <span class="cf-preview__kicker">{{ $t('teach.programs.form.kicker') }}</span>
                         <strong class="cf-preview__title">{{ form.name || $t('teach.programs.form.untitled') }}</strong>
                         <span class="cf-preview__meta">
                             <v-icon :icon="visibility.icon" size="15" />
@@ -543,152 +536,6 @@ function destroy() {
 <style scoped src="../courseForm.css"></style>
 
 <style scoped>
-/* ---------- The programs' own design (same colors as the class form): a track for the steps, a cover for the preview ---------- */
-.pf {
-    --pf-accent: var(--rq-action-primary);
-    --pf-tint: var(--rq-icon-tile);
-}
-
-.pf .cf-section__num {
-    border-radius: 10px;
-    background: var(--pf-tint);
-    color: var(--pf-accent);
-}
-
-/* The step bar: circles on one line that fills up to the current step */
-.cf-steps.pf-track {
-    display: flex;
-    gap: 0;
-    padding: 18px 12px 12px;
-}
-
-.pf-track .cf-step {
-    flex: 1 1 0;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 6px;
-    background: none;
-    text-align: center;
-}
-
-.pf-track .cf-step:hover:not(:disabled) {
-    background: none;
-}
-
-.pf-track .cf-step:hover:not(:disabled) .cf-step__num {
-    border-color: var(--pf-accent);
-}
-
-.pf-track .cf-step__text {
-    align-items: center;
-}
-
-.pf-track .cf-step__num {
-    position: relative;
-    z-index: 1;
-    width: 34px;
-    height: 34px;
-}
-
-/* The line from the step before (inline-start side) to this one */
-.pf-track .cf-step + .cf-step::before {
-    position: absolute;
-    top: 16px;
-    inset-inline-end: 50%;
-    width: 100%;
-    height: 3px;
-    border-radius: 3px;
-    background: var(--rq-line);
-    content: "";
-    transition: background-color var(--rq-dur) var(--rq-ease);
-}
-
-.pf-track .cf-step.pf-track__passed + .cf-step.pf-track__passed::before {
-    background: var(--pf-accent);
-}
-
-.pf-track .cf-step--on {
-    background: none;
-}
-
-.pf-track .cf-step--on .cf-step__num {
-    border-color: var(--pf-accent);
-    background: var(--pf-accent);
-    color: #fff;
-    box-shadow: 0 0 0 5px var(--pf-tint);
-}
-
-.pf-track .cf-step--done .cf-step__num {
-    border-color: var(--rq-success);
-    background: var(--rq-success);
-    color: #fff;
-}
-
-.pf-track .cf-step--on .cf-step__text strong {
-    color: var(--pf-accent);
-}
-
-.pf-track .cf-step--on::after {
-    display: none;
-}
-
-@media (max-width: 759.98px) {
-    .cf-steps.pf-track {
-        display: flex;
-    }
-}
-
-/* The preview: a program cover */
-.pf-cover__media {
-    position: relative;
-}
-
-.pf-cover__media--empty {
-    background:
-        radial-gradient(circle at 80% 20%, rgb(255 255 255 / 0.25), transparent 45%),
-        linear-gradient(135deg, var(--pf-accent), color-mix(in srgb, var(--pf-accent) 55%, #0b1f44));
-}
-
-.pf-cover__mark {
-    display: grid;
-    place-items: center;
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
-    background: rgb(255 255 255 / 0.16);
-    color: #fff;
-}
-
-.pf-cover__ribbon {
-    position: absolute;
-    top: 10px;
-    inset-inline-start: 10px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    border-radius: var(--rq-radius-pill);
-    background: rgb(255 255 255 / 0.92);
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--pf-accent);
-    box-shadow: 0 4px 12px -6px rgb(15 23 42 / 0.4);
-}
-
-.pf-cover__star {
-    position: absolute;
-    top: 10px;
-    inset-inline-end: 10px;
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--rq-accent-amber);
-    color: #fff;
-}
-
-
 .pf-options {
     display: flex;
     flex-direction: column;
