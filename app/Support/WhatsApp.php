@@ -18,4 +18,10 @@ class WhatsApp
 
         return 'https://wa.me/'.$number.($text !== '' ? '?text='.rawurlencode($text) : '');
     }
+
+    /** No number: WhatsApp asks whom to send it to (a contact or the class's group). */
+    public static function share(string $text): string
+    {
+        return 'https://wa.me/?text='.rawurlencode($text);
+    }
 }

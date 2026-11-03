@@ -11,6 +11,19 @@
         ]"
     >
         <template #actions>
+        <v-btn
+            v-if="item.meeting_share_url && accepted.length"
+            class="rq-btn me-2"
+            variant="tonal"
+            color="success"
+            size="small"
+            :href="item.meeting_share_url"
+            target="_blank"
+            rel="noopener"
+        >
+            <v-icon icon="tabler:brand-whatsapp" start />
+            {{ $t('teach.classes.meeting.share') }}
+        </v-btn>
         <span class="rq-badge" :class="item.seats && accepted.length > item.seats ? 'rq-badge--warning' : 'rq-badge--success'">
             {{ item.seats
                 ? $t('teach.students.of_seats', { accepted: accepted.length, seats: item.seats })

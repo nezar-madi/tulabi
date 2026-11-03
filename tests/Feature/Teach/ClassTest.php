@@ -276,6 +276,39 @@ class ClassTest extends TestCase
         $this->assertNull($class->meeting_url);
     }
 
+    public function test_a_changed_meeting_link_is_marked_and_offered_on_whatsapp(): void
+    {
+        $this->actingAs($this->instructor());
+        $this->post('/teach/classes', $this->data(['type' => 'online', 'meeting_url' => 'https://meet.google.com/abc']));
+        $class = TeachingClass::query()->sole();
+        // A new class has no students to tell yet.
+        $this->assertNull($class->meeting_url_changed_at);
+
+        // Saving without touching the link marks nothing.
+        $this->put("/teach/classes/{$class->id}", $this->data(['type' => 'online', 'meeting_url' => 'https://meet.google.com/abc', 'title' => 'عنوان آخر']))
+            ->assertSessionHas('meetingChanged', false);
+        $this->assertNull($class->fresh()->meeting_url_changed_at);
+
+        $this->put("/teach/classes/{$class->id}", $this->data(['type' => 'online', 'meeting_url' => 'https://zoom.us/j/123']))
+            ->assertSessionHas('meetingChanged', true);
+        $class->refresh();
+        $this->assertNotNull($class->meeting_url_changed_at);
+        $this->assertTrue($class->meetingUrlIsNew());
+
+        $this->get("/teach/classes/{$class->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('meetingShareUrl', fn (string $url) => str_starts_with($url, 'https://wa.me/?text=')
+                    && str_contains(rawurldecode($url), 'https://zoom.us/j/123')));
+
+        $this->travel(TeachingClass::MEETING_URL_NEW_DAYS + 1)->days();
+        $this->assertFalse($class->fresh()->meetingUrlIsNew());
+
+        // An in-person class has no link to share.
+        $this->put("/teach/classes/{$class->id}", $this->data());
+        $this->get("/teach/classes/{$class->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page->where('meetingShareUrl', null));
+    }
+
     public function test_publishing_needs_the_page_address(): void
     {
         $user = $this->instructor(slug: null);

@@ -28,7 +28,13 @@
 
                 <!-- The meeting link: only an accepted student of a running online class gets it from the server. -->
                 <section v-if="enrollment.status === 'accepted' && cls.type === 'online'" class="detail__meeting">
-                    <h2 class="detail__subtitle">{{ $t('student.classes.meeting') }}</h2>
+                    <h2 class="detail__subtitle">
+                        {{ $t('student.classes.meeting') }}
+                        <span v-if="cls.meeting_url_new" class="detail__new">{{ $t('student.classes.meeting_updated') }}</span>
+                    </h2>
+                    <p v-if="cls.meeting_url_new" class="detail__muted mb-3">
+                        {{ $t('student.classes.meeting_updated_on', { date: formatDate(cls.meeting_url_changed_at) }) }}
+                    </p>
                     <v-btn
                         v-if="cls.meeting_url"
                         class="rq-btn rq-btn--primary"
@@ -190,6 +196,19 @@ function withdraw(question) {
     font-family: var(--rq-font-display);
     font-size: var(--rq-text-card-title);
     color: var(--rq-text-heading);
+}
+
+.detail__new {
+    display: inline-block;
+    margin-inline-start: 8px;
+    padding: 2px 10px;
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-success-tint);
+    font-family: var(--rq-font-body, inherit);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rq-success);
+    vertical-align: middle;
 }
 
 .detail__muted {

@@ -29,6 +29,10 @@ class EnrollmentPresenter
             'class' => [
                 ...ClassPresenter::forPublic($class),
                 'meeting_url' => $enrollment->isActiveMember() ? $class->meeting_url : null,
+                'meeting_url_new' => $enrollment->isActiveMember() && $class->meetingUrlIsNew(),
+                'meeting_url_changed_at' => $enrollment->isActiveMember() && $class->meetingUrlIsNew()
+                    ? $class->meeting_url_changed_at->toIso8601String()
+                    : null,
                 'cancel_reason' => $class->isCanceled() ? $class->cancel_reason : null,
                 'url' => $instructor->isPublic() && $class->isPubliclyVisible()
                     ? route('classes.show', ['slug' => $instructor->slug, 'class' => $class->id])

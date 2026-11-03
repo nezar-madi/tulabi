@@ -127,11 +127,16 @@ class JoinClassTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('enrollment.class.meeting_url', null))
             ->assertDontSee('meet.google.com/xyz', false);
 
+        $class->forceFill(['meeting_url_changed_at' => now()])->save();
+        $this->get("/account/classes/{$enrollment->id}")
+            ->assertInertia(fn (Assert $page) => $page->where('enrollment.class.meeting_url_new', false));
+
         $enrollment->forceFill(['status' => Enrollment::STATUS_ACCEPTED, 'fee' => '300'])->save();
         $this->get("/account/classes/{$enrollment->id}")
             ->assertInertia(fn (Assert $page) => $page
                 ->where('enrollment.status', Enrollment::STATUS_ACCEPTED)
-                ->where('enrollment.class.meeting_url', 'https://meet.google.com/xyz'));
+                ->where('enrollment.class.meeting_url', 'https://meet.google.com/xyz')
+                ->where('enrollment.class.meeting_url_new', true));
 
         // A canceled class: the place shows «ملغى» and the link is gone.
         $class->forceFill(['status' => TeachingClass::STATUS_CANCELED])->save();

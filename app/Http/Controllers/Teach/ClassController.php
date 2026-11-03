@@ -123,6 +123,8 @@ class ClassController extends Controller
             'currency' => $class->currency_code,
             'programs' => $this->programOptions($this->instructor($request), $class->program_id),
             'today' => TulabiClock::today(),
+            'meetingShareUrl' => ClassPresenter::meetingShareUrl($class),
+            'meetingChanged' => (bool) $request->session()->get('meetingChanged'),
             'publicUrl' => $class->isPubliclyVisible() || $class->status === TeachingClass::STATUS_DRAFT
                 ? $this->publicUrl($class)
                 : null,
@@ -134,7 +136,15 @@ class ClassController extends Controller
         $class = $this->ownClass($request, $class);
         $jpeg = $this->renderImage($request);
 
-        $class->fill($request->classData())->save();
+        $class->fill($request->classData());
+        // A new meeting link is marked for the students and offered to the instructor to send on WhatsApp.
+        $meetingChanged = $class->isDirty('meeting_url') && $class->meeting_url !== null;
+
+        if ($meetingChanged) {
+            $class->forceFill(['meeting_url_changed_at' => now()]);
+        }
+
+        $class->save();
 
         if ($jpeg !== null) {
             $this->images->attach($class, $jpeg);
@@ -142,7 +152,7 @@ class ClassController extends Controller
             $this->images->delete($class);
         }
 
-        return back()->with('status', __('classes.saved'));
+        return back()->with('status', __('classes.saved'))->with('meetingChanged', $meetingChanged);
     }
 
     public function publish(InstructorActionRequest $request, TeachingClass $class): RedirectResponse

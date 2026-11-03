@@ -75,6 +75,7 @@ class EnrollmentController extends Controller
                 'status' => $class->status,
                 'seats' => $class->seats,
                 'price' => ClassPresenter::forPublic($class)['price'],
+                'meeting_share_url' => ClassPresenter::meetingShareUrl($class),
             ],
             'enrollments' => $enrollments,
             'resetLink' => $request->session()->get('resetLink'),

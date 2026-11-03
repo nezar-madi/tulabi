@@ -291,6 +291,23 @@
                                 :error-messages="form.errors.meeting_url"
                             />
                             <p class="teach-hint mt-1">{{ $t('teach.classes.fields.meeting_url_hint') }}</p>
+
+                            <!-- The saved link, sent from the instructor's own WhatsApp (to the class group or a student). -->
+                            <div v-if="meetingShareUrl" class="cf-share" :class="{ 'cf-share--new': meetingChanged }">
+                                <p v-if="meetingChanged" class="cf-share__text">{{ $t('teach.classes.meeting.changed') }}</p>
+                                <v-btn
+                                    class="rq-btn"
+                                    :variant="meetingChanged ? 'flat' : 'tonal'"
+                                    color="success"
+                                    size="small"
+                                    :href="meetingShareUrl"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    <v-icon icon="tabler:brand-whatsapp" start />
+                                    {{ $t('teach.classes.meeting.share') }}
+                                </v-btn>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -667,6 +684,9 @@ const props = defineProps({
     // The programs (course templates) a course may be put in: [{ id, name, description, image_url }].
     programs: { type: Array, default: () => [] },
     publicUrl: { type: String, default: null },
+    // wa.me message with the saved meeting link (online class), and whether this save changed it.
+    meetingShareUrl: { type: String, default: null },
+    meetingChanged: { type: Boolean, default: false },
     // A program chosen on the way in (a new class from this program).
     selectedProgram: { type: Number, default: null },
     // Libya's today, the earliest date a suspended class may restart on.
@@ -1293,5 +1313,23 @@ function cancelClass() {
         grid-row: 1;
         grid-column: 2;
     }
+}
+
+.cf-share {
+    margin-top: 12px;
+}
+
+.cf-share--new {
+    padding: 12px 14px;
+    border: 1px solid var(--rq-success);
+    border-radius: var(--rq-radius-md, 12px);
+    background: var(--rq-success-tint);
+}
+
+.cf-share__text {
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--rq-text-heading);
 }
 </style>

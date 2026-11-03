@@ -64,6 +64,19 @@ class ClassPresenter
         ];
     }
 
+    /**
+     * A WhatsApp message with the meeting link, for the instructor to send to their students
+     * (an online class with a link only).
+     */
+    public static function meetingShareUrl(TeachingClass $class): ?string
+    {
+        if ($class->type !== TeachingClass::TYPE_ONLINE || $class->meeting_url === null || $class->isCanceled()) {
+            return null;
+        }
+
+        return WhatsApp::share(__('classes.meeting_whatsapp', ['class' => $class->title, 'url' => $class->meeting_url]));
+    }
+
     /** "17:00:00" from the database becomes "17:00". */
     private static function time(?string $value): ?string
     {

@@ -53,6 +53,9 @@ class TeachingClass extends Model
     /** Folder of the promotional images on the public disk (App\Support\ClassImage). */
     public const IMAGE_DIRECTORY = 'class-images';
 
+    /** Days a changed meeting link is marked «تم التحديث» for the students. */
+    public const MEETING_URL_NEW_DAYS = 7;
+
     protected $table = 'classes';
 
     protected $fillable = [
@@ -97,7 +100,15 @@ class TeachingClass extends Model
             'seats' => 'integer',
             'published_at' => 'datetime',
             'canceled_at' => 'datetime',
+            'meeting_url_changed_at' => 'datetime',
         ];
+    }
+
+    /** The meeting link was changed in the last few days. */
+    public function meetingUrlIsNew(): bool
+    {
+        return $this->meeting_url !== null && $this->meeting_url_changed_at !== null
+            && $this->meeting_url_changed_at->gt(now()->subDays(self::MEETING_URL_NEW_DAYS));
     }
 
     /** A path on the current host (php artisan storage:link), so it works on any domain. */
