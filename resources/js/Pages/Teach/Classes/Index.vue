@@ -107,9 +107,32 @@
         <span class="cl-count">{{ countText }}</span>
     </div>
 
-    <p v-if="classes.data.length === 0" class="rq-card teach-empty">
-        {{ filtering ? $t('teach.classes.narrow.empty') : $t('teach.classes.empty') }}
-    </p>
+    <!-- Empty: what is missing depends on the tab, or on the filters in use -->
+    <EmptyState
+        v-if="classes.data.length === 0"
+        :icon="emptyState.icon"
+        :tone="emptyState.tone"
+        :title="emptyState.title"
+        :text="emptyState.text"
+    >
+        <v-btn v-if="filtering" class="text-none" variant="flat" color="primary" prepend-icon="tabler:x" @click="clearAll">
+            {{ $t('teach.classes.narrow.clear') }}
+        </v-btn>
+        <template v-else-if="filter !== 'canceled'">
+            <v-btn class="text-none" variant="flat" color="primary" prepend-icon="tabler:plus" @click="router.visit(route('teach.classes.create'))">
+                {{ $t('teach.classes.new') }}
+            </v-btn>
+            <v-btn
+                v-if="filter === 'active' && draftCount > 0"
+                class="text-none"
+                variant="text"
+                color="primary"
+                @click="apply({ filter: 'draft' })"
+            >
+                {{ $t('teach.classes.empty_state.see_drafts', { count: draftCount }) }}
+            </v-btn>
+        </template>
+    </EmptyState>
 
     <div class="class-grid">
         <TeachClassCard v-for="cls in classes.data" :key="cls.id" :cls="cls" :slug="slug" :today="today" />
@@ -126,6 +149,7 @@ import PageIntro from '@/Components/PageIntro.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import TeachClassCard from '@/Components/TeachClassCard.vue';
 import Pager from '@/Components/Pager.vue';
+import EmptyState from '@/Components/EmptyState.vue';
 import FilterChip from '@/Components/FilterChip.vue';
 import FormPlainDatePicker from '@/Components/formFields/FormPlainDatePicker.vue';
 import { formatDay } from '@/utils/classFormat';
@@ -135,6 +159,8 @@ const props = defineProps({
     // The filters in use: q, when, from, to, price, type, program.
     narrow: { type: Object, default: () => ({}) },
     programs: { type: Array, default: () => [] },
+    // Drafts waiting, offered from an empty «المنشورة» tab.
+    draftCount: { type: Number, default: 0 },
     classes: { type: Object, required: true },
     hasSlug: { type: Boolean, default: false },
     slug: { type: String, default: null },
@@ -154,6 +180,22 @@ const programItems = computed(() => [
     ...props.programs.map((program) => ({ title: program.name, value: String(program.id) })),
     { title: t('teach.classes.narrow.no_program'), value: 'none' },
 ]);
+
+const emptyState = computed(() => {
+    if (filtering.value) {
+        return { icon: 'tabler:search', tone: 'neutral', title: t('teach.classes.narrow.empty'), text: t('teach.classes.empty_state.filtered') };
+    }
+
+    const icon = { active: 'tabler:school', draft: 'tabler:pencil', canceled: 'tabler:ban' }[props.filter];
+    const tone = { active: 'primary', draft: 'violet', canceled: 'neutral' }[props.filter];
+
+    return {
+        icon,
+        tone,
+        title: t(`teach.classes.empty_state.${props.filter}_title`),
+        text: t(`teach.classes.empty_state.${props.filter}_text`),
+    };
+});
 
 // Arabic counting: لا فصول، فصل واحد، فصلان، 3-10 فصول، 11+ فصلًا.
 const countText = computed(() => {

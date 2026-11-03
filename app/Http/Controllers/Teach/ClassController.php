@@ -101,6 +101,7 @@ class ClassController extends Controller
             'filter' => $filter,
             'narrow' => (object) $narrow,
             'programs' => $instructor->programs()->orderBy('name')->get(['id', 'name']),
+            'draftCount' => $instructor->classes()->where('status', TeachingClass::STATUS_DRAFT)->count(),
             'classes' => $classes,
             'hasSlug' => $instructor->slug !== null,
             'slug' => $instructor->slug,
