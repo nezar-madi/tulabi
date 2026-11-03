@@ -45,36 +45,102 @@
 
     <v-alert v-if="form.errors.program" type="error" variant="tonal" class="mb-4" rounded="lg">{{ form.errors.program }}</v-alert>
 
-    <div class="cf">
-        <form id="program-form" class="cf__main" @submit.prevent="submit">
-            <!-- The steps: one at a time on a new program; tabs to open in any order on an existing one -->
-            <nav class="cf-steps" :class="{ 'cf-steps--tabs': item }" :style="{ '--cf-steps': steps.length }" :aria-label="$t('teach.programs.wizard.label')">
-                <button
-                    v-for="(entry, index) in steps"
-                    :key="entry.key"
-                    type="button"
-                    class="cf-step"
-                    :class="{
-                        'cf-step--on': step === index,
-                        'cf-step--done': stepDone(index),
-                        'cf-step--error': stepHasErrors(index),
-                    }"
-                    :disabled="!canOpen(index)"
-                    :aria-current="step === index ? 'step' : undefined"
-                    @click="goTo(index)"
-                >
-                    <span class="cf-step__num">
-                        <v-icon v-if="stepHasErrors(index)" icon="tabler:alert-triangle" size="15" />
-                        <v-icon v-else-if="stepDone(index)" icon="tabler:check" size="16" />
-                        <template v-else>{{ index + 1 }}</template>
-                    </span>
-                    <span class="cf-step__text">
-                        <small>{{ $t('teach.classes.wizard.step', { n: index + 1 }) }}</small>
-                        <strong>{{ $t(`teach.programs.wizard.steps.${entry.key}`) }}</strong>
-                    </span>
-                </button>
+    <!-- Two columns: the steps, the preview and what is missing on the start side; the form beside them -->
+    <div class="pf-layout">
+        <aside class="pf-side">
+            <nav class="pf-rail" :aria-label="$t('teach.programs.wizard.label')">
+                <p class="pf-rail__head">{{ $t('teach.programs.wizard.label') }}</p>
+                <ol class="pf-rail__list">
+                    <li
+                        v-for="(entry, index) in steps"
+                        :key="entry.key"
+                        class="pf-rail__item"
+                        :class="{ 'pf-rail__item--passed': index < step || stepDone(index) }"
+                    >
+                        <button
+                            type="button"
+                            class="pf-rail__step"
+                            :class="{
+                                'pf-rail__step--on': step === index,
+                                'pf-rail__step--done': stepDone(index),
+                                'pf-rail__step--error': stepHasErrors(index),
+                            }"
+                            :disabled="!canOpen(index)"
+                            :aria-current="step === index ? 'step' : undefined"
+                            @click="goTo(index)"
+                        >
+                            <span class="pf-rail__dot">
+                                <v-icon v-if="stepHasErrors(index)" icon="tabler:alert-triangle" size="15" />
+                                <v-icon v-else-if="stepDone(index)" icon="tabler:check" size="16" />
+                                <template v-else>{{ index + 1 }}</template>
+                            </span>
+                            <span class="pf-rail__text">
+                                <strong>{{ $t(`teach.programs.wizard.steps.${entry.key}`) }}</strong>
+                                <small>{{ $t(`teach.programs.wizard.hints.${entry.key}`) }}</small>
+                            </span>
+                        </button>
+                    </li>
+                </ol>
+                <div class="pf-rail__foot">
+                    <span class="pf-rail__bar" aria-hidden="true"><span :style="{ width: `${Math.round(((step + 1) / steps.length) * 100)}%` }" /></span>
+                    <small>{{ $t('teach.programs.wizard.progress', { n: step + 1, total: steps.length }) }}</small>
+                </div>
             </nav>
 
+            <!-- Wide screens: the live preview, the save button (existing program) and what is still missing -->
+            <div class="cf-side pf-side__extra">
+                <div class="cf-preview">
+                    <div class="cf-preview__media">
+                        <img v-if="imagePreview" :src="imagePreview" alt="">
+                        <v-icon v-else icon="tabler:photo" size="32" />
+                    </div>
+                    <div class="cf-preview__body">
+                        <span class="cf-preview__kicker">{{ $t('teach.programs.form.kicker') }}</span>
+                        <strong class="cf-preview__title">{{ form.name || $t('teach.programs.form.untitled') }}</strong>
+                        <span class="cf-preview__meta">
+                            <v-icon :icon="visibility.icon" size="15" />
+                            {{ visibility.text }}
+                        </span>
+                        <span v-if="item" class="cf-preview__meta">
+                            <v-icon icon="tabler:school" size="15" />
+                            {{ $t('teach.programs.classes_note', { count: item.classes_count }) }}
+                        </span>
+                    </div>
+                </div>
+
+                <v-btn
+                    v-if="item"
+                    type="submit"
+                    form="program-form"
+                    class="text-none"
+                    variant="flat"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="form.processing"
+                >
+                    {{ $t('teach.programs.save') }}
+                </v-btn>
+                <div class="cf-ready">
+                    <div class="cf-ready__head">
+                        <strong>{{ $t('teach.programs.form.ready_title') }}</strong>
+                        <span class="rq-number">{{ readyDone }}/{{ readiness.length }}</span>
+                    </div>
+                    <span class="cf-ready__bar" aria-hidden="true"><span :style="{ width: `${Math.round((readyDone / readiness.length) * 100)}%` }" /></span>
+                    <ul class="cf-ready__list">
+                        <li v-for="entry in readiness" :key="entry.key" :class="{ 'cf-ready__item--done': entry.done }">
+                            <button type="button" @click="openSection(entry.section)">
+                                <v-icon :icon="entry.done ? 'tabler:circle-check' : 'tabler:circle'" size="18" />
+                                {{ $t(`teach.programs.form.ready.${entry.key}`) }}
+                            </button>
+                        </li>
+                    </ul>
+                    <p class="cf-ready__note">{{ $t('teach.programs.form.ready_note') }}</p>
+                </div>
+            </div>
+        </aside>
+
+        <form id="program-form" class="cf__main pf-pane" @submit.prevent="submit">
             <div class="cf__fieldset">
                 <!-- Step 1. The program's name -->
                 <section v-show="step === 0" id="pf-basics" class="cf-section">
@@ -212,60 +278,6 @@
                 </v-btn>
             </div>
         </form>
-
-        <!-- Side panel: a live preview, the save button, and what is still missing -->
-        <aside class="cf__side">
-            <div class="cf-side">
-                <div class="cf-preview">
-                    <div class="cf-preview__media">
-                        <img v-if="imagePreview" :src="imagePreview" alt="">
-                        <v-icon v-else icon="tabler:photo" size="32" />
-                    </div>
-                    <div class="cf-preview__body">
-                        <span class="cf-preview__kicker">{{ $t('teach.programs.form.kicker') }}</span>
-                        <strong class="cf-preview__title">{{ form.name || $t('teach.programs.form.untitled') }}</strong>
-                        <span class="cf-preview__meta">
-                            <v-icon :icon="visibility.icon" size="15" />
-                            {{ visibility.text }}
-                        </span>
-                        <span v-if="item" class="cf-preview__meta">
-                            <v-icon icon="tabler:school" size="15" />
-                            {{ $t('teach.programs.classes_note', { count: item.classes_count }) }}
-                        </span>
-                    </div>
-                </div>
-
-                <v-btn
-                    v-if="item"
-                    type="submit"
-                    form="program-form"
-                    class="text-none"
-                    variant="flat"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="form.processing"
-                >
-                    {{ $t('teach.programs.save') }}
-                </v-btn>
-                <div class="cf-ready">
-                    <div class="cf-ready__head">
-                        <strong>{{ $t('teach.programs.form.ready_title') }}</strong>
-                        <span class="rq-number">{{ readyDone }}/{{ readiness.length }}</span>
-                    </div>
-                    <span class="cf-ready__bar" aria-hidden="true"><span :style="{ width: `${Math.round((readyDone / readiness.length) * 100)}%` }" /></span>
-                    <ul class="cf-ready__list">
-                        <li v-for="entry in readiness" :key="entry.key" :class="{ 'cf-ready__item--done': entry.done }">
-                            <button type="button" @click="openSection(entry.section)">
-                                <v-icon :icon="entry.done ? 'tabler:circle-check' : 'tabler:circle'" size="18" />
-                                {{ $t(`teach.programs.form.ready.${entry.key}`) }}
-                            </button>
-                        </li>
-                    </ul>
-                    <p class="cf-ready__note">{{ $t('teach.programs.form.ready_note') }}</p>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <!-- Phones: the save button stays in reach at the bottom -->
@@ -536,6 +548,263 @@ function destroy() {
 <style scoped src="../courseForm.css"></style>
 
 <style scoped>
+/* ---------- Two columns: the steps rail (with the preview and readiness) and the form ---------- */
+.pf-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--rq-space-5);
+    padding-bottom: 72px; /* room for the phone bar */
+}
+
+.pf-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rq-space-4);
+    min-width: 0;
+}
+
+.pf-side__extra {
+    display: none;
+}
+
+.pf-pane {
+    min-width: 0;
+}
+
+@media (min-width: 760px) {
+    .pf-layout {
+        grid-template-columns: 230px minmax(0, 1fr);
+    }
+}
+
+@media (min-width: 1100px) {
+    .pf-layout {
+        grid-template-columns: 290px minmax(0, 1fr);
+        padding-bottom: 0;
+    }
+
+    .pf-side__extra {
+        display: flex;
+    }
+}
+
+.pf-rail {
+    padding: 16px 12px 14px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+    background: var(--rq-surface);
+}
+
+.pf-rail__head {
+    margin: 0 8px 10px;
+    font-family: var(--rq-font-display);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rq-text-subtle);
+}
+
+.pf-rail__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pf-rail__item {
+    position: relative;
+}
+
+/* The line down to the next step */
+.pf-rail__item:not(:last-child)::after {
+    position: absolute;
+    top: 44px;
+    bottom: -4px;
+    inset-inline-start: 25px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--rq-line);
+    content: "";
+}
+
+.pf-rail__item--passed:not(:last-child)::after {
+    background: var(--rq-success);
+}
+
+.pf-rail__step {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 10px;
+    border: 0;
+    border-radius: var(--rq-radius-md);
+    background: none;
+    font: inherit;
+    text-align: start;
+    color: var(--rq-text-muted);
+    cursor: pointer;
+    transition: background-color var(--rq-dur-fast) var(--rq-ease);
+}
+
+.pf-rail__step:hover:not(:disabled) {
+    background: var(--rq-surface-hover);
+}
+
+.pf-rail__step:focus-visible {
+    outline: none;
+    box-shadow: var(--rq-focus-ring);
+}
+
+.pf-rail__step:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.pf-rail__dot {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid var(--rq-line-strong);
+    border-radius: 50%;
+    background: var(--rq-surface);
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    transition: all var(--rq-dur-fast) var(--rq-ease);
+}
+
+.pf-rail__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding-top: 4px;
+}
+
+.pf-rail__text strong {
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--rq-text-body);
+}
+
+.pf-rail__text small {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--rq-text-subtle);
+}
+
+.pf-rail__step--on {
+    background: var(--rq-surface-hover);
+}
+
+.pf-rail__step--on .pf-rail__dot {
+    border-color: var(--rq-action-primary);
+    background: var(--rq-action-primary);
+    color: var(--rq-text-on-primary);
+    box-shadow: 0 0 0 4px var(--rq-icon-tile);
+}
+
+.pf-rail__step--on .pf-rail__text strong {
+    color: var(--rq-text-heading);
+}
+
+/* A bar on the inline-start edge of the current step */
+.pf-rail__step--on::before {
+    position: absolute;
+    inset-block: 10px;
+    inset-inline-start: -12px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--rq-action-primary);
+    content: "";
+}
+
+.pf-rail__step--done .pf-rail__dot {
+    border-color: var(--rq-success);
+    background: var(--rq-success);
+    color: #fff;
+}
+
+.pf-rail__step--error .pf-rail__dot {
+    border-color: var(--rq-danger);
+    background: var(--rq-danger-tint);
+    color: var(--rq-danger);
+}
+
+.pf-rail__foot {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 8px 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--rq-line-soft);
+}
+
+.pf-rail__foot small {
+    font-size: 12px;
+    color: var(--rq-text-muted);
+}
+
+.pf-rail__bar {
+    display: block;
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--rq-surface-tint);
+}
+
+.pf-rail__bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--rq-action-primary);
+    transition: width var(--rq-dur) var(--rq-ease);
+}
+
+/* Narrow: the rail becomes a row of numbers above the form */
+@media (max-width: 759.98px) {
+    .pf-rail {
+        padding: 10px;
+    }
+
+    .pf-rail__head,
+    .pf-rail__foot,
+    .pf-rail__item::after,
+    .pf-rail__text small {
+        display: none;
+    }
+
+    .pf-rail__list {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+    }
+
+    .pf-rail__item {
+        flex: 1 1 0;
+    }
+
+    .pf-rail__step {
+        justify-content: center;
+        margin: 0;
+    }
+
+    .pf-rail__step:not(.pf-rail__step--on) .pf-rail__text {
+        display: none;
+    }
+
+    .pf-rail__step--on::before {
+        display: none;
+    }
+}
+
 .pf-options {
     display: flex;
     flex-direction: column;
