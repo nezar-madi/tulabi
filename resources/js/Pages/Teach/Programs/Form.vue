@@ -543,10 +543,10 @@ function destroy() {
 <style scoped src="../courseForm.css"></style>
 
 <style scoped>
-/* ---------- The programs' own look: violet, a track for the steps, a cover for the preview ---------- */
+/* ---------- The programs' own design (same colors as the class form): a track for the steps, a cover for the preview ---------- */
 .pf {
-    --pf-accent: var(--rq-accent-violet);
-    --pf-tint: var(--rq-accent-violet-tint);
+    --pf-accent: var(--rq-action-primary);
+    --pf-tint: var(--rq-icon-tile);
 }
 
 .pf .cf-section__num {
@@ -619,9 +619,9 @@ function destroy() {
 }
 
 .pf-track .cf-step--done .cf-step__num {
-    border-color: var(--pf-accent);
-    background: var(--pf-tint);
-    color: var(--pf-accent);
+    border-color: var(--rq-success);
+    background: var(--rq-success);
+    color: #fff;
 }
 
 .pf-track .cf-step--on .cf-step__text strong {
@@ -646,7 +646,7 @@ function destroy() {
 .pf-cover__media--empty {
     background:
         radial-gradient(circle at 80% 20%, rgb(255 255 255 / 0.25), transparent 45%),
-        linear-gradient(135deg, var(--pf-accent), color-mix(in srgb, var(--pf-accent) 55%, #1e1b4b));
+        linear-gradient(135deg, var(--pf-accent), color-mix(in srgb, var(--pf-accent) 55%, #0b1f44));
 }
 
 .pf-cover__mark {
@@ -688,13 +688,6 @@ function destroy() {
     color: #fff;
 }
 
-.pf .cf-ready__bar span {
-    background: var(--pf-accent);
-}
-
-.pf .cf-ready__item--done .v-icon {
-    color: var(--pf-accent);
-}
 
 .pf-options {
     display: flex;
