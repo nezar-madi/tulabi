@@ -46,12 +46,40 @@
     <v-alert v-if="form.errors.program" type="error" variant="tonal" class="mb-4" rounded="lg">{{ form.errors.program }}</v-alert>
 
     <div class="cf">
-        <form id="program-form" class="cf__main" @submit.prevent="save">
+        <form id="program-form" class="cf__main" @submit.prevent="submit">
+            <!-- The steps: one at a time on a new program; tabs to open in any order on an existing one -->
+            <nav class="cf-steps" :class="{ 'cf-steps--tabs': item }" :style="{ '--cf-steps': steps.length }" :aria-label="$t('teach.programs.wizard.label')">
+                <button
+                    v-for="(entry, index) in steps"
+                    :key="entry.key"
+                    type="button"
+                    class="cf-step"
+                    :class="{
+                        'cf-step--on': step === index,
+                        'cf-step--done': stepDone(index),
+                        'cf-step--error': stepHasErrors(index),
+                    }"
+                    :disabled="!canOpen(index)"
+                    :aria-current="step === index ? 'step' : undefined"
+                    @click="goTo(index)"
+                >
+                    <span class="cf-step__num">
+                        <v-icon v-if="stepHasErrors(index)" icon="tabler:alert-triangle" size="15" />
+                        <v-icon v-else-if="stepDone(index)" icon="tabler:check" size="16" />
+                        <template v-else>{{ index + 1 }}</template>
+                    </span>
+                    <span class="cf-step__text">
+                        <small>{{ $t('teach.classes.wizard.step', { n: index + 1 }) }}</small>
+                        <strong>{{ $t(`teach.programs.wizard.steps.${entry.key}`) }}</strong>
+                    </span>
+                </button>
+            </nav>
+
             <div class="cf__fieldset">
-                <!-- 1. Basics: the program's name -->
-                <section id="pf-basics" class="cf-section">
+                <!-- Step 1. The program's name -->
+                <section v-show="step === 0" id="pf-basics" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">1</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:pencil" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.programs.form.basics') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.programs.form.basics_hint') }}</p>
@@ -69,10 +97,10 @@
                     </div>
                 </section>
 
-                <!-- 2. Content: description, the three lists and the video -->
-                <section id="pf-content" class="cf-section">
+                <!-- Step 2. Content: description, the three lists and the video -->
+                <section v-show="step === 1" id="pf-content" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">2</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:file-text" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.programs.form.content') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.programs.form.content_hint') }}</p>
@@ -83,10 +111,10 @@
                     </div>
                 </section>
 
-                <!-- 3. Promotional image -->
-                <section id="pf-image" class="cf-section">
+                <!-- Step 3. The promotional image, then status and visibility -->
+                <section v-show="step === 2" id="pf-image" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">3</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:photo" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.programs.fields.image') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.programs.form.image_hint') }}</p>
@@ -114,10 +142,9 @@
                     </div>
                 </section>
 
-                <!-- 4. Status and visibility -->
-                <section id="pf-status" class="cf-section">
+                <section v-show="step === 2" id="pf-status" class="cf-section">
                     <header class="cf-section__head">
-                        <span class="cf-section__num">4</span>
+                        <span class="cf-section__num"><v-icon icon="tabler:eye" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.programs.form.status') }}</h2>
                             <p class="cf-section__hint">{{ $t('teach.programs.form.status_hint') }}</p>
@@ -149,6 +176,41 @@
                     </div>
                 </section>
             </div>
+
+            <div class="cf-nav">
+                <v-btn
+                    v-if="step > 0"
+                    class="text-none"
+                    variant="text"
+                    color="primary"
+                    prepend-icon="tabler:arrow-right"
+                    @click="goTo(step - 1)"
+                >
+                    {{ $t('teach.classes.wizard.back') }}
+                </v-btn>
+                <v-spacer />
+                <v-btn
+                    v-if="step < last"
+                    class="text-none"
+                    variant="flat"
+                    color="primary"
+                    append-icon="tabler:arrow-left"
+                    @click="next"
+                >
+                    {{ $t('teach.classes.wizard.next', { name: $t(`teach.programs.wizard.steps.${steps[step + 1].key}`) }) }}
+                </v-btn>
+                <v-btn
+                    v-else-if="!item"
+                    type="submit"
+                    class="text-none"
+                    variant="flat"
+                    color="primary"
+                    prepend-icon="tabler:check"
+                    :loading="form.processing"
+                >
+                    {{ $t('teach.programs.create') }}
+                </v-btn>
+            </div>
         </form>
 
         <!-- Side panel: a live preview, the save button, and what is still missing -->
@@ -174,6 +236,7 @@
                 </div>
 
                 <v-btn
+                    v-if="item"
                     type="submit"
                     form="program-form"
                     class="text-none"
@@ -183,9 +246,8 @@
                     block
                     :loading="form.processing"
                 >
-                    {{ item ? $t('teach.programs.save') : $t('teach.programs.create') }}
+                    {{ $t('teach.programs.save') }}
                 </v-btn>
-                <p v-if="!item" class="cf-side__hint">{{ $t('teach.programs.form.hidden_note') }}</p>
                 <div class="cf-ready">
                     <div class="cf-ready__head">
                         <strong>{{ $t('teach.programs.form.ready_title') }}</strong>
@@ -194,7 +256,7 @@
                     <span class="cf-ready__bar" aria-hidden="true"><span :style="{ width: `${Math.round((readyDone / readiness.length) * 100)}%` }" /></span>
                     <ul class="cf-ready__list">
                         <li v-for="entry in readiness" :key="entry.key" :class="{ 'cf-ready__item--done': entry.done }">
-                            <button type="button" @click="scrollTo(entry.section)">
+                            <button type="button" @click="openSection(entry.section)">
                                 <v-icon :icon="entry.done ? 'tabler:circle-check' : 'tabler:circle'" size="18" />
                                 {{ $t(`teach.programs.form.ready.${entry.key}`) }}
                             </button>
@@ -208,15 +270,40 @@
 
     <!-- Phones: the save button stays in reach at the bottom -->
     <div class="cf-bar">
-        <span class="cf-bar__status">{{ $t('teach.programs.form.ready_short', { done: readyDone, total: readiness.length }) }}</span>
-        <v-btn type="submit" form="program-form" class="text-none" variant="flat" color="primary" :loading="form.processing">
+        <v-btn
+            v-if="!item && step > 0"
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+            :aria-label="$t('teach.classes.wizard.back')"
+            @click="goTo(step - 1)"
+        >
+            <v-icon icon="tabler:arrow-right" />
+        </v-btn>
+        <span class="cf-bar__status">
+            {{ item
+                ? $t('teach.programs.form.ready_short', { done: readyDone, total: readiness.length })
+                : $t('teach.classes.wizard.bar', { n: step + 1, total: steps.length, name: $t(`teach.programs.wizard.steps.${steps[step].key}`) }) }}
+        </span>
+        <v-btn
+            v-if="!item && step < last"
+            class="text-none"
+            variant="flat"
+            color="primary"
+            append-icon="tabler:arrow-left"
+            @click="next"
+        >
+            {{ $t('teach.classes.wizard.next_short') }}
+        </v-btn>
+        <v-btn v-else type="submit" form="program-form" class="text-none" variant="flat" color="primary" :loading="form.processing">
             {{ item ? $t('teach.programs.save') : $t('teach.programs.create') }}
         </v-btn>
     </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PageIntro from '@/Components/PageIntro.vue';
@@ -304,6 +391,109 @@ function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ---------- Steps ----------
+// A new program is filled one step at a time («التالي» checks the step first); an existing one
+// opens any step as a tab. Each field belongs to one step, so a server error opens its step.
+const steps = [
+    { key: 'name', sections: ['pf-basics'], fields: ['name'] },
+    { key: 'content', sections: ['pf-content'], fields: ['description', 'learn', 'requirements', 'audience', 'promo_video_url'] },
+    { key: 'publish', sections: ['pf-image', 'pf-status'], fields: ['image', 'remove_image', 'is_active', 'is_published', 'is_featured'] },
+];
+const last = steps.length - 1;
+const step = ref(0);
+const reached = ref(props.item ? last : 0);
+
+const stepOf = (field) => steps.findIndex((entry) => entry.fields.includes(field.split('.')[0]));
+const stepHasErrors = (index) => Object.keys(form.errors).some((field) => stepOf(field) === index);
+const canOpen = (index) => index <= reached.value;
+
+// What a step still lacks, as { field: message } (the server checks everything again).
+function missing(index) {
+    const need = {};
+
+    if (index === 0 && form.name.trim().length < 3) {
+        need.name = t('teach.programs.wizard.name_short');
+    }
+
+    if (index === 1 && !form.description.trim()) {
+        need.description = t('teach.classes.wizard.required');
+    }
+
+    return need;
+}
+
+const stepDone = (index) => index !== step.value && index <= reached.value && !stepHasErrors(index)
+    && Object.keys(missing(index)).length === 0;
+
+function scrollToErrors() {
+    nextTick(() => document.querySelector('#program-form .v-messages__message, #program-form small.text-error')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+}
+
+function goTo(index, force = false) {
+    if (index < 0 || index > last || (!force && !canOpen(index))) {
+        return;
+    }
+
+    step.value = index;
+    reached.value = Math.max(reached.value, index);
+    nextTick(() => document.getElementById('program-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
+// «التالي»: the step's own checks first, then the next step.
+function next() {
+    const need = missing(step.value);
+
+    form.clearErrors(...steps[step.value].fields);
+
+    if (Object.keys(need).length > 0) {
+        form.setError(need);
+        scrollToErrors();
+
+        return;
+    }
+
+    goTo(step.value + 1, true);
+}
+
+// Saving runs every step's checks (an existing program opens any step as a tab), then saves.
+function submit() {
+    if (!props.item && step.value < last) {
+        next();
+
+        return;
+    }
+
+    const need = steps.reduce((all, _, index) => ({ ...all, ...missing(index) }), {});
+
+    if (Object.keys(need).length > 0) {
+        form.clearErrors();
+        form.setError(need);
+        openFirstError();
+        nextTick(scrollToErrors);
+
+        return;
+    }
+
+    save();
+}
+
+function openFirstError() {
+    nextTick(() => {
+        const first = steps.findIndex((_, index) => stepHasErrors(index));
+
+        if (first !== -1 && first !== step.value) {
+            goTo(first, true);
+        }
+    });
+}
+
+// The readiness list opens the step a section is on, then scrolls to it.
+function openSection(id) {
+    goTo(steps.findIndex((entry) => entry.sections.includes(id)), true);
+    nextTick(() => scrollTo(id));
+}
+
 function save() {
     const send = (data) => {
         const { image, ...rest } = data;
@@ -319,9 +509,15 @@ function save() {
     // A file needs a multipart body, and PHP only reads one on POST: update through _method.
     if (props.item) {
         form.transform((data) => ({ ...send(data), _method: 'put' }))
-            .post(route('teach.programs.update', props.item.id), { preserveScroll: true, forceFormData: true, onSuccess: saved });
+            .post(route('teach.programs.update', props.item.id), { preserveScroll: true, forceFormData: true, onSuccess: saved, onError: openFirstError });
     } else {
-        form.transform(send).post(route('teach.programs.store'), { forceFormData: true, onSuccess: saved });
+        // Inertia's post keeps the page's state; only keep it when the form comes back with errors.
+        form.transform(send).post(route('teach.programs.store'), {
+            forceFormData: true,
+            preserveState: (page) => Object.keys(page.props.errors || {}).length > 0,
+            onSuccess: saved,
+            onError: openFirstError,
+        });
     }
 }
 

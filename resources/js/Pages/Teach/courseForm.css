@@ -505,3 +505,145 @@
         padding-inline: 16px;
     }
 }
+
+/* ---------- Steps (the class and program forms), and back / next ---------- */
+.cf-steps {
+    display: grid;
+    grid-template-columns: repeat(var(--cf-steps, 4), minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: var(--rq-space-5);
+    padding: 8px;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-card);
+    background: var(--rq-surface);
+}
+
+.cf-step {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--rq-radius-md);
+    background: none;
+    color: var(--rq-text-muted);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--rq-dur-fast) var(--rq-ease);
+}
+
+.cf-step:hover:not(:disabled) {
+    background: var(--rq-surface-hover);
+}
+
+.cf-step:focus-visible {
+    outline: none;
+    box-shadow: var(--rq-focus-ring);
+}
+
+.cf-step:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.cf-step__num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border: 1.5px solid var(--rq-line-strong);
+    border-radius: 50%;
+    background: var(--rq-surface);
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    transition: all var(--rq-dur-fast) var(--rq-ease);
+}
+
+.cf-step__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+.cf-step__text small {
+    font-size: 11px;
+    color: var(--rq-text-subtle);
+}
+
+.cf-step__text strong {
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cf-step--on {
+    background: var(--rq-surface-hover);
+    color: var(--rq-text-heading);
+}
+
+.cf-step--on .cf-step__num {
+    border-color: var(--rq-action-primary);
+    background: var(--rq-action-primary);
+    color: var(--rq-text-on-primary);
+    box-shadow: 0 0 0 4px var(--rq-icon-tile);
+}
+
+.cf-step--done .cf-step__num {
+    border-color: var(--rq-success);
+    background: var(--rq-success);
+    color: #fff;
+}
+
+.cf-step--done {
+    color: var(--rq-text-body);
+}
+
+.cf-step--error .cf-step__num {
+    border-color: var(--rq-danger);
+    background: var(--rq-danger-tint);
+    color: var(--rq-danger);
+}
+
+/* A thin bar under the current step */
+.cf-step--on::after {
+    position: absolute;
+    inset-inline: 10px;
+    bottom: -9px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--rq-action-primary);
+    content: "";
+}
+
+/* Phones: numbers only, the current step keeps its name */
+@media (max-width: 759.98px) {
+    .cf-steps {
+        grid-template-columns: repeat(var(--cf-steps, 4), auto);
+        justify-content: space-between;
+    }
+
+    .cf-step:not(.cf-step--on) .cf-step__text {
+        display: none;
+    }
+}
+
+/* ---------- Back / next ---------- */
+.cf-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: var(--rq-space-5);
+}
+
+@media (max-width: 1099.98px) {
+    .cf-nav {
+        display: none; /* the bottom bar does this on narrow screens */
+    }
+}
