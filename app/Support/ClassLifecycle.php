@@ -45,9 +45,10 @@ class ClassLifecycle
 
     public function cancel(TeachingClass $class, ?string $reason): void
     {
+        // A draft was never public: it is deleted, not canceled.
         $this->ensure($class, [
-            TeachingClass::STATUS_DRAFT, TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED, TeachingClass::STATUS_SUSPENDED,
-        ]);
+            TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED, TeachingClass::STATUS_SUSPENDED,
+        ], $class->status === TeachingClass::STATUS_DRAFT ? 'classes.cancel_not_draft' : 'classes.wrong_status');
 
         $reason = trim((string) $reason);
 

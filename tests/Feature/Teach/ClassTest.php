@@ -451,6 +451,10 @@ class ClassTest extends TestCase
         $this->assertSame(TeachingClass::STATUS_CANCELED, $class->fresh()->status);
 
         $draft = TeachingClass::factory()->for($user->instructor)->create();
+        // A draft is deleted, never canceled.
+        $this->post("/teach/classes/{$draft->id}/cancel")
+            ->assertSessionHasErrors(['class' => __('classes.cancel_not_draft')]);
+        $this->assertSame(TeachingClass::STATUS_DRAFT, $draft->fresh()->status);
         $this->delete("/teach/classes/{$draft->id}")->assertRedirect('/teach/classes?filter=draft');
         $this->assertSoftDeleted($draft);
         $this->get("/teach/classes/{$draft->id}/edit")->assertNotFound();

@@ -49,8 +49,15 @@
                         </v-btn>
                     </template>
                     <v-list density="compact">
-                        <v-list-item v-if="cls.status === 'draft'" :title="$t('teach.classes.delete')" base-color="error" @click="destroy" />
-                        <v-list-item :title="$t('teach.classes.cancel')" base-color="error" @click="cancelDialog = true" />
+                        <!-- A draft is deleted; only a class that was published is canceled. -->
+                        <v-list-item v-if="cls.status === 'draft'" class="cf-menu-item" base-color="error" @click="destroy">
+                            <template #prepend><v-icon icon="tabler:trash" size="16" /></template>
+                            <v-list-item-title>{{ $t('teach.classes.delete') }}</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item v-else class="cf-menu-item" base-color="error" @click="cancelDialog = true">
+                            <template #prepend><v-icon icon="tabler:ban" size="16" /></template>
+                            <v-list-item-title>{{ $t('teach.classes.cancel') }}</v-list-item-title>
+                        </v-list-item>
                     </v-list>
                 </v-menu>
             </div>
@@ -541,7 +548,7 @@
                 </div>
 
                 <v-btn
-                    v-if="!readOnly && (cls || step === last)"
+                    v-if="!readOnly && cls"
                     type="submit"
                     form="class-form"
                     class="text-none cf-side__save"
@@ -892,7 +899,14 @@ function save() {
                 onError: openFirstError,
             });
     } else {
-        form.transform(send).post(route('teach.classes.store'), { forceFormData: true, onSuccess: saved, onError: openFirstError });
+        // Inertia's post keeps the page's state by default. Keep it only when the form comes back with
+        // errors; the new draft (same component) must start fresh: edit mode and the «تم إنشاء الفصل» dialog.
+        form.transform(send).post(route('teach.classes.store'), {
+            forceFormData: true,
+            preserveState: (page) => Object.keys(page.props.errors || {}).length > 0,
+            onSuccess: saved,
+            onError: openFirstError,
+        });
     }
 }
 
@@ -1323,6 +1337,25 @@ function cancelClass() {
 
 .cf-share {
     margin-top: 12px;
+}
+
+/* «حذف المسودة» / «إلغاء الفصل» in the ⋮ menu: small, as secondary actions. */
+.cf-menu-item {
+    min-height: 34px !important;
+    padding-inline: 12px 16px !important;
+}
+
+.cf-menu-item :deep(.v-list-item__prepend) {
+    margin-inline-end: 8px;
+}
+
+.cf-menu-item :deep(.v-list-item__prepend > .v-icon) {
+    margin-inline-end: 0;
+}
+
+.cf-menu-item :deep(.v-list-item-title) {
+    font-size: 13px;
+    font-weight: 500;
 }
 
 .cf-share--new {
