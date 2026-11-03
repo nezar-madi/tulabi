@@ -50,13 +50,13 @@
                     </template>
                     <v-list density="compact">
                         <!-- A draft is deleted; only a class that was published is canceled. -->
-                        <v-list-item v-if="cls.status === 'draft'" class="cf-menu-item" base-color="error" @click="destroy">
-                            <template #prepend><v-icon icon="tabler:trash" size="16" /></template>
+                        <v-list-item v-if="cls.status === 'draft'" class="cf-menu-item" base-color="error" @click="deleteDialog = true">
                             <v-list-item-title>{{ $t('teach.classes.delete') }}</v-list-item-title>
+                            <template #append><v-icon icon="tabler:trash" size="16" /></template>
                         </v-list-item>
                         <v-list-item v-else class="cf-menu-item" base-color="error" @click="cancelDialog = true">
-                            <template #prepend><v-icon icon="tabler:ban" size="16" /></template>
                             <v-list-item-title>{{ $t('teach.classes.cancel') }}</v-list-item-title>
+                            <template #append><v-icon icon="tabler:ban" size="16" /></template>
                         </v-list-item>
                     </v-list>
                 </v-menu>
@@ -670,6 +670,23 @@
     </v-dialog>
 
     <ClassCreatedDialog v-if="cls" v-model="createdOpen" :title="cls.title" />
+
+    <v-dialog v-model="deleteDialog" max-width="420">
+        <v-card v-if="cls" class="app-form-dialog">
+            <v-card-text class="pa-6">
+                <div class="cf-confirm__icon"><v-icon icon="tabler:trash" size="26" /></div>
+                <h2 class="rq-dialog__title mb-2">{{ $t('teach.classes.delete_title') }}</h2>
+                <p class="rq-dialog__subtitle mb-0">{{ $t('teach.classes.delete_text', { title: cls.title }) }}</p>
+            </v-card-text>
+            <v-card-actions class="pa-4">
+                <v-spacer />
+                <v-btn class="rq-btn" variant="text" @click="deleteDialog = false">{{ $t('common.close') }}</v-btn>
+                <v-btn class="rq-btn" variant="flat" color="error" :loading="deleting" @click="destroy">
+                    {{ $t('teach.classes.delete_confirm_button') }}
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script setup>
@@ -1101,10 +1118,14 @@ function act(action) {
     router.post(route(`teach.classes.${action}`, cls.value.id), {}, { preserveScroll: true });
 }
 
+const deleteDialog = ref(false);
+const deleting = ref(false);
+
 function destroy() {
-    if (window.confirm(t('teach.classes.delete_confirm'))) {
-        router.delete(route('teach.classes.destroy', cls.value.id));
-    }
+    router.delete(route('teach.classes.destroy', cls.value.id), {
+        onStart: () => { deleting.value = true; },
+        onFinish: () => { deleting.value = false; },
+    });
 }
 
 function cancelClass() {
@@ -1339,18 +1360,29 @@ function cancelClass() {
     margin-top: 12px;
 }
 
+.cf-confirm__icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: var(--rq-danger-tint, rgb(220 38 38 / 0.1));
+    color: var(--rq-danger, #dc2626);
+}
+
 /* «حذف المسودة» / «إلغاء الفصل» in the ⋮ menu: small, as secondary actions. */
 .cf-menu-item {
     min-height: 34px !important;
     padding-inline: 12px 16px !important;
 }
 
-.cf-menu-item :deep(.v-list-item__prepend) {
-    margin-inline-end: 8px;
+.cf-menu-item :deep(.v-list-item__append) {
+    margin-inline-start: 10px;
 }
 
-.cf-menu-item :deep(.v-list-item__prepend > .v-icon) {
-    margin-inline-end: 0;
+.cf-menu-item :deep(.v-list-item__append > .v-icon) {
+    margin-inline-start: 0;
 }
 
 .cf-menu-item :deep(.v-list-item-title) {

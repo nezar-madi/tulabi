@@ -30,6 +30,11 @@ class ClassLifecycle
             throw ValidationException::withMessages(['class' => __('classes.image_required_to_publish')]);
         }
 
+        // A draft is not checked while saved; it may not go live over another class's sessions.
+        if ($class->status === TeachingClass::STATUS_DRAFT) {
+            $this->ensureNoClash($class, 'class');
+        }
+
         $class->forceFill([
             'status' => TeachingClass::STATUS_PUBLISHED,
             'published_at' => $class->published_at ?? now(),
@@ -126,7 +131,29 @@ class ClassLifecycle
             'starts_on' => $newStart,
             'ends_on' => $moved($class->ends_on?->toDateString()),
             'manual_dates' => $class->manual_dates === null ? null : array_map($moved, $class->manual_dates),
-        ])->save();
+        ]);
+
+        // The new dates may not land on another active class's sessions.
+        $this->ensureNoClash($class, 'starts_on');
+
+        $class->save();
+    }
+
+    private function ensureNoClash(TeachingClass $class, string $errorKey): void
+    {
+        $clash = ScheduleClash::find($class->instructor, [
+            'starts_on' => $class->starts_on->toDateString(),
+            'ends_on' => $class->ends_on?->toDateString(),
+            'schedule_type' => $class->schedule_type,
+            'days' => $class->days,
+            'manual_dates' => $class->manual_dates,
+            'start_time' => $class->start_time,
+            'end_time' => $class->end_time,
+        ], $class->getKey());
+
+        if ($clash !== null) {
+            throw ValidationException::withMessages([$errorKey => ScheduleClash::message($clash)]);
+        }
     }
 
     private function isUnderfilledAtStart(TeachingClass $class): bool

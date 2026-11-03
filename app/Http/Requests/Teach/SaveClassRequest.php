@@ -7,6 +7,7 @@ use App\Models\TeachingClass;
 use App\Rules\EmbeddableVideoUrl;
 use App\Rules\GoogleMapsUrl;
 use App\Support\CourseContent;
+use App\Support\ScheduleClash;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -157,6 +158,8 @@ class SaveClassRequest extends InstructorRequest
             if (is_string($start) && is_string($end) && $end <= $start) {
                 $validator->errors()->add('end_time', __('classes.end_time_after'));
             }
+
+            $this->checkClash($validator);
         }];
     }
 
@@ -201,6 +204,32 @@ class SaveClassRequest extends InstructorRequest
                     $validator->errors()->add('days', __('classes.days_outside_range'));
                 }
             }
+        }
+    }
+
+    /** The sessions may not overlap another active class of the instructor (App\Support\ScheduleClash). */
+    private function checkClash(Validator $validator): void
+    {
+        $fields = ['starts_on', 'ends_on', 'schedule_type', 'days', 'days.*', 'manual_dates', 'manual_dates.*', 'start_time', 'end_time'];
+        $instructor = $this->instructor();
+
+        if ($instructor === null || $validator->errors()->hasAny($fields)) {
+            return;
+        }
+
+        $class = $this->route('class');
+        $clash = ScheduleClash::find($instructor, [
+            'starts_on' => (string) $this->input('starts_on'),
+            'ends_on' => $this->input('ends_on'),
+            'schedule_type' => (string) $this->input('schedule_type'),
+            'days' => (array) $this->input('days', []),
+            'manual_dates' => (array) $this->input('manual_dates', []),
+            'start_time' => $this->input('start_time'),
+            'end_time' => $this->input('end_time'),
+        ], $class instanceof TeachingClass ? $class->getKey() : null);
+
+        if ($clash !== null) {
+            $validator->errors()->add('start_time', ScheduleClash::message($clash));
         }
     }
 

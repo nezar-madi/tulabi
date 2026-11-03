@@ -156,7 +156,7 @@
 
 .cf-choice__check {
     flex-shrink: 0;
-    color: var(--rq-action-primary);
+    color: var(--rq-success);
 }
 
 /* ---------- Image: a wide drop area, or the image with its tools ---------- */

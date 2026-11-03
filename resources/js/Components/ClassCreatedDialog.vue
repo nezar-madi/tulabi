@@ -13,21 +13,28 @@
             <p id="class-created-text" class="created__text">{{ $t('teach.classes.created.text') }}</p>
 
             <div class="created__actions">
-                <v-btn class="rq-btn" variant="flat" color="primary" block size="large" @click="emit('update:modelValue', false)">
+                <v-btn class="rq-btn" variant="flat" color="primary" block size="large" autofocus @click="emit('update:modelValue', false)">
                     <v-icon icon="tabler:pencil" start />
                     {{ $t('teach.classes.created.open') }}
                 </v-btn>
-                <Link :href="route('teach.classes.create')" class="created__another">
-                    <v-icon icon="tabler:plus" size="18" />
+                <v-btn
+                    class="rq-btn"
+                    variant="text"
+                    color="primary"
+                    block
+                    size="large"
+                    @click="router.visit(route('teach.classes.create'))"
+                >
+                    <v-icon icon="tabler:plus" start />
                     {{ $t('teach.classes.created.another') }}
-                </Link>
+                </v-btn>
             </div>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 
 /*
  * Shown once, right after a new class is saved: a check mark, the class's name, and two ways on:
@@ -111,30 +118,6 @@ const emit = defineEmits(['update:modelValue']);
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
-}
-
-.created__another {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px;
-    border-radius: var(--rq-radius-pill);
-    font-family: var(--rq-font-display);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--rq-action-primary);
-    text-decoration: none;
-    transition: background-color var(--rq-dur-fast, 150ms) var(--rq-ease, ease);
-}
-
-.created__another:hover {
-    background: var(--rq-icon-tile);
-}
-
-.created__another:focus-visible {
-    outline: none;
-    box-shadow: var(--rq-focus-ring);
 }
 
 @keyframes created-draw {
