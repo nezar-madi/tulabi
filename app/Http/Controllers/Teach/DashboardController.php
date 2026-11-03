@@ -39,7 +39,10 @@ class DashboardController extends Controller
             ->orderBy('starts_on')
             ->orderBy('id')
             ->limit(5)
-            ->withCount(['enrollments as students_count' => fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED)])
+            ->withCount([
+                'enrollments as students_count' => fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED),
+                'enrollments as price_lock_count' => fn ($query) => TeachingClass::lockingPrice($query),
+            ])
             ->get()
             ->map(fn (TeachingClass $class) => [
                 ...ClassPresenter::forOwner($class),

@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
  *   draft -> published (needs the page address, a promotional image, not ended, no clash)
  *   published <-> closed (closed: still shown, takes no new requests)
  *   published/closed -> suspended (automatic, once at the start date, see checkStart) -> published (a new start date)
- *   published/closed/suspended -> canceled (final; owes nothing, takes no payments)
+ *   published/closed/suspended, not ended -> canceled (final; owes nothing, takes no payments)
  *   draft -> deleted (soft delete, its image file removed; a class that was ever public is canceled instead)
  */
 class ClassLifecycle
@@ -62,6 +62,12 @@ class ClassLifecycle
         $this->ensure($class, [
             TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED, TeachingClass::STATUS_SUSPENDED,
         ], $class->status === TeachingClass::STATUS_DRAFT ? 'classes.cancel_not_draft' : 'classes.wrong_status');
+
+        // A class that already ran is not canceled: that would erase what its students still owe.
+        // One student's balance is let go by removing that student instead.
+        if ($class->hasEnded()) {
+            throw ValidationException::withMessages(['class' => __('classes.cancel_ended')]);
+        }
 
         $reason = trim((string) $reason);
 
@@ -118,6 +124,8 @@ class ClassLifecycle
             ->whereNull('start_checked_at')
             ->where('starts_on', '<=', TulabiClock::today())
             ->when($instructorId !== null, fn ($query) => $query->where('instructor_id', $instructorId))
+            // By id, not by page: each check stamps the class, which takes it out of this query.
+            ->lazyById()
             ->each(function (TeachingClass $class) use (&$suspended) {
                 if ($this->checkStart($class)) {
                     $suspended++;

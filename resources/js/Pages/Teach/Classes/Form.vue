@@ -43,7 +43,8 @@
                 <v-btn v-if="cls.status === 'published'" class="text-none" variant="text" color="error" prepend-icon="tabler:lock" @click="act('close')">
                     {{ $t('teach.classes.close') }}
                 </v-btn>
-                <v-menu v-if="cls.status !== 'canceled'" location="bottom end">
+                <!-- A draft is deleted; a class that has not ended is canceled; an ended one has neither. -->
+                <v-menu v-if="cls.status !== 'canceled' && (cls.status === 'draft' || !cls.ended)" location="bottom end">
                     <template #activator="{ props: menuProps }">
                         <v-btn v-bind="menuProps" icon variant="text" size="small" :aria-label="$t('teach.money.more')">
                             <v-icon icon="tabler:dots-vertical" />

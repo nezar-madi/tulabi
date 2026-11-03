@@ -204,6 +204,33 @@ class ClassRulesTest extends TestCase
         $this->assertTrue($suspended->fresh()->isSuspended());
     }
 
+    public function test_an_ended_class_cannot_be_canceled_so_what_students_owe_stays(): void
+    {
+        $ended = $this->published(['starts_on' => '2026-10-03', 'ends_on' => '2026-11-28']);
+        $enrollment = Enrollment::factory()->accepted()->for($ended, 'teachingClass')->create(['fee' => '300']);
+
+        $this->actingAs($this->user)->post("/teach/classes/{$ended->id}/cancel", ['reason' => 'x'])
+            ->assertSessionHasErrors(['class' => __('classes.cancel_ended')]);
+        $this->assertSame(TeachingClass::STATUS_PUBLISHED, $ended->fresh()->status);
+        $this->assertSame(300000, $enrollment->fresh()->remainingMillis());
+
+        // A class still running can be canceled.
+        $running = $this->published(['starts_on' => '2026-12-12', 'ends_on' => '2027-01-31', 'start_time' => '08:00', 'end_time' => '09:00']);
+        $this->post("/teach/classes/{$running->id}/cancel")->assertSessionHasNoErrors();
+        $this->assertTrue($running->fresh()->isCanceled());
+    }
+
+    public function test_the_hourly_check_reaches_every_class_in_one_run(): void
+    {
+        // More than one batch (1000) of classes due the same day.
+        TeachingClass::factory()->published()->for($this->user->instructor)->count(1005)->create([
+            'starts_on' => '2026-12-15', 'ends_on' => '2027-01-31', 'auto_suspend' => true, 'min_seats' => 1,
+        ]);
+
+        $this->assertSame(1005, app(ClassLifecycle::class)->suspendUnderfilled());
+        $this->assertSame(0, TeachingClass::query()->whereNull('start_checked_at')->count());
+    }
+
     public function test_deleting_a_draft_deletes_its_image_file(): void
     {
         Storage::fake('public');

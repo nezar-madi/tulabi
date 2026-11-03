@@ -115,6 +115,23 @@ class ClassSecurityTest extends TestCase
         $this->assertSame($few, count(DB::getQueryLog()));
     }
 
+    public function test_the_dashboard_does_not_ask_the_database_once_per_upcoming_class(): void
+    {
+        $user = User::factory()->instructor()->create();
+        $this->actingAs($user);
+
+        TeachingClass::factory()->published()->for($user->instructor)->create();
+        DB::enableQueryLog();
+        $this->get('/teach')->assertOk();
+        $one = count(DB::getQueryLog());
+
+        TeachingClass::factory()->published()->for($user->instructor)->count(4)->create();
+        DB::flushQueryLog();
+        $this->get('/teach')->assertOk()->assertInertia(fn (Assert $page) => $page->has('upcoming', 5));
+
+        $this->assertSame($one, count(DB::getQueryLog()));
+    }
+
     public function test_restarting_a_class_with_students_offers_the_new_schedule_on_whatsapp(): void
     {
         $this->travelTo('2026-12-15 10:00:00');
