@@ -6,8 +6,10 @@ use App\Models\Program;
 use App\Models\TeachingClass;
 use App\Rules\EmbeddableVideoUrl;
 use App\Rules\GoogleMapsUrl;
+use App\Support\ClassText;
 use App\Support\CourseContent;
 use App\Support\ScheduleClash;
+use App\Support\TulabiClock;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -150,7 +152,9 @@ class SaveClassRequest extends InstructorRequest
                 }
             }
 
+            $this->checkDates($validator);
             $this->checkSchedule($validator);
+            $this->checkPrice($validator);
 
             $start = $this->input('start_time');
             $end = $this->input('end_time');
@@ -204,6 +208,64 @@ class SaveClassRequest extends InstructorRequest
                     $validator->errors()->add('days', __('classes.days_outside_range'));
                 }
             }
+        }
+
+        // A weekly class starts on one of its days, so the start date is its first session (the
+        // countdown and «تعليق البدء تلقائيًا» go by it). Hand-picked dates set the period themselves
+        // (classData). An existing class is held to it only when its start or days change.
+        if ($type === TeachingClass::SCHEDULE_WEEKLY && ! $validator->errors()->hasAny(['days', 'days.*'])) {
+            $days = (array) $this->input('days', []);
+            $class = $this->route('class');
+            $sortedDays = $days;
+            sort($sortedDays);
+            $unchanged = $class instanceof TeachingClass
+                && $class->starts_on?->toDateString() === $startsOn
+                && $class->schedule_type === TeachingClass::SCHEDULE_WEEKLY
+                && ($class->days ?? []) === $sortedDays;
+
+            if (! $unchanged && ! in_array(Carbon::parse($startsOn)->dayOfWeek, $days, true)) {
+                $validator->errors()->add('starts_on', __('classes.start_not_meeting_day', ['days' => ClassText::days($days)]));
+            }
+        }
+    }
+
+    /**
+     * No past dates: a new class starts today or later and ends today or later. An existing class
+     * keeps the dates it has (one already running started in the past), but a date that is changed
+     * cannot be moved into the past.
+     */
+    private function checkDates(Validator $validator): void
+    {
+        $class = $this->route('class');
+        $today = TulabiClock::today();
+
+        foreach (['starts_on' => 'classes.start_past', 'ends_on' => 'classes.end_past'] as $field => $message) {
+            $value = $this->input($field);
+
+            if (! is_string($value) || $validator->errors()->has($field) || $value >= $today) {
+                continue;
+            }
+
+            $unchanged = $class instanceof TeachingClass && $class->{$field}?->toDateString() === $value;
+
+            if (! $unchanged) {
+                $validator->errors()->add($field, __($message));
+            }
+        }
+    }
+
+    /** The price is fixed once a student has joined (asked or accepted): their fee comes from it. */
+    private function checkPrice(Validator $validator): void
+    {
+        $class = $this->route('class');
+
+        if (! $class instanceof TeachingClass || $validator->errors()->has('price')
+            || bccomp((string) $this->input('price'), (string) $class->price, 3) === 0) {
+            return;
+        }
+
+        if ($class->priceIsLocked()) {
+            $validator->errors()->add('price', __('classes.price_locked'));
         }
     }
 
@@ -273,6 +335,8 @@ class SaveClassRequest extends InstructorRequest
             'meeting_url' => $online ? (($data['meeting_url'] ?? null) ?: null) : null,
             'days' => $days === [] ? null : $days,
             'manual_dates' => $dates === [] ? null : $dates,
+            // Hand-picked dates are the period: it starts on the first and ends on the last.
+            ...($dates === [] ? [] : ['starts_on' => $dates[0], 'ends_on' => end($dates)]),
             'seats' => (int) $data['seats'] > 0 ? (int) $data['seats'] : null,
         ];
     }

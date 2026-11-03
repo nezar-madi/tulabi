@@ -151,10 +151,18 @@ class ClassSuspensionTest extends TestCase
         $this->assertSame('2026-12-20', $class->ends_on->toDateString());
         $this->assertSame(['2026-11-20', '2026-11-27', '2026-12-20'], $class->manual_dates);
 
-        // Today itself is accepted too (the class would be checked again at once).
-        $again = $this->published(['starts_on' => '2026-11-10', 'min_seats' => 3]);
+        // Today itself is accepted too, and a restart is final: it is not suspended again.
+        $again = $this->published(['starts_on' => '2026-11-10', 'schedule_type' => 'daily', 'days' => null, 'min_seats' => 3, 'start_time' => '08:00', 'end_time' => '09:00']);
         $this->artisan('classes:check-start');
         $this->post("/teach/classes/{$again->id}/reactivate", ['starts_on' => '2026-11-10'])->assertSessionHasNoErrors();
+        $this->artisan('classes:check-start');
+        $this->assertSame(TeachingClass::STATUS_PUBLISHED, $again->fresh()->status);
+
+        // A weekly class restarts on one of its days.
+        $weekly = $this->published(['title' => 'أسبوعي', 'starts_on' => '2026-11-10', 'days' => [6], 'min_seats' => 3, 'start_time' => '10:00', 'end_time' => '11:00']);
+        $this->artisan('classes:check-start');
+        $this->post("/teach/classes/{$weekly->id}/reactivate", ['starts_on' => '2026-11-12'])->assertSessionHasErrors('starts_on');
+        $this->post("/teach/classes/{$weekly->id}/reactivate", ['starts_on' => '2026-11-14'])->assertSessionHasNoErrors();
     }
 
     public function test_only_a_suspended_class_can_be_restarted_and_only_by_its_owner(): void

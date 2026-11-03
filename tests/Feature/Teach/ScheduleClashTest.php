@@ -20,6 +20,7 @@ class ScheduleClashTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->travelTo('2026-11-03 10:00:00');
 
         $this->user = User::factory()->instructor()->create();
         $this->user->instructor->forceFill(['slug' => 'ahmed'])->save();
@@ -40,7 +41,7 @@ class ScheduleClashTest extends TestCase
 
     public function test_a_new_class_at_the_same_hours_on_a_shared_day_is_refused(): void
     {
-        $this->post('/teach/classes', $this->data(['days' => [1, 3], 'start_time' => '18:00', 'end_time' => '20:00']))
+        $this->post('/teach/classes', $this->data(['starts_on' => '2026-12-07', 'days' => [1, 3], 'start_time' => '18:00', 'end_time' => '20:00']))
             ->assertSessionHasErrors(['start_time' => ScheduleClash::message([
                 'class' => $this->active,
                 'date' => '2026-12-07', // the first Monday of the overlap
@@ -55,14 +56,14 @@ class ScheduleClashTest extends TestCase
     public function test_classes_that_never_meet_together_are_fine(): void
     {
         // Other days.
-        $this->post('/teach/classes', $this->data(['days' => [0, 2]]))->assertSessionHasNoErrors();
+        $this->post('/teach/classes', $this->data(['starts_on' => '2026-12-06', 'days' => [0, 2]]))->assertSessionHasNoErrors();
         // Same days, back to back (ends when the other starts).
         $this->post('/teach/classes', $this->data(['start_time' => '15:00', 'end_time' => '17:00']))->assertSessionHasNoErrors();
         $this->post('/teach/classes', $this->data(['start_time' => '19:00', 'end_time' => '21:00']))->assertSessionHasNoErrors();
         // Same days and hours, but after the active class has ended.
         $this->post('/teach/classes', $this->data(['starts_on' => '2027-02-01', 'ends_on' => '2027-03-31']))->assertSessionHasNoErrors();
         // A short period with no Saturday or Monday in it (Tue 1 Dec to Fri 4 Dec).
-        $this->post('/teach/classes', $this->data(['schedule_type' => 'daily', 'days' => [], 'ends_on' => '2026-12-04']))
+        $this->post('/teach/classes', $this->data(['schedule_type' => 'daily', 'days' => [], 'starts_on' => '2026-12-01', 'ends_on' => '2026-12-04']))
             ->assertSessionHasNoErrors();
     }
 
@@ -134,7 +135,7 @@ class ScheduleClashTest extends TestCase
             'audience' => ['نقطة'],
             'type' => 'online',
             'meeting_url' => '',
-            'starts_on' => '2026-12-01',
+            'starts_on' => '2026-12-05',
             'ends_on' => '2027-01-31',
             'schedule_type' => 'weekly',
             'days' => [6, 1],

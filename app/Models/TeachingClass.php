@@ -53,8 +53,13 @@ class TeachingClass extends Model
     /** Folder of the promotional images on the public disk (App\Support\ClassImage). */
     public const IMAGE_DIRECTORY = 'class-images';
 
-    /** Days a changed meeting link is marked «تم التحديث» for the students. */
+    /** Days a changed meeting link (or schedule) is marked «تم التحديث» for the students. */
     public const MEETING_URL_NEW_DAYS = 7;
+
+    /** The fields whose change accepted students are told about: when and where the class meets. */
+    public const SCHEDULE_FIELDS = [
+        'starts_on', 'ends_on', 'schedule_type', 'days', 'manual_dates', 'start_time', 'end_time', 'type', 'location', 'map_url',
+    ];
 
     protected $table = 'classes';
 
@@ -101,7 +106,35 @@ class TeachingClass extends Model
             'published_at' => 'datetime',
             'canceled_at' => 'datetime',
             'meeting_url_changed_at' => 'datetime',
+            'start_checked_at' => 'datetime',
+            'schedule_changed_at' => 'datetime',
         ];
+    }
+
+    /** The dates, hours or place changed in the last few days (shown to accepted students). */
+    public function scheduleIsNew(): bool
+    {
+        return $this->schedule_changed_at !== null
+            && $this->schedule_changed_at->gt(now()->subDays(self::MEETING_URL_NEW_DAYS));
+    }
+
+    /**
+     * The price is fixed once a student has joined: someone is waiting or accepted, or was
+     * accepted before (their fee was set from it).
+     */
+    public function priceIsLocked(): bool
+    {
+        return $this->exists && $this->enrollments()
+            ->where(fn ($query) => $query
+                ->whereIn('status', [Enrollment::STATUS_REQUESTED, Enrollment::STATUS_ACCEPTED])
+                ->orWhereNotNull('accepted_at'))
+            ->exists();
+    }
+
+    /** Accepted students right now. */
+    public function hasAcceptedStudents(): bool
+    {
+        return $this->exists && $this->enrollments()->where('status', Enrollment::STATUS_ACCEPTED)->exists();
     }
 
     /** The meeting link was changed in the last few days. */

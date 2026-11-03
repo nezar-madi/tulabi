@@ -158,6 +158,8 @@ class ClassController extends Controller
             'today' => TulabiClock::today(),
             'meetingShareUrl' => ClassPresenter::meetingShareUrl($class),
             'meetingChanged' => (bool) $request->session()->get('meetingChanged'),
+            // After a save that moved the dates, hours or place of a class with students.
+            'scheduleShareUrl' => $request->session()->get('scheduleChanged') ? ClassPresenter::scheduleShareUrl($class) : null,
             'justCreated' => (bool) $request->session()->get('classCreated'),
             'publicUrl' => $class->isPubliclyVisible() || $class->status === TeachingClass::STATUS_DRAFT
                 ? $this->publicUrl($class)
@@ -178,6 +180,21 @@ class ClassController extends Controller
             $class->forceFill(['meeting_url_changed_at' => now()]);
         }
 
+        // New dates, hours or place: accepted students see «تغيّر الموعد» and the instructor is offered WhatsApp.
+        $scheduleChanged = $class->isDirty(TeachingClass::SCHEDULE_FIELDS) && $class->hasAcceptedStudents();
+
+        if ($scheduleChanged) {
+            $class->forceFill(['schedule_changed_at' => now()]);
+        }
+
+        // «تعليق البدء تلقائيًا» looks at the start date once: a new future start is checked when it
+        // comes; a class already past its start (or moved to today) is not checked any more.
+        $started = $class->starts_on->toDateString() <= TulabiClock::today();
+
+        if ($class->isDirty('starts_on') || $class->start_checked_at === null) {
+            $class->forceFill(['start_checked_at' => $started ? ($class->start_checked_at ?? now()) : null]);
+        }
+
         $class->save();
 
         if ($jpeg !== null) {
@@ -186,7 +203,9 @@ class ClassController extends Controller
             $this->images->delete($class);
         }
 
-        return back()->with('status', __('classes.saved'))->with('meetingChanged', $meetingChanged);
+        return back()->with('status', __('classes.saved'))
+            ->with('meetingChanged', $meetingChanged)
+            ->with('scheduleChanged', $scheduleChanged);
     }
 
     public function publish(InstructorActionRequest $request, TeachingClass $class): RedirectResponse

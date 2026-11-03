@@ -14,6 +14,14 @@ use Tests\TestCase;
 
 class ClassTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A fixed "today" (Libya), so the class dates below stay in the future.
+        $this->travelTo('2026-11-03 10:00:00');
+    }
+
     public function test_a_new_class_is_a_draft_with_plain_text_content(): void
     {
         $user = $this->instructor();
@@ -49,7 +57,7 @@ class ClassTest extends TestCase
         $this->assertSame(['حل المعادلات', 'التفاضل'], $class->learn);
         $this->assertSame(['جبر أساسي'], $class->requirements);
         $this->assertSame(['طلاب الثانوي'], $class->audience);
-        $this->assertSame('2026-12-01', $class->starts_on->toDateString());
+        $this->assertSame('2026-12-05', $class->starts_on->toDateString());
     }
 
     public function test_validation(): void
@@ -142,7 +150,9 @@ class ClassTest extends TestCase
         $manual = TeachingClass::query()->latest('id')->first();
         $this->assertSame(['2026-12-05', '2026-12-20'], $manual->manual_dates);
         $this->assertNull($manual->days);
-        $this->assertSame('2027-01-31', $manual->ends_on->toDateString());
+        // Hand-picked dates are the period.
+        $this->assertSame('2026-12-05', $manual->starts_on->toDateString());
+        $this->assertSame('2026-12-20', $manual->ends_on->toDateString());
 
         $this->post('/teach/classes', $this->data(['schedule_type' => 'weekend']))->assertSessionHasErrors('schedule_type');
         $this->post('/teach/classes', $this->data(['schedule_type' => '']))->assertSessionHasErrors('schedule_type');
@@ -558,7 +568,7 @@ class ClassTest extends TestCase
             'location' => 'طرابلس، حي الأندلس',
             'map_url' => 'https://maps.app.goo.gl/abc123',
             'meeting_url' => '',
-            'starts_on' => '2026-12-01',
+            'starts_on' => '2026-12-05',
             'ends_on' => '2027-01-31',
             'schedule_type' => 'weekly',
             'days' => [6, 1],

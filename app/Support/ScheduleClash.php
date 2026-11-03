@@ -8,17 +8,16 @@ use Illuminate\Support\Carbon;
 
 /**
  * An instructor cannot teach two classes at once: a class's sessions may not overlap those of
- * another active class (published, closed or suspended) of the same instructor. Two classes clash
- * when their periods overlap, they meet on a common day in that overlap, and their hours overlap
- * (one ending at 17:00 and the other starting at 17:00 is fine). In person or online makes no
- * difference. Drafts and canceled classes are not checked against.
+ * another active class (published or closed) of the same instructor. Two classes clash when their
+ * periods overlap, they meet on a common day in that overlap, and their hours overlap (one ending at
+ * 17:00 and the other starting at 17:00 is fine). In person or online makes no difference. Drafts,
+ * canceled and suspended classes are not checked against (owner's decision: a suspended class frees
+ * its hours; its restart is checked against everything and refused if it clashes).
  */
 class ScheduleClash
 {
     /** Statuses whose sessions are taken. */
-    public const ACTIVE = [
-        TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED, TeachingClass::STATUS_SUSPENDED,
-    ];
+    public const ACTIVE = [TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED];
 
     /**
      * The first clash with another active class: that class and the first day both meet (Y-m-d).

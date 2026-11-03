@@ -72,6 +72,17 @@
         </div>
     </v-alert>
 
+    <!-- After a save that moved the dates, hours or place of a class with students -->
+    <v-alert v-if="scheduleShareUrl" type="success" variant="tonal" class="mb-4" rounded="lg" icon="tabler:calendar-event">
+        {{ $t('teach.classes.schedule_changed') }}
+        <div class="mt-2">
+            <v-btn class="text-none" variant="flat" color="success" size="small" :href="scheduleShareUrl" target="_blank" rel="noopener">
+                <v-icon icon="tabler:brand-whatsapp" start />
+                {{ $t('teach.classes.meeting.share_schedule') }}
+            </v-btn>
+        </div>
+    </v-alert>
+
     <v-alert v-if="readOnly" type="warning" variant="tonal" class="mb-4" rounded="lg">
         {{ $t('teach.classes.canceled_note') }}
         <div v-if="cls.cancel_reason" class="mt-1">{{ cls.cancel_reason }}</div>
@@ -335,6 +346,7 @@
                                 v-model="form.starts_on"
                                 :label="$t('teach.classes.fields.starts_on')"
                                 required
+                                :min="cls ? undefined : today"
                                 :disabled="readOnly"
                                 :error-messages="form.errors.starts_on"
                             />
@@ -429,6 +441,9 @@
                                 :label="`${$t('teach.classes.fields.price')} (${currencyLabel})`"
                                 :placeholder="$t('teach.classes.fields.price_hint')"
                                 required
+                                :disabled="priceLocked"
+                                :hint="priceLocked ? $t('teach.classes.fields.price_locked') : ''"
+                                :persistent-hint="priceLocked"
                                 :field-attrs="{ name: 'price', inputmode: 'decimal', dir: 'ltr' }"
                                 :error-messages="form.errors.price"
                             />
@@ -694,7 +709,7 @@ import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
-import { WEEK_ORDER, formatPeriod, formatPrice, formatSchedule } from '@/utils/classFormat';
+import { WEEK_ORDER, formatDays, formatPeriod, formatPrice, formatSchedule } from '@/utils/classFormat';
 
 const props = defineProps({
     item: { type: Object, default: null },
@@ -705,6 +720,8 @@ const props = defineProps({
     // wa.me message with the saved meeting link (online class), and whether this save changed it.
     meetingShareUrl: { type: String, default: null },
     meetingChanged: { type: Boolean, default: false },
+    // wa.me message with the new dates, hours and place, after a save that changed them (class with students).
+    scheduleShareUrl: { type: String, default: null },
     // The class was saved a moment ago: show the «تم إنشاء الفصل» dialog.
     justCreated: { type: Boolean, default: false },
     // A program chosen on the way in (a new class from this program).
@@ -716,6 +733,8 @@ const props = defineProps({
 const { t } = useI18n();
 const cls = computed(() => props.item);
 const readOnly = computed(() => cls.value?.status === 'canceled');
+// The price is fixed once a student has joined (the server refuses a change too).
+const priceLocked = computed(() => Boolean(cls.value?.price_locked));
 
 const programItems = computed(() => props.programs);
 
@@ -973,8 +992,27 @@ function missing(index) {
             }
         });
 
+        // No past dates (a date the class already had may stay as it is).
+        if (form.starts_on && form.starts_on < props.today && form.starts_on !== cls.value?.starts_on) {
+            need.starts_on = t('teach.classes.wizard.start_past');
+        }
+
+        if (form.ends_on && form.ends_on < props.today && form.ends_on !== cls.value?.ends_on) {
+            need.ends_on = t('teach.classes.wizard.end_past');
+        }
+
         if (form.schedule_type === 'weekly' && form.days.length === 0) {
             need.days = t('teach.classes.wizard.pick_days');
+        }
+
+        // A weekly class starts on one of its days (its first session).
+        const startDay = form.starts_on ? new Date(`${form.starts_on}T12:00:00Z`).getUTCDay() : null;
+        const daysChanged = !cls.value || form.starts_on !== cls.value.starts_on || cls.value.schedule_type !== 'weekly'
+            || [...form.days].sort().join() !== [...(cls.value.days || [])].sort().join();
+
+        if (form.schedule_type === 'weekly' && form.days.length && startDay !== null && !need.starts_on
+            && daysChanged && !form.days.includes(startDay)) {
+            need.starts_on = t('teach.classes.wizard.start_day', { days: formatDays(form.days, t) });
         }
 
         if (form.schedule_type === 'manual' && form.manual_dates.length === 0) {

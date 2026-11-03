@@ -54,6 +54,8 @@ class ClassPresenter
             'location' => $class->location,
             'meeting_url' => $class->meeting_url,
             'program_id' => $class->program_id,
+            // Fixed once a student has joined (asked or accepted).
+            'price_locked' => $class->priceIsLocked(),
             'promo_video_url' => $class->promo_video_url,
             'auto_suspend' => $class->auto_suspend,
             'min_seats' => $class->min_seats,
@@ -75,6 +77,29 @@ class ClassPresenter
         }
 
         return WhatsApp::share(__('classes.meeting_whatsapp', ['class' => $class->title, 'url' => $class->meeting_url]));
+    }
+
+    /**
+     * A WhatsApp message with the class's new dates, hours and place, for the instructor to send to
+     * their students after changing them.
+     */
+    public static function scheduleShareUrl(TeachingClass $class): ?string
+    {
+        if ($class->isCanceled()) {
+            return null;
+        }
+
+        $place = $class->type === TeachingClass::TYPE_ONLINE
+            ? __('classes.place_online')
+            : trim(implode(' ', array_filter([$class->location, $class->map_url])));
+
+        return WhatsApp::share(__('classes.schedule_whatsapp', [
+            'class' => $class->title,
+            'period' => __('classes.period', ['from' => ClassText::date($class->starts_on), 'to' => ClassText::date($class->ends_on)]),
+            'days' => ClassText::schedule($class),
+            'time' => ClassText::timeRange($class),
+            'place' => $place,
+        ]));
     }
 
     /** "17:00:00" from the database becomes "17:00". */

@@ -79,6 +79,11 @@ class Enrollments
             throw ValidationException::withMessages(['enrollment' => __('enrollments.class_canceled')]);
         }
 
+        // An ended class takes nobody new (its waiting requests can still be rejected).
+        if ($class->hasEnded()) {
+            throw ValidationException::withMessages(['enrollment' => __('enrollments.class_ended')]);
+        }
+
         $updated = Enrollment::query()
             ->whereKey($enrollment->getKey())
             ->where('status', Enrollment::STATUS_REQUESTED)

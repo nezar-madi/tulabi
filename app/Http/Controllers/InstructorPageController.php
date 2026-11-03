@@ -124,7 +124,10 @@ class InstructorPageController extends Controller
         /** @var TeachingClass $model */
         $model = $instructor->classes()
             ->whereKey($class)
-            ->when(! $isOwner, fn ($query) => $query->publiclyVisible())
+            // Visitors see a class until it ends (the owner still sees an ended one).
+            ->when(! $isOwner, fn ($query) => $query->publiclyVisible()->where(fn ($query) => $query
+                ->where('ends_on', '>=', TulabiClock::today())
+                ->orWhere(fn ($query) => $query->whereNull('ends_on')->where('starts_on', '>=', TulabiClock::today()))))
             ->when($isOwner, fn ($query) => $query->where('status', '!=', TeachingClass::STATUS_CANCELED))
             ->firstOrFail();
 

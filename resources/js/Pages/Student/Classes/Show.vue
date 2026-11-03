@@ -26,6 +26,18 @@
                     {{ $t('student.classes.reason', { reason: enrollment.decision_reason }) }}
                 </p>
 
+                <!-- The instructor moved the dates, hours or place in the last few days (accepted students only). -->
+                <v-alert
+                    v-if="cls.schedule_changed_at && cls.status !== 'canceled'"
+                    type="info"
+                    variant="tonal"
+                    class="my-4"
+                    rounded="lg"
+                    icon="tabler:calendar-event"
+                >
+                    {{ $t('student.classes.schedule_changed', { date: formatDate(cls.schedule_changed_at) }) }}
+                </v-alert>
+
                 <!-- The meeting link: only an accepted student of a running online class gets it from the server. -->
                 <section v-if="enrollment.status === 'accepted' && cls.type === 'online'" class="detail__meeting">
                     <h2 class="detail__subtitle">
