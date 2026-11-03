@@ -3,6 +3,7 @@
 namespace Tests\Feature\Teach;
 
 use App\Models\Enrollment;
+use App\Models\Program;
 use App\Models\TeachingClass;
 use App\Models\User;
 use App\Support\TulabiClock;
@@ -420,6 +421,41 @@ class ClassTest extends TestCase
             ->where('classes.data.0.accepted_count', 3)
             ->where('classes.data.0.requested_count', 2)
             ->where('today', TulabiClock::today()));
+    }
+
+    public function test_the_list_filters_by_title_time_date_price_type_and_program(): void
+    {
+        $this->travelTo('2026-12-15 10:00:00');
+        $user = $this->instructor();
+        $program = Program::factory()->for($user->instructor)->create(['name' => 'برنامج الرياضيات']);
+        $make = fn (array $attributes) => TeachingClass::factory()->published()->for($user->instructor)->create($attributes);
+
+        $upcoming = $make(['title' => 'جبر قادم', 'starts_on' => '2027-01-10', 'ends_on' => '2027-02-10', 'price' => '0', 'type' => 'online', 'program_id' => $program->id]);
+        $running = $make(['title' => 'هندسة جارية', 'starts_on' => '2026-12-01', 'ends_on' => '2027-01-31', 'price' => '200']);
+        $ended = $make(['title' => 'جبر منتهٍ', 'starts_on' => '2026-10-01', 'ends_on' => '2026-11-30', 'price' => '150']);
+        // Another instructor's class never shows.
+        TeachingClass::factory()->published()->create(['title' => 'جبر لغيري']);
+
+        $this->actingAs($user);
+        $ids = fn (array $query) => collect($this->get(route('teach.classes.index', $query))->assertOk()
+            ->viewData('page')['props']['classes']['data'])->pluck('id')->sort()->values()->all();
+
+        $this->assertSame([$upcoming->id, $ended->id], $ids(['q' => 'جبر']));
+        $this->assertSame([$upcoming->id], $ids(['when' => 'upcoming']));
+        $this->assertSame([$running->id], $ids(['when' => 'running']));
+        $this->assertSame([$ended->id], $ids(['when' => 'ended']));
+        $this->assertSame([$upcoming->id], $ids(['price' => 'free']));
+        $this->assertSame([$running->id, $ended->id], $ids(['price' => 'paid']));
+        $this->assertSame([$upcoming->id], $ids(['type' => 'online']));
+        $this->assertSame([$upcoming->id], $ids(['program' => (string) $program->id]));
+        $this->assertSame([$running->id, $ended->id], $ids(['program' => 'none']));
+        $this->assertSame([$running->id], $ids(['from' => '2026-11-15', 'to' => '2026-12-31']));
+        // Filters combine.
+        $this->assertSame([$ended->id], $ids(['q' => 'جبر', 'price' => 'paid']));
+
+        // Wrong values are refused, not guessed.
+        $this->get(route('teach.classes.index', ['price' => 'cheap']))->assertSessionHasErrors('price');
+        $this->get(route('teach.classes.index', ['from' => '15/12/2026']))->assertSessionHasErrors('from');
     }
 
     public function test_close_reopen_cancel_and_delete(): void

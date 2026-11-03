@@ -519,7 +519,28 @@
             },
             "delete_title": "حذف المسودة؟",
             "delete_text": "ستُحذف مسودة «{title}» ولن تظهر في قائمة فصولك. لا يمكن التراجع عن ذلك.",
-            "delete_confirm_button": "نعم، احذف"
+            "delete_confirm_button": "نعم، احذف",
+            "narrow": {
+                "search": "ابحث بعنوان الفصل",
+                "when": "الوقت",
+                "all_when": "كل الأوقات",
+                "when_upcoming": "لم تبدأ بعد",
+                "when_running": "جارية الآن",
+                "when_ended": "انتهت",
+                "price": "السعر",
+                "all_price": "المدفوعة والمجانية",
+                "price_paid": "مدفوعة",
+                "price_free": "مجانية",
+                "type": "النوع",
+                "all_type": "حضوري وعن بعد",
+                "program": "البرنامج التدريبي",
+                "all_program": "كل البرامج",
+                "no_program": "بلا برنامج",
+                "from": "تبدأ من تاريخ",
+                "to": "إلى تاريخ",
+                "clear": "مسح الفلاتر",
+                "empty": "لا فصول تطابق هذه الفلاتر."
+            }
         },
         "requests": {
             "title": "طلبات الانضمام",

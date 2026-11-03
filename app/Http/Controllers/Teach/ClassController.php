@@ -40,7 +40,20 @@ class ClassController extends Controller
     public function index(Request $request): Response
     {
         $instructor = $this->instructor($request);
-        $filter = $request->validate(['filter' => ['nullable', Rule::in(self::FILTERS)]])['filter'] ?? 'active';
+        $query = $request->validate([
+            'filter' => ['nullable', Rule::in(self::FILTERS)],
+            // Narrowing the list: title, when it runs, the start date, price, type and program.
+            'q' => ['nullable', 'string', 'max:100'],
+            'when' => ['nullable', Rule::in(['upcoming', 'running', 'ended'])],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d'],
+            'price' => ['nullable', Rule::in(['paid', 'free'])],
+            'type' => ['nullable', Rule::in([TeachingClass::TYPE_IN_PERSON, TeachingClass::TYPE_ONLINE])],
+            'program' => ['nullable', 'string', 'regex:/^(none|\d{1,10})$/'],
+        ]);
+        $filter = $query['filter'] ?? 'active';
+        $narrow = collect($query)->except('filter')->filter(fn ($value) => $value !== null && $value !== '')->all();
+        $today = TulabiClock::today();
 
         // Classes that reached their start date below their minimum are suspended before they are listed.
         $this->lifecycle->suspendUnderfilled($instructor->getKey());
@@ -53,6 +66,22 @@ class ClassController extends Controller
 
         $classes = $instructor->classes()
             ->whereIn('status', $statuses)
+            ->when($narrow['q'] ?? null, fn ($query, string $q) => $query->where(
+                'title', 'like', '%'.addcslashes($q, '\\%_').'%',
+            ))
+            ->when($narrow['when'] ?? null, fn ($query, string $when) => match ($when) {
+                'upcoming' => $query->whereDate('starts_on', '>', $today),
+                'running' => $query->whereDate('starts_on', '<=', $today)
+                    ->where(fn ($inner) => $inner->whereNull('ends_on')->orWhereDate('ends_on', '>=', $today)),
+                default => $query->whereDate('ends_on', '<', $today),
+            })
+            ->when($narrow['from'] ?? null, fn ($query, string $from) => $query->whereDate('starts_on', '>=', $from))
+            ->when($narrow['to'] ?? null, fn ($query, string $to) => $query->whereDate('starts_on', '<=', $to))
+            ->when($narrow['price'] ?? null, fn ($query, string $price) => $query->where('price', $price === 'paid' ? '>' : '=', 0))
+            ->when($narrow['type'] ?? null, fn ($query, string $type) => $query->where('type', $type))
+            ->when($narrow['program'] ?? null, fn ($query, string $program) => $program === 'none'
+                ? $query->whereNull('program_id')
+                : $query->where('program_id', (int) $program))
             // The card shows the seats taken and the requests waiting.
             ->withCount([
                 'enrollments as accepted_count' => fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED),
@@ -70,10 +99,12 @@ class ClassController extends Controller
 
         return Inertia::render('Teach/Classes/Index', [
             'filter' => $filter,
+            'narrow' => (object) $narrow,
+            'programs' => $instructor->programs()->orderBy('name')->get(['id', 'name']),
             'classes' => $classes,
             'hasSlug' => $instructor->slug !== null,
             'slug' => $instructor->slug,
-            'today' => TulabiClock::today(),
+            'today' => $today,
         ]);
     }
 

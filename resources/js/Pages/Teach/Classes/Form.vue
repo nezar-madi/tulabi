@@ -2,6 +2,7 @@
     <Head :title="cls ? cls.title : $t('teach.classes.create_title')" />
 
     <PageIntro
+        class="cf-intro"
         :title="cls ? cls.title : $t('teach.classes.create_title')"
         :description="cls ? '' : $t('teach.classes.form.lead')"
     >
@@ -14,7 +15,7 @@
         <template v-if="cls" #actions>
             <div class="d-flex flex-wrap ga-2">
                 <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
-                    <v-btn class="text-none" variant="tonal" color="primary" prepend-icon="tabler:users">
+                    <v-btn class="text-none cf-intro__students" variant="tonal" prepend-icon="tabler:users">
                         {{ $t('teach.students.open') }}
                     </v-btn>
                 </Link>
@@ -39,7 +40,7 @@
                 <v-btn v-if="cls.status === 'closed'" class="text-none" variant="flat" color="primary" @click="act('publish')">
                     {{ $t('teach.classes.reopen') }}
                 </v-btn>
-                <v-btn v-if="cls.status === 'published'" class="text-none" variant="outlined" color="primary" @click="act('close')">
+                <v-btn v-if="cls.status === 'published'" class="text-none" variant="tonal" color="error" prepend-icon="tabler:lock" @click="act('close')">
                     {{ $t('teach.classes.close') }}
                 </v-btn>
                 <v-menu v-if="cls.status !== 'canceled'" location="bottom end">
@@ -536,15 +537,6 @@
                         <img v-if="imagePreview" :src="imagePreview" alt="">
                         <v-icon v-else icon="tabler:photo" size="32" />
                     </div>
-                    <div class="cf-preview__body">
-                        <span class="cf-preview__kicker">{{ $t(`class.type.${form.type}`) }}</span>
-                        <strong class="cf-preview__title">{{ form.title || $t('teach.classes.form.untitled') }}</strong>
-                        <span class="cf-preview__meta">
-                            <v-icon icon="tabler:calendar-event" size="15" />
-                            {{ form.starts_on ? formatDay(form.starts_on) : $t('teach.classes.form.no_date') }}
-                        </span>
-                        <span class="cf-preview__price rq-number">{{ previewPrice }}</span>
-                    </div>
                 </div>
 
                 <v-btn
@@ -560,7 +552,6 @@
                 >
                     {{ cls ? $t('teach.classes.save') : $t('teach.classes.create') }}
                 </v-btn>
-                <p v-if="!cls && !readOnly" class="cf-side__hint">{{ $t('teach.classes.form.draft_note') }}</p>
                 <div class="cf-ready">
                     <div class="cf-ready__head">
                         <strong>{{ $t('teach.classes.form.ready_title') }}</strong>
@@ -703,7 +694,7 @@ import FormPlainSelect from '@/Components/formFields/FormPlainSelect.vue';
 import FormPlainTimePicker from '@/Components/formFields/FormPlainTimePicker.vue';
 import FormPlainTextarea from '@/Components/formFields/FormPlainTextarea.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
-import { WEEK_ORDER, formatDay, formatPeriod, formatPrice, formatSchedule } from '@/utils/classFormat';
+import { WEEK_ORDER, formatPeriod, formatPrice, formatSchedule } from '@/utils/classFormat';
 
 const props = defineProps({
     item: { type: Object, default: null },
@@ -1045,6 +1036,20 @@ function submit() {
         return;
     }
 
+    // Saving runs the same checks as «التالي» on every step (an edit opens any step as a tab,
+    // so it is checked here as a whole), then opens the first step that still lacks something.
+    const need = steps.reduce((all, _, index) => ({ ...all, ...missing(index) }), {});
+
+    if (Object.keys(need).length > 0) {
+        form.clearErrors();
+        form.setError(need);
+        openFirstError();
+        nextTick(() => nextTick(() => document.querySelector('#class-form .v-messages__message, #class-form small.text-error')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' })));
+
+        return;
+    }
+
     save();
 }
 
@@ -1358,6 +1363,19 @@ function cancelClass() {
 
 .cf-share {
     margin-top: 12px;
+}
+
+/* The title sits on the same line as the buttons beside it (both 40px high, centered). */
+.cf-intro :deep(.page-intro__title) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
+}
+
+.cf-intro__students {
+    color: var(--rq-accent-violet) !important;
 }
 
 .cf-confirm__icon {
