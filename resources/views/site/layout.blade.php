@@ -46,5 +46,31 @@
             @include('site.partials.icon', ['name' => 'whatsapp', 'size' => 28])
         </a>
     @endif
+<script>
+    // A form is sent once: a second press (double click, Enter twice) does nothing until the page comes back.
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+
+        if (form.dataset.sent) {
+            event.preventDefault();
+
+            return;
+        }
+
+        form.dataset.sent = '1';
+        setTimeout(function () {
+            form.querySelectorAll('button[type="submit"]').forEach(function (button) { button.disabled = true; });
+        }, 0);
+    });
+    // Coming back with the browser's back button must not leave the form locked.
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            document.querySelectorAll('form[data-sent]').forEach(function (form) {
+                delete form.dataset.sent;
+                form.querySelectorAll('button[type="submit"]').forEach(function (button) { button.disabled = false; });
+            });
+        }
+    });
+</script>
 </body>
 </html>

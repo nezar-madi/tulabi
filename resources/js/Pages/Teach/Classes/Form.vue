@@ -691,25 +691,19 @@
         :another-href="route('teach.classes.create')"
     />
 
-    <v-dialog v-model="deleteDialog" max-width="420">
-        <v-card v-if="cls" class="app-form-dialog">
-            <v-card-text class="pa-6">
-                <div class="cf-confirm__icon"><v-icon icon="tabler:trash" size="26" /></div>
-                <h2 class="rq-dialog__title mb-2">{{ $t('teach.classes.delete_title') }}</h2>
-                <p class="rq-dialog__subtitle mb-0">{{ $t('teach.classes.delete_text', { title: cls.title }) }}</p>
-            </v-card-text>
-            <v-card-actions class="pa-4">
-                <v-spacer />
-                <v-btn class="rq-btn" variant="text" @click="deleteDialog = false">{{ $t('common.close') }}</v-btn>
-                <v-btn class="rq-btn" variant="flat" color="error" :loading="deleting" @click="destroy">
-                    {{ $t('teach.classes.delete_confirm_button') }}
-                </v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
+    <ConfirmDialog
+        v-if="cls"
+        v-model="deleteDialog"
+        :title="$t('teach.classes.delete_title')"
+        :text="$t('teach.classes.delete_text', { title: cls.title })"
+        :confirm-label="$t('teach.classes.delete_confirm_button')"
+        :loading="deleting"
+        @confirm="destroy"
+    />
 </template>
 
 <script setup>
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import CreatedDialog from '@/Components/CreatedDialog.vue';
 import PromoMediaChoice from '@/Components/PromoMediaChoice.vue';
 import PageIntro from '@/Components/PageIntro.vue';
@@ -1322,17 +1316,6 @@ function cancelClass() {
 
 .cf-intro__students {
     color: var(--rq-accent-violet) !important;
-}
-
-.cf-confirm__icon {
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    margin-bottom: 14px;
-    border-radius: 50%;
-    background: var(--rq-danger-tint, rgb(220 38 38 / 0.1));
-    color: var(--rq-danger, #dc2626);
 }
 
 .cf-share--new {

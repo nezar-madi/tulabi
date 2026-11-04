@@ -1047,3 +1047,14 @@ body {
   transform-box: fill-box;
   transform-origin: center;
 }
+
+/* While a change is being saved (see utils/submitGuard.js) the buttons wait: pressing again would repeat it. */
+html[data-busy] {
+    cursor: progress;
+}
+
+html[data-busy] .v-btn:not(.v-btn--loading),
+html[data-busy] button[type="submit"] {
+    opacity: 0.6;
+    pointer-events: none;
+}

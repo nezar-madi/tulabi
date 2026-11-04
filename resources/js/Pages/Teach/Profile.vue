@@ -32,7 +32,7 @@
                     <v-icon icon="tabler:upload" start />
                     {{ $t('teach.profile.upload') }}
                 </v-btn>
-                <v-btn v-if="profile.photo_url" class="rq-btn" variant="text" color="error" @click="removePhoto">
+                <v-btn v-if="profile.photo_url" class="rq-btn" variant="text" color="error" @click="photoDialog = true">
                     {{ $t('teach.profile.remove_photo') }}
                 </v-btn>
             </div>
@@ -197,9 +197,19 @@
             </form>
         </section>
     </div>
+
+    <ConfirmDialog
+        v-model="photoDialog"
+        :title="$t('teach.profile.remove_photo_title')"
+        :text="$t('teach.profile.remove_photo_text')"
+        :confirm-label="$t('teach.profile.remove_photo_confirm')"
+        :loading="removingPhoto"
+        @confirm="removePhoto"
+    />
 </template>
 
 <script setup>
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import PageIntro from '@/Components/PageIntro.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
@@ -283,8 +293,18 @@ function upload(event) {
     });
 }
 
+const photoDialog = ref(false);
+const removingPhoto = ref(false);
+
 function removePhoto() {
-    router.delete(route('teach.profile.photo.delete'), { preserveScroll: true });
+    router.delete(route('teach.profile.photo.delete'), {
+        preserveScroll: true,
+        onStart: () => { removingPhoto.value = true; },
+        onFinish: () => {
+            removingPhoto.value = false;
+            photoDialog.value = false;
+        },
+    });
 }
 </script>
 

@@ -2,7 +2,7 @@ import './config/vuetify.scss';
 import '@mdi/font/css/materialdesignicons.css';
 import '../css/app.css';
 
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { createPinia } from 'pinia';
@@ -13,6 +13,7 @@ import { vuetify } from './config/vuetify';
 import { resolveInitialTheme } from './config/themePreference';
 import AppShell from '@/Layouts/AppShell.vue';
 import AuthSplitLayout from '@/Layouts/AuthSplitLayout.vue';
+import { installSubmitGuard } from '@/utils/submitGuard';
 
 // rqmana's layouts: sign-in pages in the split layout, signed-in pages in the app shell.
 const usesAuthLayout = (name) => /^Auth\//.test(name) || /^Join\//.test(name) || name === 'Admin/Login';
@@ -55,6 +56,9 @@ const i18n = createI18n({
         },
     },
 });
+
+// No second change while the first is still being saved (double clicks, a repeated Enter).
+installSubmitGuard(router);
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

@@ -36,7 +36,7 @@
                         </v-btn>
                     </template>
                     <v-list density="compact">
-                        <v-list-item class="cf-menu-item" base-color="error" @click="destroy">
+                        <v-list-item class="cf-menu-item" base-color="error" @click="deleteDialog = true">
                             <v-list-item-title>{{ $t('teach.programs.delete') }}</v-list-item-title>
                             <template #append><v-icon icon="tabler:trash" size="16" /></template>
                         </v-list-item>
@@ -276,6 +276,16 @@
         </aside>
     </div>
 
+    <ConfirmDialog
+        v-if="item"
+        v-model="deleteDialog"
+        :title="$t('teach.programs.delete_title')"
+        :text="$t('teach.programs.delete_text', { name: item.name })"
+        :confirm-label="$t('teach.programs.delete_confirm_button')"
+        :loading="deleting"
+        @confirm="destroy"
+    />
+
     <CreatedDialog
         v-if="item"
         v-model="createdOpen"
@@ -328,6 +338,7 @@ import { useI18n } from 'vue-i18n';
 import PageIntro from '@/Components/PageIntro.vue';
 import CourseContentFields from '@/Components/CourseContentFields.vue';
 import PromoMediaChoice from '@/Components/PromoMediaChoice.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import CreatedDialog from '@/Components/CreatedDialog.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
@@ -588,14 +599,21 @@ function save() {
     }
 }
 
+// «حذف»: asks first (a program with classes is refused by the server, and the reason is shown at the top).
+const deleteDialog = ref(false);
+const deleting = ref(false);
+
 function destroy() {
-    if (window.confirm(t('teach.programs.delete_confirm'))) {
-        router.delete(route('teach.programs.destroy', props.item.id), {
-            onError: (errors) => {
-                form.setError('program', errors.program);
-            },
-        });
-    }
+    router.delete(route('teach.programs.destroy', props.item.id), {
+        onStart: () => { deleting.value = true; },
+        onError: (errors) => {
+            form.setError('program', errors.program);
+        },
+        onFinish: () => {
+            deleting.value = false;
+            deleteDialog.value = false;
+        },
+    });
 }
 </script>
 
