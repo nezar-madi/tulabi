@@ -1324,50 +1324,37 @@ function cancelClass() {
     min-height: 40px;
 }
 
-/* ---------- Header actions: one quiet toolbar ---------- */
+/* ---------- Header actions: plain text buttons, no frames (they should not compete with the form) ---------- */
 .cf-acts {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 2px;
 }
 
-/* «الطلاب» and «عرض» share one bordered group with a divider */
 .cf-acts__group {
     display: inline-flex;
-    align-items: stretch;
-    overflow: hidden;
-    border: 1px solid var(--rq-line);
-    border-radius: var(--rq-radius-md);
-    background: var(--rq-surface);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+    align-items: center;
+    gap: 2px;
 }
 
 .cf-acts__item {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    height: 40px;
-    padding-inline: 14px;
+    gap: 6px;
+    height: 36px;
+    padding-inline: 10px;
     border: 0;
+    border-radius: var(--rq-radius-md);
     background: none;
     font-family: var(--rq-font-display);
     font-size: 14px;
-    font-weight: 600;
-    color: var(--rq-text-heading);
+    font-weight: 500;
+    color: var(--rq-text-body);
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color var(--rq-dur-fast) var(--rq-ease), color var(--rq-dur-fast) var(--rq-ease);
-}
-
-/* Inside the group the border is the group's: 38 + 2 = the same 40 as the buttons beside it */
-.cf-acts__group .cf-acts__item {
-    height: 38px;
-}
-
-.cf-acts__group .cf-acts__item + .cf-acts__item {
-    border-inline-start: 1px solid var(--rq-line);
+    transition: background-color var(--rq-dur-fast) var(--rq-ease);
 }
 
 .cf-acts__item:hover {
@@ -1376,65 +1363,58 @@ function cancelClass() {
 
 .cf-acts__item:focus-visible {
     outline: none;
-    box-shadow: inset var(--rq-focus-ring);
+    box-shadow: var(--rq-focus-ring);
 }
 
 .cf-acts__icon {
-    color: var(--rq-text-muted);
+    color: var(--rq-text-subtle);
 }
 
 .cf-acts__icon--students {
     color: var(--rq-accent-violet);
 }
 
+/* The number of accepted students, quietly after the word */
 .cf-acts__count {
-    min-width: 22px;
-    padding: 0 7px;
-    border-radius: var(--rq-radius-pill);
-    background: var(--rq-surface-tint);
-    font-size: 12px;
-    line-height: 20px;
-    text-align: center;
-    color: var(--rq-text-muted);
+    font-size: 13px;
+    color: var(--rq-text-subtle);
 }
 
+/* Waiting requests: a small dot and the number, no badge */
 .cf-acts__new {
-    padding: 0 8px;
-    border-radius: var(--rq-radius-pill);
-    background: var(--rq-warning-tint);
-    font-size: 11px;
-    line-height: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: 4px;
+    font-size: 12px;
     color: var(--rq-warning);
 }
 
-/* A button on its own (close registration, the ⋮ menu) */
-.cf-acts__item--solo {
-    border: 1px solid var(--rq-line);
-    border-radius: var(--rq-radius-md);
-    background: var(--rq-surface);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+.cf-acts__new::before {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    content: "";
 }
 
 .cf-acts__item--danger {
-    border-color: color-mix(in srgb, var(--rq-danger) 35%, transparent);
     color: var(--rq-danger);
 }
 
 .cf-acts__item--danger:hover {
-    border-color: var(--rq-danger);
     background: var(--rq-danger-tint);
 }
 
 .cf-acts__more {
     justify-content: center;
-    width: 40px;
+    width: 36px;
     padding: 0;
     color: var(--rq-text-muted);
 }
 
 .cf-acts__main {
-    height: 40px !important;
-    border-radius: var(--rq-radius-md) !important;
+    margin-inline-start: 6px;
 }
 
 .cf-share--new {
