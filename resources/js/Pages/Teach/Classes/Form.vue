@@ -11,44 +11,52 @@
             <ClassStatusBadge v-if="cls" :status="cls.status" :ended="cls.ended" class="ms-2 align-middle" />
         </template>
 
-        <!-- Status actions -->
+        <!-- The header's actions: where to go (students, public page) as one group, then what to do -->
         <template v-if="cls" #actions>
-            <div class="d-flex flex-wrap ga-2">
-                <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="text-decoration-none">
-                    <v-btn class="text-none cf-intro__students" variant="text" prepend-icon="tabler:users">
-                        {{ $t('teach.students.open') }}
-                    </v-btn>
-                </Link>
+            <div class="cf-acts">
+                <div v-if="cls.status !== 'draft' || publicUrl" class="cf-acts__group">
+                    <Link v-if="cls.status !== 'draft'" :href="route('teach.classes.students', cls.id)" class="cf-acts__item">
+                        <v-icon icon="tabler:users" size="18" class="cf-acts__icon cf-acts__icon--students" />
+                        <span>{{ $t('teach.students.open') }}</span>
+                        <span class="cf-acts__count rq-number">{{ studentCounts.accepted }}</span>
+                        <span v-if="studentCounts.requested" class="cf-acts__new">
+                            {{ $t('teach.classes.header.new_requests', { count: studentCounts.requested }) }}
+                        </span>
+                    </Link>
+                    <a v-if="publicUrl" :href="publicUrl" target="_blank" rel="noopener" class="cf-acts__item">
+                        <v-icon icon="tabler:external-link" size="18" class="cf-acts__icon" />
+                        <span>{{ cls.status === 'draft' ? $t('teach.classes.header.preview') : $t('teach.classes.view') }}</span>
+                    </a>
+                </div>
+
                 <v-btn
-                    v-if="publicUrl"
-                    class="text-none"
-                    variant="text"
+                    v-if="cls.status === 'draft'"
+                    class="text-none cf-acts__main"
+                    variant="flat"
                     color="primary"
-                    prepend-icon="tabler:external-link"
-                    :href="publicUrl"
-                    target="_blank"
-                    rel="noopener"
+                    prepend-icon="tabler:eye"
+                    :disabled="!(cls.image_url || cls.promo_video_url)"
+                    @click="act('publish')"
                 >
-                    {{ $t('teach.classes.view') }}
-                </v-btn>
-                <v-btn v-if="cls.status === 'draft'" class="text-none" variant="flat" color="primary" :disabled="!(cls.image_url || cls.promo_video_url)" @click="act('publish')">
                     {{ $t('teach.classes.publish') }}
                 </v-btn>
-                <v-btn v-if="cls.status === 'suspended'" class="text-none" variant="flat" color="primary" @click="openRestart">
+                <v-btn v-if="cls.status === 'suspended'" class="text-none cf-acts__main" variant="flat" color="primary" prepend-icon="tabler:player-play" @click="openRestart">
                     {{ $t('teach.classes.restart') }}
                 </v-btn>
-                <v-btn v-if="cls.status === 'closed'" class="text-none" variant="flat" color="primary" @click="act('publish')">
+                <v-btn v-if="cls.status === 'closed'" class="text-none cf-acts__main" variant="flat" color="primary" prepend-icon="tabler:lock-open" @click="act('publish')">
                     {{ $t('teach.classes.reopen') }}
                 </v-btn>
-                <v-btn v-if="cls.status === 'published'" class="text-none" variant="text" color="error" prepend-icon="tabler:lock" @click="act('close')">
-                    {{ $t('teach.classes.close') }}
-                </v-btn>
+                <button v-if="cls.status === 'published'" type="button" class="cf-acts__item cf-acts__item--solo cf-acts__item--danger" @click="act('close')">
+                    <v-icon icon="tabler:lock" size="18" />
+                    <span>{{ $t('teach.classes.close') }}</span>
+                </button>
+
                 <!-- A draft is deleted; a class that has not ended is canceled; an ended one has neither. -->
                 <v-menu v-if="cls.status !== 'canceled' && (cls.status === 'draft' || !cls.ended)" location="bottom end">
                     <template #activator="{ props: menuProps }">
-                        <v-btn v-bind="menuProps" icon variant="text" size="small" :aria-label="$t('teach.money.more')">
-                            <v-icon icon="tabler:dots-vertical" />
-                        </v-btn>
+                        <button v-bind="menuProps" type="button" class="cf-acts__item cf-acts__item--solo cf-acts__more" :aria-label="$t('teach.money.more')">
+                            <v-icon icon="tabler:dots-vertical" size="18" />
+                        </button>
                     </template>
                     <v-list density="compact">
                         <!-- A draft is deleted; only a class that was published is canceled. -->
@@ -729,6 +737,8 @@ const props = defineProps({
     // wa.me message with the saved meeting link (online class), and whether this save changed it.
     meetingShareUrl: { type: String, default: null },
     meetingChanged: { type: Boolean, default: false },
+    // Accepted students and waiting requests, shown on the «الطلاب» button.
+    studentCounts: { type: Object, default: () => ({ accepted: 0, requested: 0 }) },
     // wa.me message with the new dates, hours and place, after a save that changed them (class with students).
     scheduleShareUrl: { type: String, default: null },
     // The class was saved a moment ago: show the «تم إنشاء الفصل» dialog.
@@ -1314,8 +1324,117 @@ function cancelClass() {
     min-height: 40px;
 }
 
-.cf-intro__students {
-    color: var(--rq-accent-violet) !important;
+/* ---------- Header actions: one quiet toolbar ---------- */
+.cf-acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* «الطلاب» and «عرض» share one bordered group with a divider */
+.cf-acts__group {
+    display: inline-flex;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.cf-acts__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding-inline: 14px;
+    border: 0;
+    background: none;
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--rq-text-heading);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--rq-dur-fast) var(--rq-ease), color var(--rq-dur-fast) var(--rq-ease);
+}
+
+/* Inside the group the border is the group's: 38 + 2 = the same 40 as the buttons beside it */
+.cf-acts__group .cf-acts__item {
+    height: 38px;
+}
+
+.cf-acts__group .cf-acts__item + .cf-acts__item {
+    border-inline-start: 1px solid var(--rq-line);
+}
+
+.cf-acts__item:hover {
+    background: var(--rq-surface-hover);
+}
+
+.cf-acts__item:focus-visible {
+    outline: none;
+    box-shadow: inset var(--rq-focus-ring);
+}
+
+.cf-acts__icon {
+    color: var(--rq-text-muted);
+}
+
+.cf-acts__icon--students {
+    color: var(--rq-accent-violet);
+}
+
+.cf-acts__count {
+    min-width: 22px;
+    padding: 0 7px;
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-surface-tint);
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    color: var(--rq-text-muted);
+}
+
+.cf-acts__new {
+    padding: 0 8px;
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-warning-tint);
+    font-size: 11px;
+    line-height: 20px;
+    color: var(--rq-warning);
+}
+
+/* A button on its own (close registration, the ⋮ menu) */
+.cf-acts__item--solo {
+    border: 1px solid var(--rq-line);
+    border-radius: var(--rq-radius-md);
+    background: var(--rq-surface);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.cf-acts__item--danger {
+    border-color: color-mix(in srgb, var(--rq-danger) 35%, transparent);
+    color: var(--rq-danger);
+}
+
+.cf-acts__item--danger:hover {
+    border-color: var(--rq-danger);
+    background: var(--rq-danger-tint);
+}
+
+.cf-acts__more {
+    justify-content: center;
+    width: 40px;
+    padding: 0;
+    color: var(--rq-text-muted);
+}
+
+.cf-acts__main {
+    height: 40px !important;
+    border-radius: var(--rq-radius-md) !important;
 }
 
 .cf-share--new {

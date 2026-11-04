@@ -158,6 +158,10 @@ class ClassController extends Controller
             'programs' => $this->programOptions($this->instructor($request), $class->program_id),
             'today' => TulabiClock::today(),
             'meetingShareUrl' => ClassPresenter::meetingShareUrl($class),
+            'studentCounts' => [
+                'accepted' => $class->enrollments()->where('status', Enrollment::STATUS_ACCEPTED)->count(),
+                'requested' => $class->isCanceled() ? 0 : $class->enrollments()->where('status', Enrollment::STATUS_REQUESTED)->count(),
+            ],
             'meetingChanged' => (bool) $request->session()->get('meetingChanged'),
             // After a save that moved the dates, hours or place of a class with students.
             'scheduleShareUrl' => $request->session()->get('scheduleChanged') ? ClassPresenter::scheduleShareUrl($class) : null,
