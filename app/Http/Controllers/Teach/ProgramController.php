@@ -66,7 +66,8 @@ class ProgramController extends Controller
             $this->images->attach($program, $jpeg);
         }
 
-        return redirect()->route('teach.programs.edit', $program)->with('status', __('programs.created'));
+        // The program's page opens with the «تم إنشاء البرنامج» dialog (once).
+        return redirect()->route('teach.programs.edit', $program)->with('programCreated', true);
     }
 
     public function edit(Request $request, Program $program): Response
@@ -75,6 +76,7 @@ class ProgramController extends Controller
 
         return Inertia::render('Teach/Programs/Form', [
             'item' => ProgramPresenter::forOwner($program->loadCount('classes')),
+            'justCreated' => (bool) $request->session()->get('programCreated'),
         ]);
     }
 

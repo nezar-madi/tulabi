@@ -46,7 +46,7 @@ class SaveProgramRequest extends InstructorRequest
         $program = $this->route('program');
 
         return [
-            ...CourseContent::rules(),
+            ...CourseContent::rules(CourseContent::PROGRAM_DESCRIPTION_MIN, CourseContent::PROGRAM_ITEM_MIN),
             'name' => [
                 'required', 'string', 'min:3', 'max:'.Program::NAME_MAX,
                 Rule::unique('programs', 'name')
@@ -70,7 +70,13 @@ class SaveProgramRequest extends InstructorRequest
      */
     public function messages(): array
     {
-        return ['name.unique' => __('programs.name_taken')];
+        return [
+            'name.unique' => __('programs.name_taken'),
+            'description.min' => __('programs.description_short', ['min' => CourseContent::PROGRAM_DESCRIPTION_MIN]),
+            ...collect(CourseContent::LISTS)->mapWithKeys(fn (string $list) => [
+                "{$list}.*.min" => __('programs.item_short', ['min' => CourseContent::PROGRAM_ITEM_MIN]),
+            ])->all(),
+        ];
     }
 
     /**

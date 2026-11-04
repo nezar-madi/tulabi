@@ -18,6 +18,12 @@ class CourseContent
 
     public const ITEM_MAX = 200;
 
+    /** A program's description is at least this long (a class's has no minimum). */
+    public const PROGRAM_DESCRIPTION_MIN = 20;
+
+    /** A point in a program's lists is at least this long (the lists themselves may stay empty). */
+    public const PROGRAM_ITEM_MIN = 3;
+
     /**
      * Items ready to save: trimmed, empty ones dropped (the validation rules cap the count).
      *
@@ -47,17 +53,18 @@ class CourseContent
     }
 
     /**
-     * Validation rules for the shared content fields.
+     * Validation rules for the shared content fields. A minimum length for the description and
+     * for each point of the lists is optional (0 = none).
      *
      * @return array<string, mixed>
      */
-    public static function rules(): array
+    public static function rules(int $descriptionMin = 0, int $itemMin = 0): array
     {
-        $rules = ['description' => ['required', 'string', 'max:'.self::DESCRIPTION_MAX]];
+        $rules = ['description' => ['required', 'string', ...($descriptionMin > 0 ? ['min:'.$descriptionMin] : []), 'max:'.self::DESCRIPTION_MAX]];
 
         foreach (self::LISTS as $list) {
             $rules[$list] = ['nullable', 'array', 'max:'.self::ITEMS_MAX];
-            $rules[$list.'.*'] = ['string', 'max:'.self::ITEM_MAX];
+            $rules[$list.'.*'] = ['string', ...($itemMin > 0 ? ['min:'.$itemMin] : []), 'max:'.self::ITEM_MAX];
         }
 
         return $rules;

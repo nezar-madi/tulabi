@@ -680,7 +680,16 @@
         </v-card>
     </v-dialog>
 
-    <ClassCreatedDialog v-if="cls" v-model="createdOpen" :title="cls.title" />
+    <CreatedDialog
+        v-if="cls"
+        v-model="createdOpen"
+        :title="cls.title"
+        :heading="$t('teach.classes.created.title')"
+        :text="$t('teach.classes.created.text')"
+        :open-label="$t('teach.classes.created.open')"
+        :another-label="$t('teach.classes.created.another')"
+        :another-href="route('teach.classes.create')"
+    />
 
     <v-dialog v-model="deleteDialog" max-width="420">
         <v-card v-if="cls" class="app-form-dialog">
@@ -701,7 +710,7 @@
 </template>
 
 <script setup>
-import ClassCreatedDialog from '@/Components/ClassCreatedDialog.vue';
+import CreatedDialog from '@/Components/CreatedDialog.vue';
 import PromoMediaChoice from '@/Components/PromoMediaChoice.vue';
 import PageIntro from '@/Components/PageIntro.vue';
 import { computed, nextTick, ref, watch } from 'vue';
@@ -1324,25 +1333,6 @@ function cancelClass() {
     border-radius: 50%;
     background: var(--rq-danger-tint, rgb(220 38 38 / 0.1));
     color: var(--rq-danger, #dc2626);
-}
-
-/* «حذف المسودة» / «إلغاء الفصل» in the ⋮ menu: small, as secondary actions. */
-.cf-menu-item {
-    min-height: 34px !important;
-    padding-inline: 12px 16px !important;
-}
-
-.cf-menu-item :deep(.v-list-item__append) {
-    margin-inline-start: 10px;
-}
-
-.cf-menu-item :deep(.v-list-item__append > .v-icon) {
-    margin-inline-start: 0;
-}
-
-.cf-menu-item :deep(.v-list-item-title) {
-    font-size: 13px;
-    font-weight: 500;
 }
 
 .cf-share--new {

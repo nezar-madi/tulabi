@@ -36,7 +36,10 @@
                         </v-btn>
                     </template>
                     <v-list density="compact">
-                        <v-list-item :title="$t('teach.programs.delete')" base-color="error" @click="destroy" />
+                        <v-list-item class="cf-menu-item" base-color="error" @click="destroy">
+                            <v-list-item-title>{{ $t('teach.programs.delete') }}</v-list-item-title>
+                            <template #append><v-icon icon="tabler:trash" size="16" /></template>
+                        </v-list-item>
                     </v-list>
                 </v-menu>
             </div>
@@ -117,7 +120,6 @@
                         <span class="cf-section__num"><v-icon icon="tabler:photo" size="16" /></span>
                         <div>
                             <h2 class="cf-section__title">{{ $t('teach.programs.fields.image') }}</h2>
-                            <p class="cf-section__hint">{{ $t('teach.programs.form.image_hint') }}</p>
                         </div>
                     </header>
                     <div class="cf-section__body">
@@ -225,17 +227,19 @@
                         <img v-if="imagePreview" :src="imagePreview" alt="">
                         <v-icon v-else :icon="hasVideo ? 'tabler:player-play' : 'tabler:photo'" size="32" />
                     </div>
-                    <div class="cf-preview__body">
-                        <span class="cf-preview__kicker">{{ $t('teach.programs.form.kicker') }}</span>
-                        <strong class="cf-preview__title">{{ form.name || $t('teach.programs.form.untitled') }}</strong>
-                        <span class="cf-preview__meta">
-                            <v-icon :icon="visibility.icon" size="15" />
+                    <div class="cf-preview__body pf-info">
+                        <strong class="pf-info__title">{{ form.name || $t('teach.programs.form.untitled') }}</strong>
+                        <span class="pf-info__state" :class="`pf-info__state--${visibility.tone}`">
+                            <v-icon :icon="visibility.icon" size="16" />
                             {{ visibility.text }}
                         </span>
-                        <span v-if="item" class="cf-preview__meta">
-                            <v-icon icon="tabler:school" size="15" />
-                            {{ $t('teach.programs.classes_note', { count: item.classes_count }) }}
-                        </span>
+                        <div v-if="item" class="pf-info__row">
+                            <span class="pf-info__label">
+                                <v-icon icon="tabler:school" size="17" />
+                                {{ $t('teach.programs.form.classes_label') }}
+                            </span>
+                            <strong class="pf-info__value rq-number">{{ item.classes_count }}</strong>
+                        </div>
                     </div>
                 </div>
 
@@ -271,6 +275,17 @@
             </div>
         </aside>
     </div>
+
+    <CreatedDialog
+        v-if="item"
+        v-model="createdOpen"
+        :title="item.name"
+        :heading="$t('teach.programs.created.title')"
+        :text="$t('teach.programs.created.text')"
+        :open-label="$t('teach.programs.created.open')"
+        :another-label="$t('teach.programs.created.another')"
+        :another-href="route('teach.programs.create')"
+    />
 
     <!-- Phones: the save button stays in reach at the bottom -->
     <div class="cf-bar">
@@ -313,11 +328,16 @@ import { useI18n } from 'vue-i18n';
 import PageIntro from '@/Components/PageIntro.vue';
 import CourseContentFields from '@/Components/CourseContentFields.vue';
 import PromoMediaChoice from '@/Components/PromoMediaChoice.vue';
+import CreatedDialog from '@/Components/CreatedDialog.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
 const props = defineProps({
     item: { type: Object, default: null },
+    // The program was saved a moment ago: show the «تم إنشاء البرنامج» dialog.
+    justCreated: { type: Boolean, default: false },
 });
+
+const createdOpen = ref(props.justCreated);
 
 const { t } = useI18n();
 
@@ -401,17 +421,17 @@ const options = [
 
 const visibility = computed(() => {
     if (!form.is_active) {
-        return { icon: 'tabler:player-pause', text: t('teach.programs.inactive') };
+        return { icon: 'tabler:player-pause', text: t('teach.programs.inactive'), tone: 'paused' };
     }
 
     return form.is_published && hasMedia.value
-        ? { icon: 'tabler:eye', text: t('teach.programs.form.shown') }
-        : { icon: 'tabler:eye-off', text: t('teach.programs.form.not_shown') };
+        ? { icon: 'tabler:eye', text: t('teach.programs.form.shown'), tone: 'on' }
+        : { icon: 'tabler:eye-off', text: t('teach.programs.form.not_shown'), tone: 'off' };
 });
 
 const readiness = computed(() => [
     { key: 'name', section: 'pf-basics', done: form.name.trim().length >= 3 },
-    { key: 'description', section: 'pf-content', done: form.description.trim() !== '' },
+    { key: 'description', section: 'pf-content', done: form.description.trim().length >= DESCRIPTION_MIN },
     { key: 'learn', section: 'pf-content', done: form.learn.some((entry) => entry.trim() !== '') },
     { key: 'image', section: 'pf-image', done: hasMedia.value },
 ]);
@@ -437,6 +457,10 @@ const stepOf = (field) => steps.findIndex((entry) => entry.fields.includes(field
 const stepHasErrors = (index) => Object.keys(form.errors).some((field) => stepOf(field) === index);
 const canOpen = (index) => index <= reached.value;
 
+// The shortest description of a program, and the shortest point in its lists (as the server).
+const DESCRIPTION_MIN = 20;
+const ITEM_MIN = 3;
+
 // What a step still lacks, as { field: message } (the server checks everything again).
 function missing(index) {
     const need = {};
@@ -445,8 +469,21 @@ function missing(index) {
         need.name = t('teach.programs.wizard.name_short');
     }
 
-    if (index === 1 && !form.description.trim()) {
-        need.description = t('teach.classes.wizard.required');
+    if (index === 1) {
+        if (!form.description.trim()) {
+            need.description = t('teach.classes.wizard.required');
+        } else if (form.description.trim().length < DESCRIPTION_MIN) {
+            need.description = t('teach.programs.wizard.description_short', { min: DESCRIPTION_MIN });
+        }
+
+        // The lists may stay empty, but a point that is written needs at least three letters.
+        ['learn', 'requirements', 'audience'].forEach((list) => {
+            form[list].forEach((entry, index) => {
+                if (entry.trim() !== '' && entry.trim().length < ITEM_MIN) {
+                    need[`${list}.${index}`] = t('teach.programs.wizard.item_short', { min: ITEM_MIN });
+                }
+            });
+        });
     }
 
     return need;
@@ -566,6 +603,70 @@ function destroy() {
 <style scoped src="../courseForm.css"></style>
 
 <style scoped>
+/* The text under the preview image: a clear title, the state as a chip, the classes as a row */
+.pf-info {
+    gap: 12px;
+    padding: 16px 16px 18px;
+}
+
+.pf-info__title {
+    font-family: var(--rq-font-display);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--rq-text-heading);
+    overflow-wrap: anywhere;
+}
+
+.pf-info__state {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: var(--rq-radius-pill);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pf-info__state--on {
+    background: var(--rq-success-tint);
+    color: var(--rq-success);
+}
+
+.pf-info__state--off {
+    background: var(--rq-surface-tint);
+    color: var(--rq-text-body);
+}
+
+.pf-info__state--paused {
+    background: var(--rq-warning-tint);
+    color: var(--rq-warning);
+}
+
+.pf-info__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rq-line-soft);
+    font-size: 14px;
+    color: var(--rq-text-body);
+}
+
+.pf-info__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pf-info__value {
+    font-family: var(--rq-font-display);
+    font-size: 18px;
+    color: var(--rq-text-heading);
+}
+
 .pf-options {
     display: flex;
     flex-direction: column;

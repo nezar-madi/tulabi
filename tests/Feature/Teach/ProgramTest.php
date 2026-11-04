@@ -41,6 +41,44 @@ class ProgramTest extends TestCase
         $this->assertTrue($program->is_active);
     }
 
+    public function test_a_program_needs_a_name_a_real_description_and_points_of_three_letters(): void
+    {
+        $this->actingAs($this->instructor());
+
+        // The name: required, at least three letters.
+        $this->post('/teach/programs', $this->data(['name' => 'ab']))->assertSessionHasErrors('name');
+        $this->post('/teach/programs', $this->data(['name' => '  ab  ']))->assertSessionHasErrors('name');
+
+        // The description: required, at least 20 letters (after trimming).
+        $this->post('/teach/programs', $this->data(['description' => 'برنامج شامل.']))
+            ->assertSessionHasErrors(['description' => __('programs.description_short', ['min' => 20])]);
+        $this->post('/teach/programs', $this->data(['description' => str_repeat(' ', 30).'قصير']))->assertSessionHasErrors('description');
+        $this->post('/teach/programs', $this->data(['description' => str_repeat('ا', 20)]))->assertSessionHasNoErrors();
+
+        // The lists may stay empty, but a point written must have three letters.
+        foreach (['learn', 'requirements', 'audience'] as $list) {
+            $this->post('/teach/programs', $this->data(['name' => "قائمة {$list}", $list => ['مم']]))
+                ->assertSessionHasErrors(["{$list}.0" => __('programs.item_short', ['min' => 3])]);
+            $this->post('/teach/programs', $this->data(['name' => "قائمة ثانية {$list}", $list => ['ثلاثة']]))->assertSessionHasNoErrors();
+        }
+        $this->post('/teach/programs', $this->data(['name' => 'قوائم فارغة', 'learn' => [], 'requirements' => ['', '  ']]))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_the_success_dialog_opens_once_after_creating_a_program(): void
+    {
+        $this->actingAs($this->instructor());
+
+        $response = $this->post('/teach/programs', $this->data());
+        $program = Program::query()->sole();
+        $response->assertRedirect("/teach/programs/{$program->id}/edit")->assertSessionHas('programCreated', true);
+
+        $this->get("/teach/programs/{$program->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page->where('justCreated', true));
+        $this->get("/teach/programs/{$program->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page->where('justCreated', false));
+    }
+
     public function test_validation(): void
     {
         $user = $this->instructor();
@@ -290,7 +328,7 @@ class ProgramTest extends TestCase
     {
         return [
             'name' => 'رياضيات',
-            'description' => 'برنامج شامل.',
+            'description' => 'برنامج شامل لمنهج الرياضيات في الثانوية.',
             'is_active' => true,
             'is_published' => false,
             'is_featured' => false,

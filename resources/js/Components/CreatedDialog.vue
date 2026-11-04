@@ -8,14 +8,14 @@
                 </svg>
             </div>
 
-            <h2 id="class-created-title" class="created__title">{{ $t('teach.classes.created.title') }}</h2>
+            <h2 id="class-created-title" class="created__title">{{ heading }}</h2>
             <p class="created__name">{{ title }}</p>
-            <p id="class-created-text" class="created__text">{{ $t('teach.classes.created.text') }}</p>
+            <p id="class-created-text" class="created__text">{{ text }}</p>
 
             <div class="created__actions">
                 <v-btn class="rq-btn" variant="flat" color="primary" block size="large" autofocus @click="emit('update:modelValue', false)">
                     <v-icon icon="tabler:pencil" start />
-                    {{ $t('teach.classes.created.open') }}
+                    {{ openLabel }}
                 </v-btn>
                 <v-btn
                     class="rq-btn"
@@ -23,10 +23,10 @@
                     color="primary"
                     block
                     size="large"
-                    @click="router.visit(route('teach.classes.create'))"
+                    @click="router.visit(anotherHref)"
                 >
                     <v-icon icon="tabler:plus" start />
-                    {{ $t('teach.classes.created.another') }}
+                    {{ anotherLabel }}
                 </v-btn>
             </div>
         </v-card>
@@ -37,12 +37,18 @@
 import { router } from '@inertiajs/vue3';
 
 /*
- * Shown once, right after a new class is saved: a check mark, the class's name, and two ways on:
- * stay on its draft (the page behind) or start another class.
+ * Shown once, right after a new class or program is saved: a check mark, its name, and two ways
+ * on: stay on its page (the one behind) or start another.
  */
 defineProps({
     modelValue: { type: Boolean, default: false },
+    // The name of what was just created.
     title: { type: String, required: true },
+    heading: { type: String, required: true },
+    text: { type: String, required: true },
+    openLabel: { type: String, required: true },
+    anotherLabel: { type: String, required: true },
+    anotherHref: { type: String, required: true },
 });
 
 const emit = defineEmits(['update:modelValue']);

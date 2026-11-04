@@ -647,3 +647,22 @@
         display: none; /* the bottom bar does this on narrow screens */
     }
 }
+
+/* «حذف المسودة» / «إلغاء الفصل» in the ⋮ menu (classes and programs): small, as secondary actions. */
+.cf-menu-item {
+    min-height: 34px !important;
+    padding-inline: 12px 16px !important;
+}
+
+.cf-menu-item :deep(.v-list-item__append) {
+    margin-inline-start: 10px;
+}
+
+.cf-menu-item :deep(.v-list-item__append > .v-icon) {
+    margin-inline-start: 0;
+}
+
+.cf-menu-item :deep(.v-list-item-title) {
+    font-size: 13px;
+    font-weight: 500;
+}

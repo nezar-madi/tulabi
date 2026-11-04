@@ -22,8 +22,6 @@
             </button>
         </div>
 
-        <p v-if="!modelValue" class="pmc__none">{{ $t('content.media_none') }}</p>
-
         <!-- The image: each form brings its own picker (it keeps the chosen file and the saved one) -->
         <div v-if="modelValue === 'image'" class="pmc__body">
             <slot name="image" />
@@ -143,13 +141,6 @@ const options = [
 .pmc__check {
     flex-shrink: 0;
     color: var(--rq-success);
-}
-
-.pmc__none {
-    margin: 12px 0 0;
-    font-size: 13px;
-    line-height: 1.7;
-    color: var(--rq-text-muted);
 }
 
 .pmc__body {
