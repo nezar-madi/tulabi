@@ -79,14 +79,19 @@ class SaveProgramRequest extends InstructorRequest
     public function after(): array
     {
         return [function (Validator $validator) {
-            // A program shown on the instructor's page needs its promotional image: the saved one
-            // (not being removed) or a new one.
+            // A promotional image or a promotional video, never both; one of them is needed to show the
+            // program on the instructor's page. The image counts when it is new or the saved one stays.
             $program = $this->route('program');
             $hasImage = $this->newImage() !== null
                 || ($program instanceof Program && $program->image_path !== null && ! $this->boolean('remove_image'));
+            $hasVideo = $this->filled('promo_video_url');
 
-            if ($this->boolean('is_published') && ! $hasImage && ! $validator->errors()->has('image')) {
-                $validator->errors()->add('image', __('programs.image_required_to_publish'));
+            if ($hasImage && $hasVideo && ! $validator->errors()->has('promo_video_url')) {
+                $validator->errors()->add('promo_video_url', __('programs.media_either'));
+            }
+
+            if ($this->boolean('is_published') && ! $hasImage && ! $hasVideo && ! $validator->errors()->has('image')) {
+                $validator->errors()->add('image', __('programs.media_required_to_publish'));
             }
         }];
     }

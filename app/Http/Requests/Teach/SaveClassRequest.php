@@ -129,16 +129,24 @@ class SaveClassRequest extends InstructorRequest
     public function after(): array
     {
         return [function (Validator $validator) {
-            // A class already shown to visitors (or waiting to restart) keeps its image: take the
-            // image away only by closing it to the public first, never by editing.
+            // A promotional image or a promotional video, never both. The image counts when it is new
+            // or the saved one stays (a program's image is copied only when no video was chosen).
             $class = $this->route('class');
+            $hasImage = $this->newImage() !== null
+                || ($class instanceof TeachingClass && $class->image_path !== null && ! $this->boolean('remove_image'));
+            $hasVideo = $this->filled('promo_video_url');
 
-            if ($class instanceof TeachingClass && $class->image_path !== null && $this->boolean('remove_image')
-                && $this->newImage() === null
+            if ($hasImage && $hasVideo && ! $validator->errors()->has('promo_video_url')) {
+                $validator->errors()->add('promo_video_url', __('classes.media_either'));
+            }
+
+            // A class already shown to visitors (or waiting to restart) keeps one of them: the image
+            // can be swapped for a video, but both cannot be taken away.
+            if ($class instanceof TeachingClass && ! $hasImage && ! $hasVideo
                 && in_array($class->status, [
                     TeachingClass::STATUS_PUBLISHED, TeachingClass::STATUS_CLOSED, TeachingClass::STATUS_SUSPENDED,
                 ], true)) {
-                $validator->errors()->add('image', __('classes.image_required_published'));
+                $validator->errors()->add('image', __('classes.media_required_published'));
             }
 
             // A stopped program takes no new courses (one already in it may stay, as in rqmana).

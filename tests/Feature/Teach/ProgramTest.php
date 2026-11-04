@@ -24,7 +24,6 @@ class ProgramTest extends TestCase
             'learn' => ['نقطة أولى', ' ', 'نقطة ثانية'],
             'requirements' => ['متطلب'],
             'audience' => ['لمن يريد التعلم'],
-            'promo_video_url' => 'https://youtu.be/dQw4w9WgXcQ',
             'instructor_id' => 999,
             'image' => UploadedFile::fake()->image('poster.png', 1600, 900),
         ]));
@@ -36,7 +35,7 @@ class ProgramTest extends TestCase
         $this->assertSame(['نقطة أولى', 'نقطة ثانية'], $program->learn);
         $this->assertSame(['متطلب'], $program->requirements);
         $this->assertSame(['لمن يريد التعلم'], $program->audience);
-        $this->assertSame('https://youtu.be/dQw4w9WgXcQ', $program->promo_video_url);
+        $this->assertNull($program->promo_video_url);
         $this->assertStringStartsWith('program-images/'.$program->instructor_id.'/', $program->image_path);
         Storage::disk('public')->assertExists($program->image_path);
         $this->assertTrue($program->is_active);
@@ -57,13 +56,46 @@ class ProgramTest extends TestCase
         $this->assertSame(1, Program::query()->count());
     }
 
-    public function test_a_program_is_published_only_with_its_image(): void
+    public function test_a_program_has_an_image_or_a_video_never_both(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->instructor());
+        $video = 'https://youtu.be/dQw4w9WgXcQ';
+
+        // Both at once: refused.
+        $this->post('/teach/programs', $this->data(['promo_video_url' => $video, 'image' => UploadedFile::fake()->image('p.png', 1200, 800)]))
+            ->assertSessionHasErrors(['promo_video_url' => __('programs.media_either')]);
+        $this->assertSame(0, Program::query()->count());
+
+        // Neither is fine for a program that stays hidden; a video alone is fine and can be shown.
+        $this->post('/teach/programs', $this->data(['name' => 'بلا وسائط']))->assertSessionHasNoErrors();
+        $this->post('/teach/programs', $this->data(['name' => 'بفيديو', 'promo_video_url' => $video, 'is_published' => true]))
+            ->assertSessionHasNoErrors();
+        $withVideo = Program::query()->where('name', 'بفيديو')->sole();
+        $this->assertSame($video, $withVideo->promo_video_url);
+        $this->assertNull($withVideo->image_path);
+        $this->assertTrue($withVideo->isPublic());
+        $this->assertFalse(Program::query()->where('name', 'بلا وسائط')->sole()->hasMedia());
+
+        // Swapping the video for an image of a published program works in one save.
+        $this->put("/teach/programs/{$withVideo->id}", $this->data([
+            'name' => 'بفيديو', 'is_published' => true, 'promo_video_url' => '', 'image' => UploadedFile::fake()->image('q.png', 1200, 800),
+        ]))->assertSessionHasNoErrors();
+        $this->assertNull($withVideo->fresh()->promo_video_url);
+        $this->assertNotNull($withVideo->fresh()->image_path);
+
+        // A saved image plus a video typed in is both: refused.
+        $this->put("/teach/programs/{$withVideo->id}", $this->data(['name' => 'بفيديو', 'promo_video_url' => $video]))
+            ->assertSessionHasErrors(['promo_video_url' => __('programs.media_either')]);
+    }
+
+    public function test_a_program_is_published_only_with_an_image_or_a_video(): void
     {
         Storage::fake('public');
         $this->actingAs($this->instructor());
 
         $this->post('/teach/programs', $this->data(['is_published' => true]))
-            ->assertSessionHasErrors(['image' => __('programs.image_required_to_publish')]);
+            ->assertSessionHasErrors(['image' => __('programs.media_required_to_publish')]);
         $this->assertSame(0, Program::query()->count());
 
         $this->post('/teach/programs', $this->data(['is_published' => true, 'image' => UploadedFile::fake()->image('p.png', 1200, 800)]))

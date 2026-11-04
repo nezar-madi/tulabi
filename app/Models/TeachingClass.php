@@ -191,19 +191,26 @@ class TeachingClass extends Model
     }
 
     /**
-     * Classes a visitor may see: published or closed, with their promotional image, of an
-     * instructor whose page is public.
+     * Classes a visitor may see: published or closed, with their promotional image or video (one
+     * of them, never both), of an instructor whose page is public.
      *
      * @param  Builder<TeachingClass>  $query
      */
     public function scopePubliclyVisible(Builder $query): void
     {
-        $query->whereIn('status', [self::STATUS_PUBLISHED, self::STATUS_CLOSED])->whereNotNull('image_path');
+        $query->whereIn('status', [self::STATUS_PUBLISHED, self::STATUS_CLOSED])
+            ->where(fn ($media) => $media->whereNotNull('image_path')->orWhereNotNull('promo_video_url'));
     }
 
     public function isPubliclyVisible(): bool
     {
-        return in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true) && $this->image_path !== null;
+        return in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true) && $this->hasMedia();
+    }
+
+    /** A promotional image or a promotional video: what a class needs to be shown to visitors. */
+    public function hasMedia(): bool
+    {
+        return $this->image_path !== null || $this->promo_video_url !== null;
     }
 
     public function isSuspended(): bool

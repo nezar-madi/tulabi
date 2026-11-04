@@ -3,6 +3,10 @@
     <article class="rq-card tcard" :class="[`tcard--${tone}`, { 'tcard--muted': muted }]">
         <Link :href="route('teach.classes.edit', cls.id)" class="tcard__media" tabindex="-1" aria-hidden="true">
             <img v-if="cls.image_url" :src="cls.image_url" alt="" loading="lazy">
+            <span v-else-if="cls.video_embed_url" class="tcard__noimage">
+                <v-icon icon="tabler:player-play" size="28" />
+                <small>{{ $t('teach.classes.card.video_only') }}</small>
+            </span>
             <span v-else class="tcard__noimage">
                 <v-icon icon="tabler:photo" size="28" />
                 <small>{{ $t('teach.classes.card.no_image') }}</small>

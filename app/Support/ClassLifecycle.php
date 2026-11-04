@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Status changes of a class:
- *   draft -> published (needs the page address, a promotional image, not ended, no clash)
+ *   draft -> published (needs the page address, a promotional image or video, not ended, no clash)
  *   published <-> closed (closed: still shown, takes no new requests)
  *   published/closed -> suspended (automatic, once at the start date, see checkStart) -> published (a new start date)
  *   published/closed/suspended, not ended -> canceled (final; owes nothing, takes no payments)
@@ -25,9 +25,9 @@ class ClassLifecycle
             throw ValidationException::withMessages(['class' => __('classes.needs_slug')]);
         }
 
-        // A class shown on the public page needs its promotional image.
-        if ($class->image_path === null) {
-            throw ValidationException::withMessages(['class' => __('classes.image_required_to_publish')]);
+        // A class shown on the public page needs its promotional image or video.
+        if (! $class->hasMedia()) {
+            throw ValidationException::withMessages(['class' => __('classes.media_required_to_publish')]);
         }
 
         // An ended class is not opened to visitors again.

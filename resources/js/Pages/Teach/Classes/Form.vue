@@ -31,7 +31,7 @@
                 >
                     {{ $t('teach.classes.view') }}
                 </v-btn>
-                <v-btn v-if="cls.status === 'draft'" class="text-none" variant="flat" color="primary" :disabled="!cls.image_url" @click="act('publish')">
+                <v-btn v-if="cls.status === 'draft'" class="text-none" variant="flat" color="primary" :disabled="!(cls.image_url || cls.promo_video_url)" @click="act('publish')">
                     {{ $t('teach.classes.publish') }}
                 </v-btn>
                 <v-btn v-if="cls.status === 'suspended'" class="text-none" variant="flat" color="primary" @click="openRestart">
@@ -209,7 +209,7 @@
                     </div>
                 </section>
 
-                <!-- 3. Promotional image -->
+                <!-- 3. Promotional image or video (one of them) -->
                 <section v-show="step === 1" id="cf-image" class="cf-section">
                     <header class="cf-section__head">
                         <span class="cf-section__num"><v-icon icon="tabler:photo" size="16" /></span>
@@ -219,30 +219,34 @@
                         </div>
                     </header>
                     <div class="cf-section__body">
-                        <input
-                            ref="imageInput"
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            class="d-none"
-                            @change="pickImage"
-                        >
-                        <div v-if="imagePreview" class="cf-image">
-                            <img :src="imagePreview" alt="">
-                            <div class="cf-image__tools">
-                                <v-btn class="text-none" variant="flat" color="surface" size="small" prepend-icon="tabler:upload" :disabled="readOnly" @click="imageInput.click()">
-                                    {{ $t('teach.classes.fields.image_change') }}
-                                </v-btn>
-                                <v-btn class="text-none" variant="flat" color="surface" size="small" :disabled="readOnly" @click="clearImage">
-                                    <v-icon icon="tabler:trash" color="error" />
-                                </v-btn>
-                            </div>
-                        </div>
-                        <button v-else type="button" class="cf-drop" :disabled="readOnly" @click="imageInput.click()">
-                            <span class="rq-icon-tile cf-drop__tile"><v-icon icon="tabler:photo" /></span>
-                            <strong>{{ $t('teach.classes.fields.image_upload') }}</strong>
-                            <small>{{ $t('teach.classes.fields.image_hint') }}</small>
-                        </button>
-                        <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
+                        <PromoMediaChoice v-model="media" :form="form" :read-only="readOnly">
+                            <template #image>
+                                <input
+                                    ref="imageInput"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    class="d-none"
+                                    @change="pickImage"
+                                >
+                                <div v-if="imagePreview" class="cf-image">
+                                    <img :src="imagePreview" alt="">
+                                    <div class="cf-image__tools">
+                                        <v-btn class="text-none" variant="flat" color="surface" size="small" prepend-icon="tabler:upload" :disabled="readOnly" @click="imageInput.click()">
+                                            {{ $t('teach.classes.fields.image_change') }}
+                                        </v-btn>
+                                        <v-btn class="text-none" variant="flat" color="surface" size="small" :disabled="readOnly" @click="clearImage">
+                                            <v-icon icon="tabler:trash" color="error" />
+                                        </v-btn>
+                                    </div>
+                                </div>
+                                <button v-else type="button" class="cf-drop" :disabled="readOnly" @click="imageInput.click()">
+                                    <span class="rq-icon-tile cf-drop__tile"><v-icon icon="tabler:photo" /></span>
+                                    <strong>{{ $t('teach.classes.fields.image_upload') }}</strong>
+                                    <small>{{ $t('teach.classes.fields.image_hint') }}</small>
+                                </button>
+                                <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
+                            </template>
+                        </PromoMediaChoice>
                     </div>
                 </section>
 
@@ -551,7 +555,7 @@
                 <div class="cf-preview">
                     <div class="cf-preview__media">
                         <img v-if="imagePreview" :src="imagePreview" alt="">
-                        <v-icon v-else icon="tabler:photo" size="32" />
+                        <v-icon v-else :icon="hasVideo ? 'tabler:player-play' : 'tabler:photo'" size="32" />
                     </div>
                 </div>
 
@@ -698,6 +702,7 @@
 
 <script setup>
 import ClassCreatedDialog from '@/Components/ClassCreatedDialog.vue';
+import PromoMediaChoice from '@/Components/PromoMediaChoice.vue';
 import PageIntro from '@/Components/PageIntro.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -777,6 +782,31 @@ watch(mode, (value) => {
     }
 });
 
+// The promotional image or video, one of them, never both ('' = neither yet). A class that has an
+// image keeps it; an old one with both keeps the image and drops the video when saved.
+const media = ref(cls.value?.image_url ? 'image' : (cls.value?.promo_video_url ? 'video' : ''));
+
+if (media.value === 'image') {
+    form.promo_video_url = '';
+}
+
+const hasVideo = computed(() => media.value === 'video' && form.promo_video_url.trim() !== '');
+
+watch(media, (value) => {
+    if (value === 'image') {
+        form.promo_video_url = '';
+        form.remove_image = false;
+        form.no_template_image = false;
+    } else {
+        // A video, or nothing: the image goes (a saved one is removed on save; a program's is not copied).
+        clearImage();
+
+        if (value === '') {
+            form.promo_video_url = '';
+        }
+    }
+});
+
 // A program is the template of a class: on a new class, choosing one fills in the title, the
 // description, the three lists, the video and the image, and the instructor edits them from
 // there. A field the instructor already changed is not overwritten.
@@ -798,11 +828,20 @@ function fillFromProgram(previous, next) {
         }
     });
 
-    if (!form.promo_video_url || form.promo_video_url === previous?.promo_video_url) {
+    if (media.value !== 'image' && (!form.promo_video_url || form.promo_video_url === previous?.promo_video_url)) {
         form.promo_video_url = next?.promo_video_url || '';
     }
 
     form.no_template_image = false;
+
+    // The program's own choice (its image or its video) is taken when nothing was chosen yet, or
+    // when the choice came from the program that was chosen before.
+    const cameFromPrevious = (media.value === 'image' && Boolean(previous?.image_url) && !chosenPreview.value)
+        || (media.value === 'video' && Boolean(previous?.promo_video_url));
+
+    if (media.value === '' || cameFromPrevious) {
+        media.value = next?.image_url ? 'image' : (next?.promo_video_url ? 'video' : '');
+    }
 }
 
 watch(() => form.program_id, (_, previousId) => {
@@ -871,9 +910,9 @@ function toggleDay(day) {
 // The promotional image: the saved one, or the file just chosen (shown before saving).
 const imageInput = ref(null);
 const chosenPreview = ref(null);
-const imagePreview = computed(() => chosenPreview.value
+const imagePreview = computed(() => (media.value !== 'image' ? null : (chosenPreview.value
     || (form.remove_image ? null : cls.value?.image_url || null)
-    || (!cls.value && !form.no_template_image ? template.value?.image_url || null : null));
+    || (!cls.value && !form.no_template_image ? template.value?.image_url || null : null))));
 
 function pickImage(event) {
     const file = event.target.files?.[0];
@@ -1114,7 +1153,7 @@ const summary = computed(() => {
         { key: 'title', step: 0, value: form.title.trim() },
         ...(template.value ? [{ key: 'program', step: 0, value: template.value.name }] : []),
         { key: 'content', step: 1, value: form.description.trim() ? t(learnCount ? 'teach.classes.wizard.content_value' : 'teach.classes.wizard.content_plain', { count: learnCount }) : '' },
-        { key: 'image', step: 1, value: imagePreview.value ? t('teach.classes.wizard.image_yes') : t('teach.classes.wizard.image_no'), empty: !imagePreview.value },
+        { key: 'image', step: 1, value: imagePreview.value ? t('teach.classes.wizard.image_yes') : (hasVideo.value ? t('teach.classes.wizard.video_yes') : t('teach.classes.wizard.image_no')), empty: !imagePreview.value && !hasVideo.value },
         { key: 'place', step: 2, value: form.type === 'in_person' ? (form.location.trim() || t('class.type.in_person')) : t('class.type.online') },
         { key: 'period', step: 2, value: form.starts_on ? formatPeriod(form, t) : '' },
         { key: 'schedule', step: 2, value: formatSchedule(form, t) },
@@ -1136,7 +1175,7 @@ const readiness = computed(() => [
     { key: 'title', section: 'cf-basics', done: form.title.trim().length >= 3 },
     { key: 'description', section: 'cf-content', done: form.description.trim() !== '' },
     { key: 'learn', section: 'cf-content', done: form.learn.some((item) => item.trim() !== '') },
-    { key: 'image', section: 'cf-image', done: Boolean(imagePreview.value) },
+    { key: 'image', section: 'cf-image', done: Boolean(imagePreview.value) || hasVideo.value },
     {
         key: form.type === 'in_person' ? 'map' : 'meeting',
         section: 'cf-place',

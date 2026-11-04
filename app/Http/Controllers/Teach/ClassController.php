@@ -138,8 +138,8 @@ class ClassController extends Controller
 
         if ($jpeg !== null) {
             $this->images->attach($class, $jpeg);
-        } elseif ($class->program?->image_path !== null && ! $request->boolean('no_template_image')) {
-            // The program is the course's template: with no image of its own, it starts with the program's.
+        } elseif ($class->program?->image_path !== null && $class->promo_video_url === null && ! $request->boolean('no_template_image')) {
+            // The program is the course's template: with no image or video of its own, it starts with the program's image.
             $this->images->copyFromProgram($class, $class->program);
         }
 

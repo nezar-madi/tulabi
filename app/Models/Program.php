@@ -57,15 +57,25 @@ class Program extends Model
         return $this->hasMany(TeachingClass::class);
     }
 
-    /** What the public page shows: published, not stopped, and with its promotional image. */
+    /**
+     * What the public page shows: published, not stopped, and with its promotional image or video
+     * (one of them, never both).
+     */
     public function scopePublic(Builder $query): Builder
     {
-        return $query->where('is_published', true)->where('is_active', true)->whereNotNull('image_path');
+        return $query->where('is_published', true)->where('is_active', true)
+            ->where(fn ($media) => $media->whereNotNull('image_path')->orWhereNotNull('promo_video_url'));
     }
 
     public function isPublic(): bool
     {
-        return $this->is_published && $this->is_active && $this->image_path !== null;
+        return $this->is_published && $this->is_active && $this->hasMedia();
+    }
+
+    /** A promotional image or a promotional video: what a program needs to be shown to visitors. */
+    public function hasMedia(): bool
+    {
+        return $this->image_path !== null || $this->promo_video_url !== null;
     }
 
     /** A path on the current host (php artisan storage:link), so it works on any domain. */

@@ -36,6 +36,10 @@
             <article v-for="program in programs" :key="program.id" class="rq-card program" :class="{ 'program--off': !program.is_active }">
                 <Link :href="route('teach.programs.edit', program.id)" class="program__media" tabindex="-1" aria-hidden="true">
                     <img v-if="program.image_url" :src="program.image_url" alt="" loading="lazy">
+                    <span v-else-if="program.promo_video_url" class="program__noimage">
+                        <v-icon icon="tabler:player-play" size="30" />
+                        <small>{{ $t('teach.programs.card.video_only') }}</small>
+                    </span>
                     <span v-else class="program__noimage">
                         <v-icon icon="tabler:photo" size="30" />
                         <small>{{ $t('teach.programs.card.no_image') }}</small>
@@ -131,9 +135,9 @@ const stats = computed(() => [
     { key: 'published', label: t('teach.programs.stat_published'), value: props.counts.published, icon: 'tabler:world', tone: 'teal' },
 ]);
 
-// Visitors see a program only when it is active, shown, has an image, and the instructor has a page address.
+// Visitors see a program only when it is active, shown, has an image or a video, and the instructor has a page address.
 function isShown(program) {
-    return Boolean(program.public_url && program.image_url && program.is_active && program.is_published);
+    return Boolean(program.public_url && (program.image_url || program.promo_video_url) && program.is_active && program.is_published);
 }
 </script>
 

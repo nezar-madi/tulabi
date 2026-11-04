@@ -341,7 +341,7 @@ class ClassTest extends TestCase
         $this->assertNotNull($class->fresh()->published_at);
     }
 
-    public function test_a_class_is_published_only_with_its_image(): void
+    public function test_a_class_is_published_only_with_an_image_or_a_video(): void
     {
         Storage::fake('public');
         $user = $this->instructor();
@@ -349,7 +349,7 @@ class ClassTest extends TestCase
         $this->actingAs($user);
 
         $this->post("/teach/classes/{$draft->id}/publish")
-            ->assertSessionHasErrors(['class' => __('classes.image_required_to_publish')]);
+            ->assertSessionHasErrors(['class' => __('classes.media_required_to_publish')]);
         $this->assertSame(TeachingClass::STATUS_DRAFT, $draft->fresh()->status);
 
         // A draft may be saved without an image; once it has one, it publishes.
@@ -358,10 +358,63 @@ class ClassTest extends TestCase
         $this->post("/teach/classes/{$draft->id}/publish")->assertSessionHasNoErrors();
         $this->assertSame(TeachingClass::STATUS_PUBLISHED, $draft->fresh()->status);
 
-        // Its image cannot be taken away while it is shown to visitors.
+        // Its image cannot be taken away while it is shown to visitors, unless a video takes its place.
         $this->put("/teach/classes/{$draft->id}", $this->data(['remove_image' => true]))
-            ->assertSessionHasErrors(['image' => __('classes.image_required_published')]);
+            ->assertSessionHasErrors(['image' => __('classes.media_required_published')]);
         $this->assertNotNull($draft->fresh()->image_path);
+
+        $this->put("/teach/classes/{$draft->id}", $this->data(['remove_image' => true, 'promo_video_url' => 'https://youtu.be/dQw4w9WgXcQ']))
+            ->assertSessionHasNoErrors();
+        $this->assertNull($draft->fresh()->image_path);
+        $this->assertSame('https://youtu.be/dQw4w9WgXcQ', $draft->fresh()->promo_video_url);
+        $this->assertTrue($draft->fresh()->isPubliclyVisible());
+    }
+
+    public function test_a_class_has_an_image_or_a_video_never_both(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->instructor());
+        $video = 'https://youtu.be/dQw4w9WgXcQ';
+
+        $this->post('/teach/classes', $this->data(['promo_video_url' => $video, 'image' => UploadedFile::fake()->image('c.png', 1200, 800)]))
+            ->assertSessionHasErrors(['promo_video_url' => __('classes.media_either')]);
+        $this->assertSame(0, TeachingClass::query()->count());
+
+        // A video alone saves, and a class with only a video is shown to visitors once published.
+        $this->post('/teach/classes', $this->data(['promo_video_url' => $video]))->assertSessionHasNoErrors();
+        $class = TeachingClass::query()->sole();
+        $this->assertNull($class->image_path);
+        $this->post("/teach/classes/{$class->id}/publish")->assertSessionHasNoErrors();
+        $this->assertTrue($class->fresh()->isPubliclyVisible());
+
+        // An image uploaded while the video is still typed in is both: refused; the swap works.
+        $this->put("/teach/classes/{$class->id}", $this->data(['promo_video_url' => $video, 'image' => UploadedFile::fake()->image('d.png', 1200, 800)]))
+            ->assertSessionHasErrors('promo_video_url');
+        $this->put("/teach/classes/{$class->id}", $this->data(['promo_video_url' => '', 'image' => UploadedFile::fake()->image('d.png', 1200, 800)]))
+            ->assertSessionHasNoErrors();
+        $this->assertNull($class->fresh()->promo_video_url);
+        $this->assertNotNull($class->fresh()->image_path);
+    }
+
+    public function test_a_class_from_a_program_copies_its_image_unless_a_video_was_chosen(): void
+    {
+        Storage::fake('public');
+        $user = $this->instructor();
+        Storage::disk('public')->put('program-images/1/p.jpg', 'x');
+        $program = Program::factory()->for($user->instructor)->create(['image_path' => 'program-images/1/p.jpg']);
+        $this->actingAs($user);
+
+        $this->post('/teach/classes', $this->data(['program_id' => $program->id, 'from_program' => '1']))->assertSessionHasNoErrors();
+        $copied = TeachingClass::query()->latest('id')->first();
+        $this->assertNotNull($copied->image_path);
+
+        // A video of its own: the program's image is not copied next to it.
+        $this->post('/teach/classes', $this->data(['program_id' => $program->id, 'from_program' => '1', 'promo_video_url' => 'https://youtu.be/dQw4w9WgXcQ', 'starts_on' => '2026-12-19', 'start_time' => '09:00', 'end_time' => '10:00']))
+            ->assertSessionHasNoErrors();
+        $own = TeachingClass::query()->latest('id')->first();
+        $this->assertNotSame($copied->id, $own->id);
+        $this->assertNull($own->image_path);
+        $this->assertSame('https://youtu.be/dQw4w9WgXcQ', $own->promo_video_url);
     }
 
     public function test_a_class_without_an_image_is_not_shown_to_visitors(): void

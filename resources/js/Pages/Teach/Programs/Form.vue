@@ -111,7 +111,7 @@
                     </div>
                 </section>
 
-                <!-- Step 3. The promotional image, then status and visibility -->
+                <!-- Step 3. The promotional image or video (one of them), then status and visibility -->
                 <section v-show="step === 2" id="pf-image" class="cf-section">
                     <header class="cf-section__head">
                         <span class="cf-section__num"><v-icon icon="tabler:photo" size="16" /></span>
@@ -121,24 +121,28 @@
                         </div>
                     </header>
                     <div class="cf-section__body">
-                        <input ref="imageInput" type="file" accept="image/jpeg,image/png,image/webp" class="d-none" @change="pickImage">
-                        <div v-if="imagePreview" class="cf-image">
-                            <img :src="imagePreview" alt="">
-                            <div class="cf-image__tools">
-                                <v-btn class="text-none" variant="flat" color="surface" size="small" prepend-icon="tabler:upload" @click="imageInput.click()">
-                                    {{ $t('teach.programs.fields.image_change') }}
-                                </v-btn>
-                                <v-btn class="text-none" variant="flat" color="surface" size="small" :aria-label="$t('teach.programs.fields.image_remove')" @click="clearImage">
-                                    <v-icon icon="tabler:trash" color="error" />
-                                </v-btn>
-                            </div>
-                        </div>
-                        <button v-else type="button" class="cf-drop" @click="imageInput.click()">
-                            <span class="rq-icon-tile cf-drop__tile"><v-icon icon="tabler:photo" /></span>
-                            <strong>{{ $t('teach.programs.fields.image_upload') }}</strong>
-                            <small>{{ $t('teach.programs.fields.image_hint') }}</small>
-                        </button>
-                        <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
+                        <PromoMediaChoice v-model="media" :form="form">
+                            <template #image>
+                                <input ref="imageInput" type="file" accept="image/jpeg,image/png,image/webp" class="d-none" @change="pickImage">
+                                <div v-if="imagePreview" class="cf-image">
+                                    <img :src="imagePreview" alt="">
+                                    <div class="cf-image__tools">
+                                        <v-btn class="text-none" variant="flat" color="surface" size="small" prepend-icon="tabler:upload" @click="imageInput.click()">
+                                            {{ $t('teach.programs.fields.image_change') }}
+                                        </v-btn>
+                                        <v-btn class="text-none" variant="flat" color="surface" size="small" :aria-label="$t('teach.programs.fields.image_remove')" @click="clearImage">
+                                            <v-icon icon="tabler:trash" color="error" />
+                                        </v-btn>
+                                    </div>
+                                </div>
+                                <button v-else type="button" class="cf-drop" @click="imageInput.click()">
+                                    <span class="rq-icon-tile cf-drop__tile"><v-icon icon="tabler:photo" /></span>
+                                    <strong>{{ $t('teach.programs.fields.image_upload') }}</strong>
+                                    <small>{{ $t('teach.programs.fields.image_hint') }}</small>
+                                </button>
+                                <small v-if="form.errors.image" class="text-error d-block mt-2">{{ form.errors.image }}</small>
+                            </template>
+                        </PromoMediaChoice>
                     </div>
                 </section>
 
@@ -168,7 +172,7 @@
                                     :aria-label="$t(`teach.programs.fields.${option.key}`)"
                                 />
                             </div>
-                            <p v-if="option.key === 'is_published' && form.is_published && !imagePreview" class="pf-options__warn">
+                            <p v-if="option.key === 'is_published' && form.is_published && !hasMedia" class="pf-options__warn">
                                 <v-icon icon="tabler:alert-triangle" size="16" />
                                 {{ $t('teach.programs.fields.image_required') }}
                             </p>
@@ -219,7 +223,7 @@
                 <div class="cf-preview">
                     <div class="cf-preview__media">
                         <img v-if="imagePreview" :src="imagePreview" alt="">
-                        <v-icon v-else icon="tabler:photo" size="32" />
+                        <v-icon v-else :icon="hasVideo ? 'tabler:player-play' : 'tabler:photo'" size="32" />
                     </div>
                     <div class="cf-preview__body">
                         <span class="cf-preview__kicker">{{ $t('teach.programs.form.kicker') }}</span>
@@ -303,11 +307,12 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import PageIntro from '@/Components/PageIntro.vue';
 import CourseContentFields from '@/Components/CourseContentFields.vue';
+import PromoMediaChoice from '@/Components/PromoMediaChoice.vue';
 import FormPlainTextField from '@/Components/formFields/FormPlainTextField.vue';
 
 const props = defineProps({
@@ -333,7 +338,32 @@ const form = useForm({
 // The poster: the saved one, or the file just chosen (shown before saving).
 const imageInput = ref(null);
 const chosenPreview = ref(null);
-const imagePreview = computed(() => chosenPreview.value || (form.remove_image ? null : props.item?.image_url || null));
+const imagePreview = computed(() => (media.value !== 'image' ? null : (chosenPreview.value || (form.remove_image ? null : props.item?.image_url || null))));
+
+// The promotional image or video, one of them, never both ('' = neither yet). A program that has an
+// image keeps it; an old one with both keeps the image and drops the video when saved.
+const media = ref(props.item?.image_url ? 'image' : (props.item?.promo_video_url ? 'video' : ''));
+
+if (media.value === 'image') {
+    form.promo_video_url = '';
+}
+
+const hasVideo = computed(() => media.value === 'video' && form.promo_video_url.trim() !== '');
+const hasMedia = computed(() => Boolean(imagePreview.value) || hasVideo.value);
+
+watch(media, (value) => {
+    if (value === 'image') {
+        form.promo_video_url = '';
+        form.remove_image = false;
+    } else {
+        // A video, or nothing: the image goes (a saved one is removed on save).
+        clearImage();
+
+        if (value === '') {
+            form.promo_video_url = '';
+        }
+    }
+});
 
 function pickImage(event) {
     const file = event.target.files?.[0];
@@ -374,7 +404,7 @@ const visibility = computed(() => {
         return { icon: 'tabler:player-pause', text: t('teach.programs.inactive') };
     }
 
-    return form.is_published && imagePreview.value
+    return form.is_published && hasMedia.value
         ? { icon: 'tabler:eye', text: t('teach.programs.form.shown') }
         : { icon: 'tabler:eye-off', text: t('teach.programs.form.not_shown') };
 });
@@ -383,7 +413,7 @@ const readiness = computed(() => [
     { key: 'name', section: 'pf-basics', done: form.name.trim().length >= 3 },
     { key: 'description', section: 'pf-content', done: form.description.trim() !== '' },
     { key: 'learn', section: 'pf-content', done: form.learn.some((entry) => entry.trim() !== '') },
-    { key: 'image', section: 'pf-image', done: Boolean(imagePreview.value) },
+    { key: 'image', section: 'pf-image', done: hasMedia.value },
 ]);
 const readyDone = computed(() => readiness.value.filter((entry) => entry.done).length);
 
@@ -396,8 +426,8 @@ function scrollTo(id) {
 // opens any step as a tab. Each field belongs to one step, so a server error opens its step.
 const steps = [
     { key: 'name', sections: ['pf-basics'], fields: ['name'] },
-    { key: 'content', sections: ['pf-content'], fields: ['description', 'learn', 'requirements', 'audience', 'promo_video_url'] },
-    { key: 'publish', sections: ['pf-image', 'pf-status'], fields: ['image', 'remove_image', 'is_active', 'is_published', 'is_featured'] },
+    { key: 'content', sections: ['pf-content'], fields: ['description', 'learn', 'requirements', 'audience'] },
+    { key: 'publish', sections: ['pf-image', 'pf-status'], fields: ['promo_video_url', 'image', 'remove_image', 'is_active', 'is_published', 'is_featured'] },
 ];
 const last = steps.length - 1;
 const step = ref(0);
