@@ -114,4 +114,4 @@ php artisan serve --port=8010      # http://127.0.0.1:8010
 
 - `php artisan test` (sqlite in memory, `phpunit.xml` forces it): 151 tests. `tests/TestCase.php` uses `RefreshDatabase` and calls `withoutVite()` so pages render without a build. Admin test accounts need a confirmed second factor: `Admin::factory()->withTwoFactor()`; `actingAs($admin, 'admin')`.
 - `npm run test:js` (vitest): translation strings compile, every Tabler icon used is registered.
-- CI (`.github/workflows/ci.yml`, mirrors rqmana): PHP tests on 8.3 and 8.5, then `npm ci`, `test:js` and the build on 8.5. It runs once a GitHub remote exists.
+- **No CI for now** (owner's decision 2026-11-05): `.github/workflows/ci.yml` was removed. Run `php artisan test` and `npm run test:js` by hand before a commit (the old workflow ran the PHP tests on 8.3 and 8.5, then `npm ci`, `test:js` and the build on 8.5; it is in the git history if it is wanted again).
