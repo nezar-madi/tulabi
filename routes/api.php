@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\V1\Teach\ClassController as TeachClassController;
 use App\Http\Controllers\Api\V1\Teach\EnrollmentController as TeachEnrollmentController;
 use App\Http\Controllers\Api\V1\Teach\HomeController;
 use App\Http\Controllers\Api\V1\Teach\PaymentController as TeachPaymentController;
+use App\Http\Controllers\Api\V1\Teach\ProfileController as TeachProfileController;
 use App\Http\Controllers\Api\V1\Teach\ProgramController as TeachProgramController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Middleware\EnsureInstructor;
@@ -59,6 +61,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::post('/auth/logout-all', [AuthController::class, 'logoutAll'])->name('auth.logout-all');
 
+        // «حسابي» and «انضم كمدرّس».
+        Route::get('/account', [AccountController::class, 'show'])->name('account.show');
+        Route::put('/account', [AccountController::class, 'update'])->name('account.update');
+        Route::put('/account/password', [AccountController::class, 'updatePassword'])
+            ->middleware('throttle:account-password')
+            ->name('account.password');
+        Route::get('/instructor-application', [AccountController::class, 'application'])->name('instructor-application.show');
+        Route::post('/instructor-application', [AccountController::class, 'apply'])
+            ->middleware('throttle:join')
+            ->name('instructor-application.store');
+
         // «اطلب الانضمام».
         Route::post('/classes/{class}/join', [CatalogController::class, 'join'])
             ->middleware('throttle:join-class')
@@ -77,6 +90,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // {enrollment} and {payment} must be the instructor's own (FormRequests, then the controller).
         Route::middleware(EnsureInstructor::class)->prefix('teach')->name('teach.')->group(function () {
             Route::get('/home', [HomeController::class, 'home'])->name('home');
+
+            // «صفحتي»: the public page's details, address and photo (multipart).
+            Route::get('/profile', [TeachProfileController::class, 'show'])->name('profile.show');
+            Route::put('/profile', [TeachProfileController::class, 'update'])->name('profile.update');
+            Route::post('/profile/photo', [TeachProfileController::class, 'uploadPhoto'])->name('profile.photo');
+            Route::delete('/profile/photo', [TeachProfileController::class, 'deletePhoto'])->name('profile.photo.delete');
             Route::get('/students', [HomeController::class, 'students'])->name('students.index');
             Route::get('/payments', [HomeController::class, 'payments'])->name('payments.index');
 

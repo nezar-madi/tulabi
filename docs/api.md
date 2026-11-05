@@ -88,6 +88,21 @@ the admin for a link, as on the website.
 `name` is null until the person fills it in. `instructor` is null for students. One account can
 be both: show the instructor side when `is_instructor` is true.
 
+`GET /account` → `{ profile { name ('' until filled), phone, email }, instructor { display_name, specialty, city, status } | null,
+application { status (pending|accepted|rejected), specialty, created_at, rejection_reason } | null, enrollmentCounts { status: n } }`.
+
+`PUT /account` — `{ name (3+), email? }` → `{ message, user }` (the phone cannot be changed).
+
+`PUT /account/password` — `{ current_password, password (8+, different), password_confirmation }` → `{ message, token,
+token_type, expires_at, user }`. Every sign-in ends, this one too: **replace the saved token with the new one**.
+
+## Becoming an instructor («انضم كمدرّس»)
+
+- `GET /instructor-application` → `{ can_apply, is_instructor, pending, needs_name, previous { specialty, city, bio } | null }`
+  (`previous`: the last rejected application, to fill the form again).
+- `POST /instructor-application` — `{ name (when needs_name), specialty, city, bio? }` → `201 { message, user }`. The admin
+  accepts or rejects it; `GET /me` then shows `is_instructor`. Already an instructor or waiting: 422 on `specialty`.
+
 ## An instructor's page (no sign-in needed)
 
 The same things visitors see on `tulabi.ly/{slug}`: drafts, hidden programs and suspended
@@ -198,6 +213,16 @@ publicUrl }` — use `canDelete` to show «حذف», `item.status` for the actio
 - `DELETE /teach/classes/{id}` → `{ message }`. Only a draft, or a canceled or ended class with no accepted student and no
   payment; otherwise 422.
 - Creating and saving are limited to 30 a minute.
+
+**The public page** («صفحتي»)
+
+- `GET /teach/profile` → `{ profile { display_name, specialty, city, sections [{title, body (safe HTML)}], whatsapp, links ["https://..."],
+  slug, photo_url, public_url }, defaultSectionTitle, sectionSuggestions, baseUrl, slugRules { min, max } }`.
+- `PUT /teach/profile` — `{ display_name, specialty, city, sections [{title, body}], whatsapp?, links[] (addresses starting with http(s)://), slug? }` → `{ message, ...the same }`.
+  `body` is limited HTML (paragraphs, line breaks, bold, lists), cleaned on the server. `slug` is the page address
+  (`tulabi.ly/{slug}`): 3–40 lowercase English letters, digits and single dashes, starting with a letter, not a reserved word; it cannot be removed while a class is
+  shown to visitors (422 on `slug`).
+- `POST /teach/profile/photo` (multipart, `photo`) and `DELETE /teach/profile/photo` → `{ message, ...the same }`.
 
 **Programs** («البرامج التدريبية»)
 

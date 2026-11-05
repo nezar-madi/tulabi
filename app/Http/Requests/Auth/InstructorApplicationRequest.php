@@ -12,7 +12,7 @@ class InstructorApplicationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user('web') !== null;
+        return $this->user() !== null;
     }
 
     /**
@@ -26,7 +26,7 @@ class InstructorApplicationRequest extends FormRequest
             'bio' => ['nullable', 'string', 'max:1000'],
         ];
 
-        if (! $this->user('web')->hasName()) {
+        if (! $this->user()->hasName()) {
             $rules['name'] = ['required', 'string', 'min:3', 'max:120'];
         }
 

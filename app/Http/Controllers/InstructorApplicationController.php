@@ -45,7 +45,7 @@ class InstructorApplicationController extends Controller
     public function store(InstructorApplicationRequest $request, InstructorApplications $applications): RedirectResponse
     {
         /** @var User $user */
-        $user = $request->user('web');
+        $user = $request->user();
         $data = $request->validated();
 
         DB::transaction(function () use ($user, $applications, $data) {
