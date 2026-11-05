@@ -226,10 +226,10 @@ class ClassTest extends TestCase
         Storage::disk('public')->assertExists($first);
         $this->assertSame('/storage/'.$first, $class->imageUrl());
 
-        // Saved as a 16:10 JPEG whatever was uploaded.
+        // Saved as a JPEG with the whole picture: the shape is kept (nothing is cropped).
         [$width, $height] = getimagesizefromstring(Storage::disk('public')->get($first));
-        $this->assertSame(1200, $width);
-        $this->assertSame(750, $height);
+        $this->assertSame(1600, $width);
+        $this->assertSame(900, $height);
 
         $this->put("/teach/classes/{$class->id}", $this->data(['image' => UploadedFile::fake()->image('new.jpg', 800, 800)]))
             ->assertSessionHasNoErrors();

@@ -6,36 +6,30 @@
         :description="item ? '' : $t('teach.programs.form.lead')"
     >
         <template v-if="item" #actions>
-            <div class="d-flex flex-wrap ga-2">
-                <v-btn
-                    v-if="item.is_active"
-                    class="text-none"
-                    variant="tonal"
-                    color="primary"
-                    prepend-icon="tabler:plus"
-                    @click="router.visit(route('teach.classes.create', { program: item.id }))"
-                >
-                    {{ $t('teach.programs.new_class') }}
-                </v-btn>
-                <v-btn
-                    v-if="item.public_url && item.image_url && item.is_active && item.is_published"
-                    class="text-none"
-                    variant="text"
-                    color="primary"
-                    prepend-icon="tabler:external-link"
-                    :href="item.public_url"
-                    target="_blank"
-                    rel="noopener"
-                >
-                    {{ $t('teach.programs.view') }}
-                </v-btn>
-                <v-menu location="bottom end">
+            <div class="cf-acts">
+                <v-menu location="bottom end" offset="6">
                     <template #activator="{ props: menuProps }">
-                        <v-btn v-bind="menuProps" icon variant="text" size="small" :aria-label="$t('teach.money.more')">
-                            <v-icon icon="tabler:dots-vertical" />
-                        </v-btn>
+                        <button v-bind="menuProps" type="button" class="cf-acts__toggle">
+                            <span>{{ $t('teach.classes.header.options') }}</span>
+                            <v-icon icon="tabler:chevron-down" size="16" class="cf-acts__chevron" />
+                        </button>
                     </template>
-                    <v-list density="compact">
+                    <v-list density="compact" class="cf-acts__list">
+                        <v-list-item
+                            v-if="item.is_active"
+                            class="cf-menu-item"
+                            @click="router.visit(route('teach.classes.create', { program: item.id }))"
+                        >
+                            <v-list-item-title>{{ $t('teach.programs.new_class') }}</v-list-item-title>
+                            <template #append><v-icon icon="tabler:plus" size="16" /></template>
+                        </v-list-item>
+                        <v-list-item v-if="isShown" class="cf-menu-item" :href="item.public_url" target="_blank" rel="noopener">
+                            <v-list-item-title>{{ $t('teach.programs.view') }}</v-list-item-title>
+                            <template #append><v-icon icon="tabler:external-link" size="16" /></template>
+                        </v-list-item>
+
+                        <v-divider v-if="item.is_active || isShown" class="my-1" />
+
                         <v-list-item class="cf-menu-item" base-color="error" @click="deleteDialog = true">
                             <v-list-item-title>{{ $t('teach.programs.delete') }}</v-list-item-title>
                             <template #append><v-icon icon="tabler:trash" size="16" /></template>
@@ -349,6 +343,10 @@ const props = defineProps({
 });
 
 const createdOpen = ref(props.justCreated);
+
+// Visitors can open the program: public address, an image or a video, active and shown.
+const isShown = computed(() => Boolean(props.item?.public_url && (props.item.image_url || props.item.promo_video_url)
+    && props.item.is_active && props.item.is_published));
 
 const { t } = useI18n();
 

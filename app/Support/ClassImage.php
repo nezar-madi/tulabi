@@ -10,21 +10,21 @@ use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
- * A class's promotional image. Like the instructor's photo, every upload is decoded and saved
- * again (here as a 16:10 JPEG, the shape of the cards on the public page), so what is served is
- * always a plain image with no EXIF data.
+ * A class's or a program's promotional image. Like the instructor's photo, every upload is decoded
+ * and saved again as a JPEG, so what is served is always a plain image with no EXIF data. The
+ * whole picture is kept (owner's decision 2026-11-05: images must not be cut): it is only made
+ * smaller to fit a box, never cropped. The cards of the public page frame it themselves.
  */
 class ClassImage
 {
-    public const WIDTH = 1200;
-
-    public const HEIGHT = 750;
+    /** The longest side after saving; smaller images are not enlarged. */
+    public const MAX_SIDE = 1600;
 
     /** Larger images are refused before decoding (memory). */
     public const MAX_PIXELS = 25_000_000;
 
     /**
-     * The JPEG bytes of an upload, cropped from the centre to 16:10. Throws when it is not a readable image.
+     * The JPEG bytes of an upload, the whole picture scaled down to fit MAX_SIDE. Throws when it is not a readable image.
      */
     public function render(UploadedFile $file): string
     {
@@ -42,31 +42,16 @@ class ClassImage
 
         $width = imagesx($source);
         $height = imagesy($source);
-        $ratio = self::WIDTH / self::HEIGHT;
-
-        // Largest 16:10 area centred in the image.
-        $cropWidth = $width / $height > $ratio ? (int) round($height * $ratio) : $width;
-        $cropHeight = $width / $height > $ratio ? $height : (int) round($width / $ratio);
 
         // Small images are not enlarged.
-        $scale = min(1, self::WIDTH / $cropWidth);
-        $targetWidth = max(1, (int) round($cropWidth * $scale));
-        $targetHeight = max(1, (int) round($cropHeight * $scale));
+        $scale = min(1, self::MAX_SIDE / max($width, $height));
+        $targetWidth = max(1, (int) round($width * $scale));
+        $targetHeight = max(1, (int) round($height * $scale));
 
         $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
+        // A transparent PNG goes onto white (a JPEG has no transparency).
         imagefill($canvas, 0, 0, (int) imagecolorallocate($canvas, 255, 255, 255));
-        imagecopyresampled(
-            $canvas,
-            $source,
-            0,
-            0,
-            intdiv($width - $cropWidth, 2),
-            intdiv($height - $cropHeight, 2),
-            $targetWidth,
-            $targetHeight,
-            $cropWidth,
-            $cropHeight,
-        );
+        imagecopyresampled($canvas, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
 
         ob_start();
         imagejpeg($canvas, null, 85);
