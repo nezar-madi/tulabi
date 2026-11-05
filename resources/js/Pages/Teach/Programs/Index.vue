@@ -14,8 +14,6 @@
                     {{ $t('teach.programs.new') }}
                 </v-btn>
             </template>
-
-            <PageIntroStats :items="stats" />
         </PageIntro>
 
         <v-alert v-if="!hasSlug && programs.length" type="info" variant="tonal" density="comfortable" rounded="lg">
@@ -115,25 +113,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PageIntro from '@/Components/PageIntro.vue';
-import PageIntroStats from '@/Components/PageIntroStats.vue';
 
 const props = defineProps({
     programs: { type: Array, default: () => [] },
     counts: { type: Object, default: () => ({ total: 0, active: 0, published: 0 }) },
     hasSlug: { type: Boolean, default: false },
 });
-
-const { t } = useI18n();
-
-const stats = computed(() => [
-    { key: 'total', label: t('teach.programs.stat_total'), value: props.counts.total, icon: 'tabler:layout-grid', tone: 'sky' },
-    { key: 'active', label: t('teach.programs.stat_active'), value: props.counts.active, icon: 'tabler:circle-check', tone: 'success' },
-    { key: 'published', label: t('teach.programs.stat_published'), value: props.counts.published, icon: 'tabler:world', tone: 'teal' },
-]);
 
 // Visitors see a program only when it is active, shown, has an image or a video, and the instructor has a page address.
 function isShown(program) {
