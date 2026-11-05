@@ -1,21 +1,26 @@
 <template>
-    <!-- The server's one-time message after an action («حُفظ الفصل.»...): a toast, not a banner -->
+    <!-- The server's one-time message after an action («حُفظ الفصل.»...): a toast at the top-left
+         ("end" in the right-to-left layout), with a countdown bar that stops while the pointer is on it -->
     <v-snackbar
         v-model="open"
         location="top end"
-        :timeout="4500"
-        rounded="lg"
-        elevation="8"
+        :timeout="5000"
+        timer="bottom"
+        timer-color="success"
+        :elevation="0"
         class="flash-toast"
         role="status"
         aria-live="polite"
     >
-        <span class="flash-toast__body">
-            <span class="flash-toast__icon" aria-hidden="true"><v-icon icon="tabler:check" size="16" /></span>
-            <span>{{ message }}</span>
-        </span>
+        <div class="flash-toast__body">
+            <span class="flash-toast__icon" aria-hidden="true"><v-icon icon="tabler:circle-check" size="22" /></span>
+            <div class="flash-toast__text">
+                <strong class="flash-toast__title">{{ $t('common.success_title') }}</strong>
+                <span class="flash-toast__message">{{ message }}</span>
+            </div>
+        </div>
         <template #actions>
-            <v-btn icon variant="text" size="small" :aria-label="$t('common.close')" @click="open = false">
+            <v-btn icon variant="text" size="small" class="flash-toast__close" :aria-label="$t('common.close')" @click="open = false">
                 <v-icon icon="tabler:x" size="18" />
             </v-btn>
         </template>
@@ -47,29 +52,70 @@ watch(() => page.props.flash, (flash) => {
 </script>
 
 <style scoped>
-/* A dark toast with a green check: it reads on any page and leaves the content alone */
+/* A light card: a thin frame, a green edge on the reading side, a soft shadow */
 .flash-toast :deep(.v-snackbar__wrapper) {
-    min-width: 280px;
-    background: #1f2933;
-    color: #fff;
+    min-width: 320px;
+    max-width: 420px;
+    overflow: hidden;
+    border: 1px solid var(--rq-line);
+    border-inline-start: 4px solid var(--rq-success);
+    border-radius: 12px;
+    background: var(--rq-surface);
+    color: var(--rq-text-body);
+    box-shadow: 0 16px 36px -16px rgb(15 23 42 / 0.35), 0 2px 6px rgb(15 23 42 / 0.06);
+}
+
+.flash-toast :deep(.v-snackbar__content) {
+    padding: 14px 12px 16px 16px;
 }
 
 .flash-toast__body {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    font-weight: 500;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 .flash-toast__icon {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: var(--rq-success, #1e7a45);
-    color: #fff;
+    background: var(--rq-success-tint);
+    color: var(--rq-success);
+}
+
+.flash-toast__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.flash-toast__title {
+    font-family: var(--rq-font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--rq-text-heading);
+}
+
+.flash-toast__message {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--rq-text-muted);
+}
+
+.flash-toast__close {
+    align-self: flex-start;
+    margin-top: 6px;
+    color: var(--rq-text-subtle);
+}
+
+/* The countdown along the bottom edge: thin, in the toast's green */
+.flash-toast :deep(.v-snackbar__timer .v-progress-linear) {
+    height: 3px !important;
+    opacity: 0.85;
 }
 </style>
