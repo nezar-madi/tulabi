@@ -247,6 +247,7 @@
                     size="large"
                     block
                     :loading="form.processing"
+                    :disabled="!form.isDirty"
                 >
                     {{ $t('teach.programs.save') }}
                 </v-btn>
@@ -319,7 +320,16 @@
         >
             {{ $t('teach.classes.wizard.next_short') }}
         </v-btn>
-        <v-btn v-else type="submit" form="program-form" class="text-none" variant="flat" color="primary" :loading="form.processing">
+        <v-btn
+            v-else
+            type="submit"
+            form="program-form"
+            class="text-none"
+            variant="flat"
+            color="primary"
+            :loading="form.processing"
+            :disabled="Boolean(item) && !form.isDirty"
+        >
             {{ item ? $t('teach.programs.save') : $t('teach.programs.create') }}
         </v-btn>
     </div>
@@ -537,6 +547,11 @@ function submit() {
     if (!props.item && step.value < last) {
         next();
 
+        return;
+    }
+
+    // An existing program with nothing changed has nothing to save (the button is off; Enter too).
+    if (props.item && !form.isDirty) {
         return;
     }
 
