@@ -1,6 +1,6 @@
 <template>
     <p v-if="payments.length === 0" class="payment-list__empty">{{ emptyText }}</p>
-    <ul v-else class="payment-list">
+    <ul v-else class="payment-list" :class="{ 'payment-list--quiet': quiet }">
         <li v-for="payment in payments" :key="payment.id" class="payment-list__row" :class="{ 'payment-list__row--void': payment.voided }">
             <div class="payment-list__main">
                 <strong class="payment-list__amount rq-number">{{ $t('money.amount', { amount: payment.amount }) }}</strong>
@@ -19,7 +19,7 @@
                 <v-btn
                     class="rq-btn"
                     variant="text"
-                    color="primary"
+                    :color="quiet ? undefined : 'primary'"
                     size="small"
                     :href="payment.receipt_url"
                     target="_blank"
@@ -42,6 +42,8 @@ defineProps({
     emptyText: { type: String, default: '' },
     // Optional extra text per row (the class name on «دفعاتي»).
     extra: { type: Function, default: () => '' },
+    // History beside the page's main task: amounts in plain text, the receipt link neutral.
+    quiet: { type: Boolean, default: false },
 });
 </script>
 
@@ -80,6 +82,14 @@ defineProps({
     font-family: var(--rq-font-display);
     font-size: 16px;
     color: var(--rq-text-number);
+}
+
+.payment-list--quiet .payment-list__amount {
+    color: var(--rq-text-body);
+}
+
+.payment-list--quiet .payment-list__actions .v-btn {
+    color: var(--rq-text-muted);
 }
 
 .payment-list__meta {
