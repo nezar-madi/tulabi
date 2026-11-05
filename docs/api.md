@@ -168,6 +168,37 @@ The data is the same as the website's pages (shared code in `App\Support\Teach`)
 - `PUT /teach/payments/{id}` — `{ method, notes? }` → `{ message, payment, totals }`. Other fields are ignored.
 - `POST /teach/payments/{id}/void` — `{ reason }` (3+ letters) → `{ message, payment (voided: true), totals }`. Twice: 422 on `payment`.
 
+**Classes**
+
+A class is created as a draft, then published (visitors see it and can ask to join), closed (still shown, no new
+requests), suspended (by itself when «تعليق البدء تلقائيًا» finds too few students at the start; reactivated on a new
+date), or canceled (with a reason; students see it). Every answer that changes a class brings it back as the edit
+screen shows it: `{ item, currency, programs, today, meetingShareUrl, canDelete, studentCounts { accepted, requested },
+publicUrl }` — use `canDelete` to show «حذف», `item.status` for the actions.
+
+- `GET /teach/classes?filter=active|draft|canceled&q=&when=upcoming|running|ended&from=&to=&price=paid|free&type=online|in_person&program=none|{id}&page=`
+  → `{ filter, narrow (object), programs [{id, name}], draftCount, classes { data: [class + accepted_count, requested_count], ...paging (20) },
+  hasSlug, slug, today }`.
+- `GET /teach/classes/form?program={id}` → what the new-class form needs: `{ item: null, currency, programs [active programs with
+  their content, to copy into the class], selectedProgram, today }`.
+- `GET /teach/classes/{id}` → the edit screen (above).
+- `POST /teach/classes` → `201 { message, ...edit screen }`. Fields (as the website's form):
+  `title (3–150), description, learn[], requirements[], audience[] (each at least one point), from_program, program_id
+  (needed when from_program; an active program of the instructor), type (in_person|online), location?, map_url (Google
+  Maps, needed in person), meeting_url? (online), starts_on, ends_on (Y-m-d, end not before start), schedule_type
+  (daily|weekly|manual), days[] (0–6, Sunday = 0; weekly), manual_dates[] (Y-m-d; manual), start_time, end_time (H:i),
+  price (0 = free, up to 3 decimals; locked once a student has paid), seats (0 = no limit), auto_suspend, min_seats
+  (with auto_suspend; not more than seats), promo_video_url?, image? (file), no_template_image (do not copy the program's image)`.
+  An image **or** a video, never both. Multipart with an image, JSON otherwise.
+- `POST /teach/classes/{id}` (multipart, with a new image) or `PUT` (JSON) → `{ message, meeting_changed, schedule_changed,
+  schedule_share_url, ...edit screen }`. **Send every field** (a full save). When `meeting_changed` or `schedule_changed`
+  is true, offer to tell the students: `meetingShareUrl` / `schedule_share_url` are ready WhatsApp links.
+- `POST /teach/classes/{id}/publish` (needs a page address and an image or video), `/close`, `/reactivate` (`{ starts_on }`,
+  a suspended class), `/cancel` (`{ reason }`) → `{ message, ...edit screen }`. Not allowed in the class's state: 422 on `class`.
+- `DELETE /teach/classes/{id}` → `{ message }`. Only a draft, or a canceled or ended class with no accepted student and no
+  payment; otherwise 422.
+- Creating and saving are limited to 30 a minute.
+
 **Programs** («البرامج التدريبية»)
 
 - `GET /teach/programs` → `{ programs: [...], has_slug }`, featured first. Each: `id, name, description, learn, requirements,

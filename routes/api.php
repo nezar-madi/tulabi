@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\RegisterController;
 use App\Http\Controllers\Api\V1\Student\StudentClassController;
+use App\Http\Controllers\Api\V1\Teach\ClassController as TeachClassController;
 use App\Http\Controllers\Api\V1\Teach\EnrollmentController as TeachEnrollmentController;
 use App\Http\Controllers\Api\V1\Teach\HomeController;
 use App\Http\Controllers\Api\V1\Teach\PaymentController as TeachPaymentController;
@@ -92,6 +93,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/enrollments/{enrollment}/payments', [TeachPaymentController::class, 'store'])->name('enrollments.payments.store');
             Route::put('/payments/{payment}', [TeachPaymentController::class, 'update'])->name('payments.update');
             Route::post('/payments/{payment}/void', [TeachPaymentController::class, 'void'])->name('payments.void');
+
+            // The classes. Saving with a new image is multipart, so it goes by POST.
+            Route::get('/classes', [TeachClassController::class, 'index'])->name('classes.index');
+            Route::get('/classes/form', [TeachClassController::class, 'form'])->name('classes.form');
+            Route::post('/classes', [TeachClassController::class, 'store'])->middleware('throttle:class-save')->name('classes.store');
+            Route::get('/classes/{class}', [TeachClassController::class, 'show'])->whereNumber('class')->name('classes.show');
+            Route::match(['put', 'post'], '/classes/{class}', [TeachClassController::class, 'update'])
+                ->whereNumber('class')
+                ->middleware('throttle:class-save')
+                ->name('classes.update');
+            Route::post('/classes/{class}/publish', [TeachClassController::class, 'publish'])->name('classes.publish');
+            Route::post('/classes/{class}/close', [TeachClassController::class, 'close'])->name('classes.close');
+            Route::post('/classes/{class}/reactivate', [TeachClassController::class, 'reactivate'])->name('classes.reactivate');
+            Route::post('/classes/{class}/cancel', [TeachClassController::class, 'cancel'])->name('classes.cancel');
+            Route::delete('/classes/{class}', [TeachClassController::class, 'destroy'])->whereNumber('class')->name('classes.destroy');
 
             // «البرامج التدريبية». Saving with a new image is multipart, so it goes by POST.
             Route::get('/programs', [TeachProgramController::class, 'index'])->name('programs.index');
