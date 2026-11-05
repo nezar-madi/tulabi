@@ -31,12 +31,12 @@ class SaveProgramRequest extends InstructorRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'name' => is_string($this->input('name')) ? preg_replace('/\s+/u', ' ', trim($this->input('name'))) : $this->input('name'),
+            'name' => CourseContent::cleanName($this->input('name')),
             'description' => CourseContent::cleanDescription($this->input('description')),
             'learn' => CourseContent::cleanList($this->input('learn', [])),
             'requirements' => CourseContent::cleanList($this->input('requirements', [])),
             'audience' => CourseContent::cleanList($this->input('audience', [])),
-            'promo_video_url' => $this->filled('promo_video_url') ? trim((string) $this->input('promo_video_url')) : null,
+            'promo_video_url' => CourseContent::cleanVideoUrl($this->input('promo_video_url')),
             'is_active' => $this->boolean('is_active'),
             'is_published' => $this->boolean('is_published'),
             'is_featured' => $this->boolean('is_featured'),

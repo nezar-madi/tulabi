@@ -44,12 +44,50 @@ class CourseContent
         return $clean;
     }
 
-    /** Plain description: normalised line breaks, no more than one blank line in a row. */
-    public static function cleanDescription(?string $text): string
+    /**
+     * Plain description: normalised line breaks, no more than one blank line in a row. Anything that
+     * is not text (a crafted request sending a list) becomes empty, so the validation rejects it.
+     */
+    public static function cleanDescription(mixed $text): string
     {
-        $text = str_replace(["\r\n", "\r"], "\n", (string) $text);
+        if (! is_string($text)) {
+            return '';
+        }
+
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
 
         return trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? '');
+    }
+
+    /**
+     * A one-line name or title: spaces collapsed, and the invisible characters that flip the
+     * direction of the text after them removed (they could make a name display reversed).
+     * Anything that is not text is left as it is for the validation to reject.
+     */
+    public static function cleanName(mixed $text): mixed
+    {
+        if (! is_string($text)) {
+            return $text;
+        }
+
+        $text = preg_replace('/[\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $text) ?? $text;
+
+        return trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
+    }
+
+    /**
+     * A promotional video link: trimmed, empty becomes null; anything that is not text is left
+     * for the validation to reject (it would otherwise be turned into "Array", a server error).
+     */
+    public static function cleanVideoUrl(mixed $url): mixed
+    {
+        if (! is_string($url)) {
+            return $url;
+        }
+
+        $url = trim($url);
+
+        return $url === '' ? null : $url;
     }
 
     /**

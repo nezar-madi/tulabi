@@ -94,6 +94,29 @@ class ProgramTest extends TestCase
         $this->assertSame(1, Program::query()->count());
     }
 
+    public function test_fields_sent_as_lists_are_rejected_not_a_server_error(): void
+    {
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/programs', $this->data(['description' => ['نص']]))->assertSessionHasErrors('description');
+        $this->post('/teach/programs', $this->data(['promo_video_url' => ['https://youtu.be/dQw4w9WgXcQ']]))->assertSessionHasErrors('promo_video_url');
+        $this->post('/teach/programs', $this->data(['name' => ['اسم']]))->assertSessionHasErrors('name');
+
+        $this->post('/teach/classes', ['title' => ['فصل'], 'description' => ['نص'], 'promo_video_url' => ['x'], 'type' => 'online'])
+            ->assertSessionHasErrors(['title', 'description', 'promo_video_url']);
+
+        $this->assertSame(0, Program::query()->count());
+    }
+
+    public function test_direction_characters_are_removed_from_a_program_name(): void
+    {
+        $this->actingAs($this->instructor());
+
+        $this->post('/teach/programs', $this->data(['name' => "برنامج\u{202E}  العربية\u{2066}"]))->assertSessionHasNoErrors();
+
+        $this->assertSame('برنامج العربية', Program::query()->sole()->name);
+    }
+
     public function test_a_program_has_an_image_or_a_video_never_both(): void
     {
         Storage::fake('public');
