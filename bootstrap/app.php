@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\CheckAppVersion;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -11,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        // The mobile app's API (/api/v1/...): tokens, JSON only.
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
@@ -24,6 +28,12 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->api(prepend: [
+            ForceJsonResponse::class,
+            CheckAppVersion::class,
+        ]);
+        $middleware->throttleApi();
+
         $middleware->web(append: [
             EnsureAccountIsActive::class,
             HandleInertiaRequests::class,

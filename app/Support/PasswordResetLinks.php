@@ -89,6 +89,9 @@ class PasswordResetLinks
                 'remember_token' => Str::random(60),
             ])->save();
 
+            // The app's sign-ins end too (the website's end through AuthenticateSession).
+            $user->tokens()->delete();
+
             return $user;
         });
     }

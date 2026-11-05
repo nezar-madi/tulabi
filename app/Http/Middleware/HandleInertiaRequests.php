@@ -2,9 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Enrollment;
-use App\Models\TeachingClass;
 use App\Models\User;
+use App\Support\UserPresenter;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -69,12 +68,7 @@ class HandleInertiaRequests extends Middleware
             'isInstructor' => $isInstructor,
             'instructorUrl' => $isInstructor ? $user->instructor->publicUrl() : null,
             // Join requests waiting for this instructor (badge in the instructor menu).
-            'pendingRequests' => $isInstructor ? Enrollment::query()
-                ->where('status', Enrollment::STATUS_REQUESTED)
-                ->whereHas('teachingClass', fn ($query) => $query
-                    ->where('instructor_id', $user->instructor->getKey())
-                    ->where('status', '!=', TeachingClass::STATUS_CANCELED))
-                ->count() : 0,
+            'pendingRequests' => UserPresenter::pendingRequests($user),
         ];
     }
 }

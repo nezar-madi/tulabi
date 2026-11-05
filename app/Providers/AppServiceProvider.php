@@ -69,6 +69,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('instructor-reset-link', fn (Request $request) => Limit::perHour(20)
             ->by('instructor-reset-link:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
+        // The app's API: generous for real use, per account (or per IP before signing in).
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)
+            ->by('api:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         RateLimiter::for('account-password', fn (Request $request) => Limit::perMinutes(10, 10)
             ->by('account-password:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }

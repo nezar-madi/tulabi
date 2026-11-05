@@ -12,6 +12,14 @@ A platform for independent instructors in Libya (tulabi.ly). Each instructor has
 - **Direction (owner's decision 2026-11-05): a native Flutter app is the main product**, for students and instructors. Instructors can do everything there that the website's instructor area does (programs, classes, requests, students, payments, profile and public page settings). That needs a JSON API in this project first (Sanctum tokens, `/api/v1`, reusing the FormRequests and services; push through Firebase Cloud Messaging); the Flutter app lives in its own repository. The public pages (`tulabi.ly/{slug}`) and the admin stay on the web. There is no activity history, on the web or in the app.
 - **Work is local only** for now: no server, no staging, no GitHub remote. Commit locally; never push without asking.
 
+## The app's API (/api/v1)
+
+- `routes/api.php`, documented for the app in `docs/api.md` (keep it in step). Sanctum **tokens only**: `config/sanctum.php` has no `guard` (a website session never signs in to the API) and no cookie routes; tokens last `SANCTUM_TOKEN_DAYS` (180), pruned nightly.
+- Middleware on every API route: `ForceJsonResponse`, `CheckAppVersion` (`X-App-Version` older than `tulabi.app.min_version` → 426; `/meta` exempt), the `api` limiter (120/min). Signed-in routes: `auth:sanctum` + `EnsureTokenAccountIsActive` (suspended → token deleted, 401 `account_suspended`).
+- Sign-in is `App\Support\PasswordLogin` (shared with the website, same lockout). Sign-up has no session: the code check returns an encrypted `registration_token` (`App\Support\RegistrationTokens`, 30 minutes). The app's sign-up has no reCAPTCHA (only `throttle:register`); before launch, add Firebase App Check or similar so SMS cannot be abused.
+- A password change or reset deletes the account's API tokens (`AccountController::updatePassword`, `PasswordResetLinks::consume`).
+- `App\Support\UserPresenter` is the account as the app sees it, and the pending-requests count the website's menu also uses.
+
 ## Decisions from the spec (don't undo without asking)
 
 - **Libya only:** Arabic only (RTL), currency **LYD** (`App\Support\Currency`), time zone **Africa/Tripoli**, Libyan mobile numbers only.

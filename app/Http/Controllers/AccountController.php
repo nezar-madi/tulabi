@@ -70,7 +70,9 @@ class AccountController extends Controller
         $user->forceFill(['password' => (string) $request->validated('password')])->save();
 
         // Other devices signed in with the old password are signed out by AuthenticateSession;
-        // this session takes the new password hash at the end of the request.
+        // this session takes the new password hash at the end of the request. The app's
+        // sign-ins (tokens) end too.
+        $user->tokens()->delete();
         $request->session()->regenerate();
 
         return redirect()->route('account')->with('status', __('accounts.password_saved'));
