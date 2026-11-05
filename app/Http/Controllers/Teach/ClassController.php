@@ -158,6 +158,8 @@ class ClassController extends Controller
             'programs' => $this->programOptions($this->instructor($request), $class->program_id),
             'today' => TulabiClock::today(),
             'meetingShareUrl' => ClassPresenter::meetingShareUrl($class),
+            // «حذف»: a draft, or a canceled / ended class with no accepted student and no payment.
+            'canDelete' => $class->canBeDeleted(),
             'studentCounts' => [
                 'accepted' => $class->enrollments()->where('status', Enrollment::STATUS_ACCEPTED)->count(),
                 'requested' => $class->isCanceled() ? 0 : $class->enrollments()->where('status', Enrollment::STATUS_REQUESTED)->count(),
@@ -246,9 +248,15 @@ class ClassController extends Controller
 
     public function destroy(InstructorActionRequest $request, TeachingClass $class): RedirectResponse
     {
-        $this->lifecycle->delete($this->ownClass($request, $class));
+        $class = $this->ownClass($request, $class);
+        // Back to the list the class was in.
+        $filter = $class->isCanceled() ? 'canceled' : ($class->status === TeachingClass::STATUS_DRAFT ? 'draft' : 'active');
+        $wasDraft = $class->status === TeachingClass::STATUS_DRAFT;
 
-        return redirect()->route('teach.classes.index', ['filter' => 'draft'])->with('status', __('classes.deleted'));
+        $this->lifecycle->delete($class);
+
+        return redirect()->route('teach.classes.index', ['filter' => $filter])
+            ->with('status', __($wasDraft ? 'classes.deleted' : 'classes.deleted_class'));
     }
 
     /**

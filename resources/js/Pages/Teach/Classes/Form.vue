@@ -67,14 +67,14 @@
                             <v-list-item-title>{{ $t('teach.classes.close') }}</v-list-item-title>
                             <template #append><v-icon icon="tabler:lock" size="16" /></template>
                         </v-list-item>
-                        <!-- A draft is deleted; a class that has not ended is canceled; an ended one has neither. -->
-                        <v-list-item v-if="cls.status === 'draft'" class="cf-menu-item" base-color="error" @click="deleteDialog = true">
-                            <v-list-item-title>{{ $t('teach.classes.delete') }}</v-list-item-title>
-                            <template #append><v-icon icon="tabler:trash" size="16" /></template>
-                        </v-list-item>
-                        <v-list-item v-else-if="cls.status !== 'canceled' && !cls.ended" class="cf-menu-item" base-color="error" @click="cancelDialog = true">
+                        <!-- A class that has not ended is canceled; a draft, or a canceled / ended class with no accepted student and no payment, is deleted. -->
+                        <v-list-item v-if="cls.status !== 'draft' && cls.status !== 'canceled' && !cls.ended" class="cf-menu-item" base-color="error" @click="cancelDialog = true">
                             <v-list-item-title>{{ $t('teach.classes.cancel') }}</v-list-item-title>
                             <template #append><v-icon icon="tabler:ban" size="16" /></template>
+                        </v-list-item>
+                        <v-list-item v-if="canDelete" class="cf-menu-item" base-color="error" @click="deleteDialog = true">
+                            <v-list-item-title>{{ cls.status === 'draft' ? $t('teach.classes.delete') : $t('teach.classes.delete_class') }}</v-list-item-title>
+                            <template #append><v-icon icon="tabler:trash" size="16" /></template>
                         </v-list-item>
                     </v-list>
                 </v-menu>
@@ -710,8 +710,8 @@
     <ConfirmDialog
         v-if="cls"
         v-model="deleteDialog"
-        :title="$t('teach.classes.delete_title')"
-        :text="$t('teach.classes.delete_text', { title: cls.title })"
+        :title="cls.status === 'draft' ? $t('teach.classes.delete_title') : $t('teach.classes.delete_class_title')"
+        :text="cls.status === 'draft' ? $t('teach.classes.delete_text', { title: cls.title }) : $t('teach.classes.delete_class_text', { title: cls.title })"
         :confirm-label="$t('teach.classes.delete_confirm_button')"
         :loading="deleting"
         @confirm="destroy"
@@ -745,6 +745,8 @@ const props = defineProps({
     // wa.me message with the saved meeting link (online class), and whether this save changed it.
     meetingShareUrl: { type: String, default: null },
     meetingChanged: { type: Boolean, default: false },
+    // The class can be deleted: a draft, or a canceled / ended class with no accepted student and no payment.
+    canDelete: { type: Boolean, default: false },
     // Accepted students and waiting requests, shown on the «الطلاب» button.
     studentCounts: { type: Object, default: () => ({ accepted: 0, requested: 0 }) },
     // wa.me message with the new dates, hours and place, after a save that changed them (class with students).
@@ -881,8 +883,8 @@ if (!cls.value && form.program_id) {
 // A suspended class starts again on a new date
 // The «خيارات» menu shows when it has something: the students and the public page (or the draft's
 // preview), closing registration, and deleting a draft or canceling a class that has not ended.
-const hasDangerItems = computed(() => Boolean(cls.value) && (cls.value.status === 'published' || cls.value.status === 'draft'
-    || (cls.value.status !== 'canceled' && !cls.value.ended)));
+const hasDangerItems = computed(() => Boolean(cls.value) && (props.canDelete || cls.value.status === 'published'
+    || (cls.value.status !== 'draft' && cls.value.status !== 'canceled' && !cls.value.ended)));
 const hasMenu = computed(() => Boolean(cls.value) && (cls.value.status !== 'draft' || Boolean(props.publicUrl) || hasDangerItems.value));
 
 const restartOpen = ref(false);

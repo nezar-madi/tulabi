@@ -207,6 +207,29 @@ class TeachingClass extends Model
         return in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true) && $this->hasMedia();
     }
 
+    /**
+     * A draft can always be deleted. A canceled class or one that has ended can be too, when nobody
+     * was ever accepted in it and no payment was ever recorded (voided ones count: their receipt
+     * numbers stay). A class that is running cannot: it is canceled instead.
+     */
+    public function canBeDeleted(): bool
+    {
+        if ($this->status === self::STATUS_DRAFT) {
+            return true;
+        }
+
+        if (! ($this->isCanceled() || $this->hasEnded())) {
+            return false;
+        }
+
+        $everAccepted = $this->enrollments()
+            ->where(fn ($query) => $query->where('status', Enrollment::STATUS_ACCEPTED)->orWhereNotNull('accepted_at'))
+            ->exists();
+
+        return ! $everAccepted
+            && ! Payment::query()->whereIn('enrollment_id', $this->enrollments()->select('id'))->exists();
+    }
+
     /** A promotional image or a promotional video: what a class needs to be shown to visitors. */
     public function hasMedia(): bool
     {

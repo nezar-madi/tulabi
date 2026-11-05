@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\TeachingClass;
 use App\Models\User;
 use App\Support\ClassLifecycle;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -229,6 +230,69 @@ class ClassRulesTest extends TestCase
 
         $this->assertSame(1005, app(ClassLifecycle::class)->suspendUnderfilled());
         $this->assertSame(0, TeachingClass::query()->whereNull('start_checked_at')->count());
+    }
+
+    public function test_a_canceled_or_ended_class_is_deleted_only_with_no_accepted_student_and_no_payment(): void
+    {
+        $this->actingAs($this->user);
+
+        // Canceled, nobody ever accepted: deletable, and its requests (waiting, rejected, withdrawn) go with it.
+        $canceled = $this->published(['starts_on' => '2026-12-19', 'ends_on' => '2027-01-31', 'days' => [6]]);
+        $waiting = Enrollment::factory()->for($canceled, 'teachingClass')->create(['status' => Enrollment::STATUS_REQUESTED]);
+        Enrollment::factory()->for($canceled, 'teachingClass')->create(['status' => Enrollment::STATUS_REJECTED]);
+        Enrollment::factory()->for($canceled, 'teachingClass')->create(['status' => Enrollment::STATUS_WITHDRAWN]);
+        $this->post("/teach/classes/{$canceled->id}/cancel")->assertSessionHasNoErrors();
+        $this->get("/teach/classes/{$canceled->id}/edit")->assertInertia(fn (Assert $page) => $page->where('canDelete', true));
+
+        $this->delete("/teach/classes/{$canceled->id}")->assertRedirect('/teach/classes?filter=canceled');
+        $this->assertNull(TeachingClass::query()->find($canceled->id));
+        $this->assertSame(0, Enrollment::query()->where('class_id', $canceled->id)->count());
+        $this->assertNull(Enrollment::query()->find($waiting->id));
+
+        // Canceled with an accepted student: kept (its record stays).
+        $kept = $this->published(['starts_on' => '2026-12-19', 'ends_on' => '2027-01-31', 'days' => [6], 'start_time' => '08:00', 'end_time' => '09:00']);
+        $this->accept($kept);
+        $this->post("/teach/classes/{$kept->id}/cancel")->assertSessionHasNoErrors();
+        $this->get("/teach/classes/{$kept->id}/edit")->assertInertia(fn (Assert $page) => $page->where('canDelete', false));
+        $this->delete("/teach/classes/{$kept->id}")->assertSessionHasErrors(['class' => __('classes.delete_has_history')]);
+        $this->assertNotNull(TeachingClass::query()->find($kept->id));
+
+        // Ended and nobody was ever accepted: deletable.
+        $empty = $this->published(['starts_on' => '2026-10-03', 'ends_on' => '2026-11-28']);
+        $this->delete("/teach/classes/{$empty->id}")->assertRedirect('/teach/classes?filter=active');
+        $this->assertNull(TeachingClass::query()->find($empty->id));
+
+        // Ended, a student was accepted once and left: still kept (they were accepted).
+        $left = $this->published(['starts_on' => '2026-10-03', 'ends_on' => '2026-11-28', 'start_time' => '10:00', 'end_time' => '11:00']);
+        $this->accept($left)->forceFill(['status' => Enrollment::STATUS_WITHDRAWN])->save();
+        $this->delete("/teach/classes/{$left->id}")->assertSessionHasErrors(['class' => __('classes.delete_has_history')]);
+
+        // Ended with a payment recorded (even voided): kept.
+        $paid = $this->published(['starts_on' => '2026-10-03', 'ends_on' => '2026-11-28', 'start_time' => '12:00', 'end_time' => '13:00']);
+        $enrollment = Enrollment::factory()->for($paid, 'teachingClass')->create(['status' => Enrollment::STATUS_REQUESTED]);
+        DB::table('payments')->insert([
+            'enrollment_id' => $enrollment->id, 'instructor_id' => $this->user->instructor->id, 'amount' => '10', 'currency_code' => 'LYD',
+            'paid_at' => now(), 'method' => 'cash', 'receipt_number' => 'TL-20261201-0001', 'voided_at' => now(),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->assertFalse($paid->fresh()->canBeDeleted());
+        $this->delete("/teach/classes/{$paid->id}")->assertSessionHasErrors(['class' => __('classes.delete_has_history')]);
+
+        // A class that is running is canceled, not deleted.
+        $running = $this->published(['starts_on' => '2026-12-12', 'ends_on' => '2027-01-31', 'days' => [6], 'start_time' => '14:00', 'end_time' => '15:00']);
+        $this->delete("/teach/classes/{$running->id}")->assertSessionHasErrors(['class' => __('classes.delete_only_drafts')]);
+        $this->assertNotNull(TeachingClass::query()->find($running->id));
+    }
+
+    public function test_the_edit_page_offers_delete_only_when_it_is_allowed(): void
+    {
+        $this->actingAs($this->user);
+
+        $draft = TeachingClass::factory()->for($this->user->instructor)->create();
+        $this->get("/teach/classes/{$draft->id}/edit")->assertInertia(fn (Assert $page) => $page->where('canDelete', true));
+
+        $running = $this->published(['starts_on' => '2026-12-12', 'ends_on' => '2027-01-31', 'days' => [6]]);
+        $this->get("/teach/classes/{$running->id}/edit")->assertInertia(fn (Assert $page) => $page->where('canDelete', false));
     }
 
     public function test_deleting_a_draft_deletes_its_image_file(): void

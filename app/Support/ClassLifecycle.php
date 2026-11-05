@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Enrollment;
 use App\Models\TeachingClass;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -13,7 +14,8 @@ use Illuminate\Validation\ValidationException;
  *   published <-> closed (closed: still shown, takes no new requests)
  *   published/closed -> suspended (automatic, once at the start date, see checkStart) -> published (a new start date)
  *   published/closed/suspended, not ended -> canceled (final; owes nothing, takes no payments)
- *   draft -> deleted (soft delete, its image file removed; a class that was ever public is canceled instead)
+ *   draft -> deleted (soft delete, its image file removed); a canceled or ended class too when it never
+ *   had an accepted student or a payment; a class that is running is canceled instead
  */
 class ClassLifecycle
 {
@@ -78,13 +80,25 @@ class ClassLifecycle
         ])->save();
     }
 
+    /**
+     * A draft, or a canceled / ended class that never had an accepted student or a payment (see
+     * TeachingClass::canBeDeleted). Its image file goes with it, and so do the requests that were
+     * never accepted (rejected, withdrawn, still waiting): they would otherwise stay in the
+     * students' lists under a class that is gone.
+     */
     public function delete(TeachingClass $class): void
     {
-        $this->ensure($class, [TeachingClass::STATUS_DRAFT], 'classes.delete_only_drafts');
+        if (! $class->canBeDeleted()) {
+            throw ValidationException::withMessages(['class' => __(
+                $class->isCanceled() || $class->hasEnded() ? 'classes.delete_has_history' : 'classes.delete_only_drafts',
+            )]);
+        }
 
-        // A draft was never public: its image file goes with it.
-        app(ClassImage::class)->delete($class);
-        $class->delete();
+        DB::transaction(function () use ($class) {
+            $class->enrollments()->delete();
+            app(ClassImage::class)->delete($class);
+            $class->delete();
+        });
     }
 
     /**
