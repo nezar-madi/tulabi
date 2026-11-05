@@ -9,8 +9,11 @@ use App\Http\Requests\Teach\SaveProgramRequest;
 use App\Models\Program;
 use App\Support\ClassImage;
 use App\Support\ProgramPresenter;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,11 +42,6 @@ class ProgramController extends Controller
 
         return Inertia::render('Teach/Programs/Index', [
             'programs' => $programs->map(fn (Program $program) => ProgramPresenter::forOwner($program))->values(),
-            'counts' => [
-                'total' => $programs->count(),
-                'active' => $programs->where('is_active', true)->count(),
-                'published' => $programs->where('is_active', true)->where('is_published', true)->count(),
-            ],
             'hasSlug' => $instructor->slug !== null,
         ]);
     }
@@ -59,12 +57,16 @@ class ProgramController extends Controller
     {
         $jpeg = $this->renderImage($request);
 
-        $program = new Program($request->programData());
-        $program->forceFill(['instructor_id' => $this->instructor($request)->getKey()])->save();
+        $program = $this->unlessNameTaken(fn () => DB::transaction(function () use ($request, $jpeg) {
+            $program = new Program($request->programData());
+            $program->forceFill(['instructor_id' => $this->instructor($request)->getKey()])->save();
 
-        if ($jpeg !== null) {
-            $this->images->attach($program, $jpeg);
-        }
+            if ($jpeg !== null) {
+                $this->images->attach($program, $jpeg);
+            }
+
+            return $program;
+        }));
 
         // The program's page opens with the «تم إنشاء البرنامج» dialog (once).
         return redirect()->route('teach.programs.edit', $program)->with('programCreated', true);
@@ -85,13 +87,15 @@ class ProgramController extends Controller
         $program = $this->ownProgram($request, $program);
         $jpeg = $this->renderImage($request);
 
-        $program->fill($request->programData())->save();
+        $this->unlessNameTaken(fn () => DB::transaction(function () use ($request, $program, $jpeg) {
+            $program->fill($request->programData())->save();
 
-        if ($jpeg !== null) {
-            $this->images->attach($program, $jpeg);
-        } elseif ($request->boolean('remove_image')) {
-            $this->images->delete($program);
-        }
+            if ($jpeg !== null) {
+                $this->images->attach($program, $jpeg);
+            } elseif ($request->boolean('remove_image')) {
+                $this->images->delete($program);
+            }
+        }));
 
         return back()->with('status', __('programs.saved'));
     }
@@ -101,12 +105,21 @@ class ProgramController extends Controller
         $program = $this->ownProgram($request, $program);
 
         // Courses keep their program; remove them from it (or stop the program) first, as in rqmana.
-        if ($program->classes()->exists()) {
-            throw ValidationException::withMessages(['program' => __('programs.has_classes')]);
-        }
+        // The check and the delete run together (the row locked), so a course added meanwhile is not
+        // silently left without its program; the image file goes only once the row is gone.
+        DB::transaction(function () use ($program) {
+            Program::query()->whereKey($program->getKey())->lockForUpdate()->first();
 
-        $this->images->delete($program);
-        $program->delete();
+            if ($program->classes()->exists()) {
+                throw ValidationException::withMessages(['program' => __('programs.has_classes')]);
+            }
+
+            $program->delete();
+        });
+
+        if ($program->image_path !== null) {
+            Storage::disk('public')->delete($program->image_path);
+        }
 
         return redirect()->route('teach.programs.index')->with('status', __('programs.deleted'));
     }
@@ -116,6 +129,24 @@ class ProgramController extends Controller
         abort_unless($program->instructor_id === $this->instructor($request)->getKey(), 404);
 
         return $program;
+    }
+
+    /**
+     * Two saves with the same name at the same moment: the second one hits the database's unique
+     * index; tell the instructor as the validation would, not with a server error.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $save
+     * @return T
+     */
+    private function unlessNameTaken(callable $save): mixed
+    {
+        try {
+            return $save();
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages(['name' => __('programs.name_taken')]);
+        }
     }
 
     private function renderImage(SaveProgramRequest $request): ?string

@@ -107,4 +107,13 @@ class ProgramPagesTest extends TestCase
 
         $this->get("/sara/programs/{$program->id}")->assertOk()->assertSee('/storage/program-images/1/x.jpg', false);
     }
+
+    public function test_an_id_too_long_for_a_number_is_not_found_not_an_error(): void
+    {
+        $user = User::factory()->instructor()->create();
+        $user->instructor->forceFill(['slug' => 'long-id-teacher'])->save();
+
+        $this->get('/long-id-teacher/programs/99999999999999999999')->assertNotFound();
+        $this->get('/long-id-teacher/classes/99999999999999999999')->assertNotFound();
+    }
 }

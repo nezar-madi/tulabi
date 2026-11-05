@@ -105,9 +105,9 @@ Route::middleware(['auth:web', AuthenticateSession::class, EnsureInstructor::cla
         // «البرامج التدريبية»: the catalogue courses belong to. Every {program} must be the instructor's own.
         Route::get('/programs', [ProgramController::class, 'index'])->name('programs.index');
         Route::get('/programs/create', [ProgramController::class, 'create'])->name('programs.create');
-        Route::post('/programs', [ProgramController::class, 'store'])->name('programs.store');
+        Route::post('/programs', [ProgramController::class, 'store'])->middleware('throttle:program-save')->name('programs.store');
         Route::get('/programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
-        Route::put('/programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
+        Route::put('/programs/{program}', [ProgramController::class, 'update'])->middleware('throttle:program-save')->name('programs.update');
         Route::delete('/programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
 
         // «الطلاب»: everyone accepted in any of the instructor's courses.

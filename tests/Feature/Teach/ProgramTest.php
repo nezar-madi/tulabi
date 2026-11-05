@@ -187,7 +187,7 @@ class ProgramTest extends TestCase
         $this->actingAs($this->instructor());
 
         $this->get("/teach/programs/{$other->id}/edit")->assertNotFound();
-        $this->put("/teach/programs/{$other->id}", $this->data())->assertForbidden();
+        $this->put("/teach/programs/{$other->id}", $this->data())->assertNotFound();
         $this->delete("/teach/programs/{$other->id}")->assertNotFound();
 
         $this->assertSame('رياضيات', $other->fresh()->name);
@@ -199,7 +199,7 @@ class ProgramTest extends TestCase
         $this->actingAs(User::factory()->create())->get('/teach/programs')->assertForbidden();
     }
 
-    public function test_the_list_shows_counts_and_orders_featured_first(): void
+    public function test_the_list_orders_featured_first(): void
     {
         $user = $this->instructor();
         $a = Program::factory()->for($user->instructor)->create(['name' => 'ألف']);
@@ -209,7 +209,7 @@ class ProgramTest extends TestCase
 
         $this->actingAs($user)->get('/teach/programs')->assertInertia(fn (Assert $page) => $page
             ->component('Teach/Programs/Index')
-            ->where('counts', ['total' => 3, 'active' => 2, 'published' => 1])
+            ->missing('counts')
             ->where('programs.0.name', 'باء')
             ->where('programs.1.name', 'ألف')
             ->where('programs.1.classes_count', 1));
@@ -229,6 +229,50 @@ class ProgramTest extends TestCase
 
         $this->delete("/teach/programs/{$empty->id}")->assertRedirect('/teach/programs');
         $this->assertNull(Program::query()->find($empty->id));
+    }
+
+    public function test_deleting_a_program_removes_its_image(): void
+    {
+        Storage::fake('public');
+        $user = $this->instructor();
+        $this->actingAs($user)->post('/teach/programs', $this->data([
+            'image' => UploadedFile::fake()->image('poster.png', 1600, 900),
+        ]));
+        $program = Program::query()->sole();
+        Storage::disk('public')->assertExists($program->image_path);
+
+        $this->delete("/teach/programs/{$program->id}")->assertRedirect('/teach/programs');
+
+        $this->assertNull(Program::query()->find($program->id));
+        Storage::disk('public')->assertMissing($program->image_path);
+    }
+
+    public function test_saving_programs_is_rate_limited(): void
+    {
+        $this->actingAs($this->instructor());
+
+        for ($i = 0; $i < 30; $i++) {
+            $this->post('/teach/programs', $this->data(['name' => "برنامج {$i}"]))->assertRedirect();
+        }
+
+        $this->post('/teach/programs', $this->data(['name' => 'برنامج زائد']))->assertTooManyRequests();
+    }
+
+    public function test_a_same_name_saved_at_the_same_moment_is_a_validation_error(): void
+    {
+        $user = $this->instructor();
+        $this->actingAs($user);
+
+        // The validation sees no clash; the row appears just before the insert (as a second request would).
+        Program::creating(function (Program $program) use ($user) {
+            Program::flushEventListeners();
+            Program::factory()->for($user->instructor)->create(['name' => $program->name]);
+        });
+
+        $this->post('/teach/programs', $this->data(['name' => 'برنامج متزامن']))
+            ->assertSessionHasErrors(['name' => __('programs.name_taken')]);
+        // Nothing half-saved (here the clashing row was made inside the same transaction, so it went too).
+        $this->assertSame(0, Program::query()->where('name', 'برنامج متزامن')->count());
     }
 
     public function test_a_course_can_join_an_active_program_of_its_own_instructor(): void

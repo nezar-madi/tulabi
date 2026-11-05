@@ -118,7 +118,6 @@ import PageIntro from '@/Components/PageIntro.vue';
 
 const props = defineProps({
     programs: { type: Array, default: () => [] },
-    counts: { type: Object, default: () => ({ total: 0, active: 0, published: 0 }) },
     hasSlug: { type: Boolean, default: false },
 });
 

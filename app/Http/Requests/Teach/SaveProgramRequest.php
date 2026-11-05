@@ -16,10 +16,16 @@ class SaveProgramRequest extends InstructorRequest
 {
     public function authorize(): bool
     {
-        $program = $this->route('program');
+        if (! parent::authorize()) {
+            return false;
+        }
 
-        return parent::authorize()
-            && (! $program instanceof Program || $program->instructor_id === $this->instructor()?->getKey());
+        // Another instructor's program is "not found" (404), as on its edit page and on delete,
+        // so a save does not confirm that the id exists.
+        $program = $this->route('program');
+        abort_if($program instanceof Program && $program->instructor_id !== $this->instructor()?->getKey(), 404);
+
+        return true;
     }
 
     protected function prepareForValidation(): void

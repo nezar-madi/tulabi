@@ -62,6 +62,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('class-save', fn (Request $request) => Limit::perMinute(30)
             ->by('class-save:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
+        // Creating and saving programs (each save may carry a 4 MB image), as for classes.
+        RateLimiter::for('program-save', fn (Request $request) => Limit::perMinute(30)
+            ->by('program-save:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         RateLimiter::for('instructor-reset-link', fn (Request $request) => Limit::perHour(20)
             ->by('instructor-reset-link:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
