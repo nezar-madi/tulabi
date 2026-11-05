@@ -585,6 +585,7 @@
                     size="large"
                     block
                     :loading="form.processing"
+                    :disabled="!form.isDirty"
                 >
                     {{ cls ? $t('teach.classes.save') : $t('teach.classes.create') }}
                 </v-btn>
@@ -645,6 +646,7 @@
             variant="flat"
             color="primary"
             :loading="form.processing"
+            :disabled="Boolean(cls) && !form.isDirty"
         >
             {{ cls ? $t('teach.classes.save') : $t('teach.classes.create') }}
         </v-btn>
@@ -1140,6 +1142,11 @@ function submit() {
     if (!cls.value && step.value < last) {
         next();
 
+        return;
+    }
+
+    // An existing class with nothing changed has nothing to save (the button is off; Enter too).
+    if (cls.value && !form.isDirty) {
         return;
     }
 

@@ -7,10 +7,6 @@
     @include('site.partials.page-head', [
         'title' => $program['name'],
         'eyebrow' => __('site.programs.program'),
-        'crumbs' => [
-            ['label' => __('site.programs.title'), 'url' => route('programs.index', ['slug' => $site['slug']])],
-            ['label' => $program['name']],
-        ],
     ])
 
     <section class="rq-section">

@@ -149,10 +149,6 @@ a{color:inherit}
 /* Page header (inner pages) */
 .rq-page-head{background:var(--rq-surface);border-bottom:1px solid var(--rq-line);padding-block:clamp(36px,5vw,64px)}
 .rq-page-head .rq-wrap{display:flex;flex-direction:column;gap:16px}
-.rq-crumbs{display:flex;flex-wrap:wrap;gap:6px;font-size:14px;color:var(--rq-faint);margin:0;padding:0;list-style:none}
-.rq-crumbs a{color:var(--rq-muted);text-decoration:none}
-.rq-crumbs a:hover{color:var(--rq-primary)}
-.rq-crumbs li+li::before{content:"/";margin-inline-end:6px;color:var(--rq-line-strong)}
 
 /* Filters */
 .rq-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:16px 14px;align-items:end;padding:20px 22px;background:var(--rq-tint);border:1px solid var(--rq-line);border-radius:12px;margin-bottom:32px}

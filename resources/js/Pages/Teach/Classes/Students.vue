@@ -3,12 +3,6 @@
 
     <PageIntro
         :title="$t('teach.students.title', { title: item.title })"
-        :breadcrumbs="[
-            { title: $t('nav.home'), href: route('teach.dashboard') },
-            { title: $t('teach.nav.classes'), href: route('teach.classes.index') },
-            { title: item.title, href: route('teach.classes.edit', item.id) },
-            { title: $t('teach.students.open') },
-        ]"
     >
         <template #actions>
             <div class="d-flex flex-wrap ga-2">

@@ -4,7 +4,6 @@
     @include('site.partials.page-head', [
         'title' => __('site.programs.title'),
         'lead' => __('site.programs.intro'),
-        'crumbs' => [['label' => __('site.programs.title')]],
     ])
 
     <section class="rq-section">

@@ -5,7 +5,6 @@
         <PageIntro
             :title="$t('teach.dashboard.title', { name: profile.display_name })"
             :description="$t('teach.dashboard.lead')"
-            :breadcrumbs="[]"
         >
             <template #actions>
                 <v-btn

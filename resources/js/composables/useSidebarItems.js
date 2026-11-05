@@ -17,7 +17,7 @@ export function useSidebarItems() {
     return computed(() => (isAdmin.value ? adminSidebarItems() : accountSidebarItems(page.props.auth?.user)));
 }
 
-/** Where "الرئيسية" (the first breadcrumb) leads. */
+/** Where "الرئيسية" leads. */
 export function useHomeRoute() {
     const page = usePage();
     const isAdmin = useIsAdminArea();
