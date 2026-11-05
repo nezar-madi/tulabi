@@ -88,6 +88,49 @@ the admin for a link, as on the website.
 `name` is null until the person fills it in. `instructor` is null for students. One account can
 be both: show the instructor side when `is_instructor` is true.
 
+## An instructor's page (no sign-in needed)
+
+The same things visitors see on `tulabi.ly/{slug}`: drafts, hidden programs and suspended
+instructors are 404, even for the instructor (they manage their own in the instructor part).
+All `*_url` fields are full addresses. `url` fields point to the website (for sharing).
+
+- `GET /instructors/{slug}` → `{ instructor, classes, programs }`
+  - `instructor`: `name, slug, url, specialty, city, photo_url, links, whatsapp_number, whatsapp_url, has_programs,
+    about_sections: [{ title, body (safe HTML), text (plain) }]`
+  - `classes`: open classes, soonest first: `id, title, description, learn, requirements, audience,
+    video_embed_url, type (online|in_person), type_label, location, map_url, image_url, program {name, url} | null,
+    status, status_label, is_open (takes requests), ended, starts_on (Y-m-d), starting_date, ending_date,
+    schedule, time, price (text), is_free, seats, whatsapp_url, enrollment` (see below)
+  - `programs`: featured first: `id, name, description, learn, requirements, audience, video_embed_url, summary,
+    url, poster_url, is_featured, upcoming_count`
+- `GET /instructors/{slug}/classes/{id}` → `{ instructor, class }`. With a token, `class.enrollment` is the
+  person's own request: `{ id, status, status_label }` (null if none). Use it to show «طلبك قيد المراجعة» etc.
+- `GET /instructors/{slug}/programs/{id}` → `{ instructor, program, classes }` (its open classes).
+
+`POST /classes/{id}/join` (token) — `{ "note": "..." }` (optional, up to 500). → `201 { message, enrollment }`.
+422 on `enrollment` when the class takes no requests, it is the person's own class, or they already
+asked / are in it. Limited to 20 an hour.
+
+## The student side (token)
+
+Enrollment `status`: `requested` (waiting), `accepted`, `rejected`, `withdrawn`, `canceled` (removed by the
+instructor, or the class was canceled).
+
+- `GET /student/classes` → `{ enrollments: [...] }`, newest request first. Each: `id, status, fee, note,
+  decision_reason, requested_at, decided_at, class { ...the class's details, meeting_url, schedule_changed_at,
+  meeting_url_new, meeting_url_changed_at, cancel_reason, url }, instructor { display_name, photo_url, url, whatsapp }`.
+  `meeting_url` is only there for an accepted student of a class that still runs; `schedule_changed_at`
+  and `meeting_url_new` say the instructor changed them in the last few days (show a notice).
+- `GET /student/classes/{id}` → `{ enrollment, totals: { fee, paid, remaining }, payments: [...] }`. Someone else's: 403.
+- `POST /student/classes/{id}/withdraw` → `{ message, enrollment }`. Takes back a waiting request or leaves
+  a class (as on the website; ask "are you sure?" first). Already decided: 422 on `enrollment`.
+- `GET /student/payments` → `{ payments: [...] }` in every class: `id, amount, currency, paid_on (Y-m-d), method,
+  receipt_number, notes, voided, void_reason, receipt_url, class_title, instructor, enrollment_id`.
+- `GET /receipts/{id}` → the receipt as a PDF (A5, Arabic). Open `receipt_url` with the token header and
+  show or share the file. Only the student and the instructor who recorded it; others 403.
+
+Amounts are text with up to three decimals (`"120"`, `"62.5"`), in Libyan dinars (`currency: "LYD"`, shown «د.ل»).
+
 ## Rules for the API code (server side)
 
 - New routes go in `routes/api.php` under `v1`, named `api.v1.*`, with a test in `tests/Feature/Api`.

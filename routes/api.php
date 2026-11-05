@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\RegisterController;
+use App\Http\Controllers\Api\V1\Student\StudentClassController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Middleware\EnsureTokenAccountIsActive;
+use App\Support\InstructorSlug;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,9 +36,35 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:register-verify')
         ->name('auth.register');
 
+    // An instructor's public page, as visitors see it (no sign-in needed; a token adds the
+    // person's own request to a class). Same rules as tulabi.ly/{slug} (App\Support\PublicCatalog).
+    Route::get('/instructors/{slug}', [CatalogController::class, 'instructor'])
+        ->where('slug', InstructorSlug::routePattern())
+        ->name('instructors.show');
+    Route::get('/instructors/{slug}/classes/{class}', [CatalogController::class, 'showClass'])
+        ->where(['slug' => InstructorSlug::routePattern(), 'class' => '[0-9]{1,18}'])
+        ->name('instructors.classes.show');
+    Route::get('/instructors/{slug}/programs/{program}', [CatalogController::class, 'showProgram'])
+        ->where(['slug' => InstructorSlug::routePattern(), 'program' => '[0-9]{1,18}'])
+        ->name('instructors.programs.show');
+
     Route::middleware(['auth:sanctum', EnsureTokenAccountIsActive::class])->group(function () {
         Route::get('/me', MeController::class)->name('me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::post('/auth/logout-all', [AuthController::class, 'logoutAll'])->name('auth.logout-all');
+
+        // «اطلب الانضمام».
+        Route::post('/classes/{class}/join', [CatalogController::class, 'join'])
+            ->middleware('throttle:join-class')
+            ->name('classes.join');
+
+        // The student side: «فصولي» and «دفعاتي». Every {enrollment} must be the user's own
+        // (StudentEnrollmentRequest); a receipt opens for its student and its instructor only.
+        Route::get('/student/classes', [StudentClassController::class, 'index'])->name('student.classes.index');
+        Route::get('/student/classes/{enrollment}', [StudentClassController::class, 'show'])->name('student.classes.show');
+        Route::post('/student/classes/{enrollment}/withdraw', [StudentClassController::class, 'withdraw'])
+            ->name('student.classes.withdraw');
+        Route::get('/student/payments', [StudentClassController::class, 'payments'])->name('student.payments.index');
+        Route::get('/receipts/{payment}', [ReceiptController::class, 'show'])->name('receipts.show');
     });
 });

@@ -21,7 +21,8 @@ class ReceiptController extends Controller
     public function show(Request $request, Payment $payment): Response
     {
         $payment->load(['enrollment.user', 'enrollment.teachingClass', 'instructor']);
-        abort_unless($this->canSee($request->user('web'), $payment), 403);
+        // The website's session or the app's token (/api/v1/receipts/{payment}).
+        abort_unless($this->canSee($request->user(), $payment), 403);
 
         $html = view('receipts.payment', $this->context($payment))->render();
         $binary = $this->pdf($html);

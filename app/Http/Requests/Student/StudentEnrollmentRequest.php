@@ -7,13 +7,14 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * The student's own enrollment only.
+ * The student's own enrollment only. The signed-in user of the route's guard: the website's
+ * session, or the app's token (/api/v1/student/...).
  */
 class StudentEnrollmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user('web');
+        $user = $this->user();
         $enrollment = $this->route('enrollment');
 
         return $user instanceof User
