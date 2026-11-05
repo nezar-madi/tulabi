@@ -2,7 +2,15 @@
     <Head :title="cls.title" />
 
     <div class="student-page">
-        <PageIntro :title="cls.title" :description="$t('student.classes.requested_on', { date: formatDate(enrollment.requested_at) })">
+        <PageIntro
+            :breadcrumbs="[
+                { title: $t('nav.home'), href: route('student.classes.index') },
+                { title: $t('nav.my_classes'), href: route('student.classes.index') },
+                { title: cls.title },
+            ]"
+            :title="cls.title"
+            :description="$t('student.classes.requested_on', { date: formatDate(enrollment.requested_at) })"
+        >
             <template #title>
                 {{ cls.title }}
                 <EnrollmentStatusBadge :status="enrollment.status" class="ms-2 align-middle" />

@@ -2,6 +2,11 @@
     <Head :title="item ? item.name : $t('teach.programs.create_title')" />
 
     <PageIntro
+        :breadcrumbs="[
+            { title: $t('nav.home'), href: route('teach.dashboard') },
+            { title: $t('teach.nav.programs'), href: route('teach.programs.index') },
+            { title: item ? item.name : $t('teach.programs.create_title') },
+        ]"
         :title="item ? item.name : $t('teach.programs.create_title')"
         :description="item ? '' : $t('teach.programs.form.lead')"
     >

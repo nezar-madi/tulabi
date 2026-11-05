@@ -6,7 +6,36 @@
                     <slot name="media" />
                 </div>
                 <div class="page-intro__copy">
-                    <h1 class="page-intro__title rq-display">
+                    <nav
+                        v-if="trail.length"
+                        class="page-intro__crumbs"
+                        :aria-label="$t('nav.home')"
+                    >
+                        <template v-for="(crumb, index) in trail" :key="index">
+                            <v-icon
+                                v-if="index > 0"
+                                icon="tabler:chevron-left"
+                                size="14"
+                                class="page-intro__crumb-sep"
+                                aria-hidden="true"
+                            />
+                            <Link
+                                v-if="crumb.href && index < trail.length - 1"
+                                :href="crumb.href"
+                                class="page-intro__crumb page-intro__crumb--link"
+                            >
+                                {{ crumb.title }}
+                            </Link>
+                            <span
+                                v-else
+                                class="page-intro__crumb"
+                                :aria-current="index === trail.length - 1 ? 'page' : undefined"
+                            >
+                                {{ crumb.title }}
+                            </span>
+                        </template>
+                    </nav>
+                    <h1 class="page-intro__title rq-display" :class="{ 'page-intro__title--flush': !trail.length }">
                         <slot name="title">{{ title }}</slot>
                     </h1>
                     <p v-if="description || $slots.description" class="page-intro__lead">
@@ -31,16 +60,26 @@
 
 <script setup>
 /**
- * The opening of every page (spec PageHeader): title, description and meta line, actions on the
- * side (primary solid, secondary as tint buttons) and optional content below (e.g. PageIntroStats).
- * The #media slot puts a photo or tile before the title (detail pages). There is no breadcrumb:
- * the sidebar is the way around (owner's decision 2026-11-05).
+ * The opening of every page (spec PageHeader): an optional breadcrumb, title, description and meta
+ * line, actions on the side (primary solid, secondary as tint buttons) and optional content below
+ * (e.g. PageIntroStats). The #media slot puts a photo or tile before the title (detail pages).
+ *
+ * Breadcrumbs are for the deeper pages only (owner's decision 2026-11-05): a page that sits inside
+ * another (a class's edit page, its students, a student's payments) passes its own
+ * `breadcrumbs` = [{ title, href? }, ...] (the last one is the page itself); the main page of a
+ * section passes none and shows none.
  */
-defineProps({
+import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
+
+const props = defineProps({
     title: { type: String, default: '' },
     description: { type: String, default: '' },
     meta: { type: String, default: '' },
+    breadcrumbs: { type: Array, default: () => [] },
 });
+
+const trail = computed(() => props.breadcrumbs);
 </script>
 
 <style scoped>
@@ -73,11 +112,40 @@ defineProps({
 }
 
 .page-intro__title {
-    margin: 0;
+    margin: var(--rq-space-2) 0 0;
     font-size: var(--rq-text-h2);
     font-weight: 700;
     line-height: 1.3;
     color: var(--rq-text-heading);
+}
+
+/* Breadcrumb: ancestors are blue links, the current page is muted; chevron-left separators */
+.page-intro__crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--rq-font-display);
+    font-size: var(--rq-text-label);
+    line-height: 1.5;
+}
+
+.page-intro__crumb {
+    color: var(--rq-text-muted);
+}
+
+.page-intro__crumb--link {
+    color: var(--rq-text-link);
+    text-decoration: none;
+    transition: color var(--rq-dur) var(--rq-ease);
+}
+
+.page-intro__crumb--link:hover {
+    color: var(--rq-text-link-hover);
+}
+
+.page-intro__crumb-sep {
+    color: var(--rq-text-subtle);
 }
 
 /* Secondary actions: tint buttons (spec Button "secondary") */
@@ -89,6 +157,10 @@ defineProps({
 
 .page-intro__actions :deep(.v-btn--variant-outlined:hover) {
     background: var(--rq-surface-tint);
+}
+
+.page-intro__title--flush {
+    margin-top: 0;
 }
 
 .page-intro__lead {

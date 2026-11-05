@@ -7,6 +7,10 @@
     @include('site.partials.page-head', [
         'title' => $course['title'],
         'eyebrow' => $course['status_label'],
+        'crumbs' => [
+            ['label' => __('site.nav.classes'), 'url' => $site['url'].'#classes'],
+            ['label' => $course['title']],
+        ],
     ])
 
     <section class="rq-section">

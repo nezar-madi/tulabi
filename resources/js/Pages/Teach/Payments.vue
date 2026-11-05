@@ -2,6 +2,12 @@
     <Head :title="$t('teach.payments.title', { name: enrollment.student?.name || '' })" />
 
     <PageIntro
+        :breadcrumbs="[
+            { title: $t('nav.home'), href: route('teach.dashboard') },
+            { title: $t('teach.nav.classes'), href: route('teach.classes.index') },
+            { title: enrollment.class.title, href: route('teach.classes.students', enrollment.class.id) },
+            { title: $t('teach.students.payments') },
+        ]"
         :title="$t('teach.payments.title', { name: enrollment.student?.name || '' })"
     >
         <template #actions>

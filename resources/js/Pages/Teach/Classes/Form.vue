@@ -3,6 +3,11 @@
 
     <PageIntro
         class="cf-intro"
+        :breadcrumbs="[
+            { title: $t('nav.home'), href: route('teach.dashboard') },
+            { title: $t('teach.nav.classes'), href: route('teach.classes.index') },
+            { title: cls ? cls.title : $t('teach.classes.create_title') },
+        ]"
         :title="cls ? cls.title : $t('teach.classes.create_title')"
         :description="cls ? '' : $t('teach.classes.form.lead')"
     >
