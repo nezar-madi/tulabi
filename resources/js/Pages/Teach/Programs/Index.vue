@@ -1,11 +1,6 @@
 <template>
     <Head :title="$t('teach.programs.title')" />
 
-    <!--
-        Emphasis through contrast: «برنامج جديد» is the only filled button and each card leads with
-        its name. Counts, states and card tools are grey; colour is kept for small signals only
-        (a green dot when shown or active, an amber star when featured).
-    -->
     <div class="programs">
         <PageIntro :title="$t('teach.programs.title')" :description="$t('teach.programs.lead')">
             <template #actions>
@@ -50,10 +45,11 @@
                         <small>{{ $t('teach.programs.card.no_image') }}</small>
                     </span>
                     <span v-if="program.is_featured" class="program__chip program__chip--featured">
-                        <v-icon icon="tabler:star-filled" size="13" class="program__star" />
+                        <v-icon icon="tabler:star" size="13" />
                         {{ $t('teach.programs.featured') }}
                     </span>
                     <span class="program__chip program__chip--state" :class="{ 'program__chip--live': isShown(program) }">
+                        <v-icon :icon="isShown(program) ? 'tabler:eye' : 'tabler:eye-off'" size="13" />
                         {{ isShown(program) ? $t('teach.programs.published') : $t('teach.programs.hidden') }}
                     </span>
                 </Link>
@@ -134,9 +130,9 @@ const props = defineProps({
 const { t } = useI18n();
 
 const stats = computed(() => [
-    { key: 'total', label: t('teach.programs.stat_total'), value: props.counts.total, icon: 'tabler:layout-grid', tone: 'neutral' },
-    { key: 'active', label: t('teach.programs.stat_active'), value: props.counts.active, icon: 'tabler:circle-check', tone: 'neutral' },
-    { key: 'published', label: t('teach.programs.stat_published'), value: props.counts.published, icon: 'tabler:world', tone: 'neutral' },
+    { key: 'total', label: t('teach.programs.stat_total'), value: props.counts.total, icon: 'tabler:layout-grid', tone: 'sky' },
+    { key: 'active', label: t('teach.programs.stat_active'), value: props.counts.active, icon: 'tabler:circle-check', tone: 'success' },
+    { key: 'published', label: t('teach.programs.stat_published'), value: props.counts.published, icon: 'tabler:world', tone: 'teal' },
 ]);
 
 // Visitors see a program only when it is active, shown, has an image or a video, and the instructor has a page address.
@@ -199,7 +195,7 @@ function isShown(program) {
     justify-content: center;
     aspect-ratio: 16 / 9;
     overflow: hidden;
-    background: var(--rq-surface-chrome);
+    background: var(--rq-surface-tint);
     color: var(--rq-text-subtle);
     text-decoration: none;
 }
@@ -234,38 +230,22 @@ function isShown(program) {
     font-size: 12px;
     font-weight: 600;
     line-height: 1.5;
-    background: rgb(255 255 255 / 0.92);
-    color: var(--rq-text-body);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.12);
+    color: #fff;
+    backdrop-filter: blur(6px);
 }
 
 .program__chip--featured {
     inset-inline-start: 10px;
-}
-
-.program__star {
-    color: var(--rq-accent-amber);
+    background: var(--rq-accent-amber);
 }
 
 .program__chip--state {
     inset-inline-end: 10px;
-    color: var(--rq-text-muted);
-}
-
-.program__chip--state::before {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--rq-text-subtle);
-    content: "";
+    background: rgb(15 23 42 / 0.6);
 }
 
 .program__chip--live {
-    color: var(--rq-text-body);
-}
-
-.program__chip--live::before {
-    background: var(--rq-success);
+    background: rgb(21 128 61 / 0.88);
 }
 
 .program__body {
@@ -285,7 +265,7 @@ function isShown(program) {
 }
 
 .program__name a {
-    color: var(--rq-text-body);
+    color: var(--rq-text-heading);
     text-decoration: none;
 }
 
@@ -329,8 +309,13 @@ function isShown(program) {
     content: "";
 }
 
+.program__status--on {
+    color: var(--rq-success);
+}
+
 .program__status--on::before {
     background: var(--rq-success);
+    box-shadow: 0 0 0 3px var(--rq-success-tint);
 }
 
 .program__count {
@@ -347,6 +332,7 @@ function isShown(program) {
     padding-block: 8px;
     padding-inline: 18px 8px;
     border-top: 1px solid var(--rq-line-soft);
+    background: var(--rq-surface-hover);
 }
 
 .program__new {
@@ -354,19 +340,20 @@ function isShown(program) {
     align-items: center;
     gap: 4px;
     padding-block: 5px;
-    padding-inline: 8px 10px;
-    border-radius: var(--rq-radius-sm);
+    padding-inline: 10px 14px;
+    border-radius: var(--rq-radius-pill);
+    background: var(--rq-icon-tile);
     font-family: var(--rq-font-display);
     font-size: 13px;
     font-weight: 600;
-    color: var(--rq-text-muted);
+    color: var(--rq-action-primary);
     text-decoration: none;
     transition: background-color var(--rq-dur-fast) var(--rq-ease), color var(--rq-dur-fast) var(--rq-ease);
 }
 
 .program__new:hover {
-    background: var(--rq-surface-hover);
-    color: var(--rq-text-link);
+    background: var(--rq-action-primary);
+    color: var(--rq-text-on-primary);
 }
 
 .program__new:focus-visible {
