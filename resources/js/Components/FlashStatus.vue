@@ -52,13 +52,12 @@ watch(() => page.props.flash, (flash) => {
 </script>
 
 <style scoped>
-/* A light card: a thin frame, a green edge on the reading side, a soft shadow */
+/* A light card: a thin neutral frame and a soft shadow */
 .flash-toast :deep(.v-snackbar__wrapper) {
     min-width: 320px;
     max-width: 420px;
     overflow: hidden;
     border: 1px solid var(--rq-line);
-    border-inline-start: 4px solid var(--rq-success);
     border-radius: 12px;
     background: var(--rq-surface);
     color: var(--rq-text-body);
