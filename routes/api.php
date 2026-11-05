@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Student\StudentClassController;
 use App\Http\Controllers\Api\V1\Teach\EnrollmentController as TeachEnrollmentController;
 use App\Http\Controllers\Api\V1\Teach\HomeController;
 use App\Http\Controllers\Api\V1\Teach\PaymentController as TeachPaymentController;
+use App\Http\Controllers\Api\V1\Teach\ProgramController as TeachProgramController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Middleware\EnsureInstructor;
 use App\Http\Middleware\EnsureTokenAccountIsActive;
@@ -91,6 +92,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/enrollments/{enrollment}/payments', [TeachPaymentController::class, 'store'])->name('enrollments.payments.store');
             Route::put('/payments/{payment}', [TeachPaymentController::class, 'update'])->name('payments.update');
             Route::post('/payments/{payment}/void', [TeachPaymentController::class, 'void'])->name('payments.void');
+
+            // «البرامج التدريبية». Saving with a new image is multipart, so it goes by POST.
+            Route::get('/programs', [TeachProgramController::class, 'index'])->name('programs.index');
+            Route::get('/programs/rules', [TeachProgramController::class, 'rules'])->name('programs.rules');
+            Route::post('/programs', [TeachProgramController::class, 'store'])->middleware('throttle:program-save')->name('programs.store');
+            Route::get('/programs/{program}', [TeachProgramController::class, 'show'])->whereNumber('program')->name('programs.show');
+            Route::match(['put', 'post'], '/programs/{program}', [TeachProgramController::class, 'update'])
+                ->whereNumber('program')
+                ->middleware('throttle:program-save')
+                ->name('programs.update');
+            Route::delete('/programs/{program}', [TeachProgramController::class, 'destroy'])->whereNumber('program')->name('programs.destroy');
         });
     });
 });

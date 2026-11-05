@@ -168,6 +168,25 @@ The data is the same as the website's pages (shared code in `App\Support\Teach`)
 - `PUT /teach/payments/{id}` — `{ method, notes? }` → `{ message, payment, totals }`. Other fields are ignored.
 - `POST /teach/payments/{id}/void` — `{ reason }` (3+ letters) → `{ message, payment (voided: true), totals }`. Twice: 422 on `payment`.
 
+**Programs** («البرامج التدريبية»)
+
+- `GET /teach/programs` → `{ programs: [...], has_slug }`, featured first. Each: `id, name, description, learn, requirements,
+  audience, promo_video_url, image_url, is_active, is_published, is_featured, classes_count, public_url` (null without a page
+  address). Visitors see a program only when it is active, published and has an image or a video, and the instructor has a
+  page address (`has_slug`).
+- `GET /teach/programs/rules` → the limits to check in the form before sending (the server checks them again): name 3–120,
+  description 20–5000, each list up to 15 points of 3–200 letters, image jpg/png/webp up to 4 MB and 600×300 to 6000×6000,
+  video hosts.
+- `GET /teach/programs/{id}` → `{ program }`.
+- `POST /teach/programs` → `201 { message, program }`. Fields: `name, description, learn[], requirements[], audience[],
+  promo_video_url?, is_active, is_published, is_featured, image?` (file). Send as `multipart/form-data` when there is an image,
+  JSON otherwise. An image **or** a video, never both; publishing needs one of them.
+- `POST /teach/programs/{id}` (multipart, with a new image) or `PUT` (JSON) → `{ message, program }`. **Send every field**:
+  it is a full save, like the website's form (an empty `learn` clears the list, no `promo_video_url` removes the video).
+  `remove_image: true` deletes the image; a new `image` replaces it.
+- `DELETE /teach/programs/{id}` → `{ message }`. A program that still has classes: 422 on `program`.
+- Saving is limited to 30 a minute. A name already used by the same instructor: 422 on `name`.
+
 ## Rules for the API code (server side)
 
 - New routes go in `routes/api.php` under `v1`, named `api.v1.*`, with a test in `tests/Feature/Api`.

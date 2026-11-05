@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teach\Concerns;
 
 use App\Models\Instructor;
+use App\Models\Program;
 use App\Models\TeachingClass;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -25,5 +26,15 @@ trait FindsOwnClass
         abort_unless($class->instructor_id === $this->instructor($request)->getKey(), 404);
 
         return $class;
+    }
+
+    /**
+     * The same for a program: another instructor's is "not found".
+     */
+    protected function ownProgram(Request $request, Program $program): Program
+    {
+        abort_unless($program->instructor_id === $this->instructor($request)->getKey(), 404);
+
+        return $program;
     }
 }
