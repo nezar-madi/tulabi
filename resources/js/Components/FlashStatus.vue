@@ -2,7 +2,7 @@
     <!-- The server's one-time message after an action («حُفظ الفصل.»...): a toast, not a banner -->
     <v-snackbar
         v-model="open"
-        location="top"
+        location="top end"
         :timeout="4500"
         rounded="lg"
         elevation="8"
