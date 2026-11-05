@@ -25,7 +25,8 @@ class PaymentPresenter
             'notes' => $payment->notes,
             'voided' => $payment->isVoided(),
             'void_reason' => $payment->void_reason,
-            'receipt_url' => route('receipts.show', $payment),
+            // The app opens the receipt with its token at the API's address; the website with its session.
+            'receipt_url' => request()->is('api/*') ? route('api.v1.receipts.show', $payment) : route('receipts.show', $payment),
         ];
     }
 

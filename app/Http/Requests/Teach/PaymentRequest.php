@@ -24,7 +24,7 @@ class PaymentRequest extends InstructorRequest
      */
     public function rules(): array
     {
-        return $this->routeIs('teach.payments.void')
+        return $this->routeIs('teach.payments.void', 'api.v1.teach.payments.void')
             ? ['reason' => ['required', 'string', 'min:3', 'max:500']]
             : [
                 'method' => ['required', Rule::in(Payment::MANUAL_METHODS)],

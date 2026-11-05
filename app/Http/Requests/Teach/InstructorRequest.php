@@ -27,7 +27,7 @@ abstract class InstructorRequest extends FormRequest
 
     public function instructor(): ?Instructor
     {
-        $user = $this->user('web');
+        $user = $this->user();
 
         return $user instanceof User && $user->isInstructor() ? $user->instructor : null;
     }

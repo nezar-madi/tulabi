@@ -6,7 +6,11 @@ use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\RegisterController;
 use App\Http\Controllers\Api\V1\Student\StudentClassController;
+use App\Http\Controllers\Api\V1\Teach\EnrollmentController as TeachEnrollmentController;
+use App\Http\Controllers\Api\V1\Teach\HomeController;
+use App\Http\Controllers\Api\V1\Teach\PaymentController as TeachPaymentController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Middleware\EnsureInstructor;
 use App\Http\Middleware\EnsureTokenAccountIsActive;
 use App\Support\InstructorSlug;
 use Illuminate\Support\Facades\Route;
@@ -66,5 +70,27 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->name('student.classes.withdraw');
         Route::get('/student/payments', [StudentClassController::class, 'payments'])->name('student.payments.index');
         Route::get('/receipts/{payment}', [ReceiptController::class, 'show'])->name('receipts.show');
+
+        // The instructor side (EnsureInstructor: an active instructor account). Every {class},
+        // {enrollment} and {payment} must be the instructor's own (FormRequests, then the controller).
+        Route::middleware(EnsureInstructor::class)->prefix('teach')->name('teach.')->group(function () {
+            Route::get('/home', [HomeController::class, 'home'])->name('home');
+            Route::get('/students', [HomeController::class, 'students'])->name('students.index');
+            Route::get('/payments', [HomeController::class, 'payments'])->name('payments.index');
+
+            Route::get('/requests', [TeachEnrollmentController::class, 'requests'])->name('requests.index');
+            Route::get('/classes/{class}/students', [TeachEnrollmentController::class, 'students'])->name('classes.students');
+            Route::post('/enrollments/{enrollment}/accept', [TeachEnrollmentController::class, 'accept'])->name('enrollments.accept');
+            Route::post('/enrollments/{enrollment}/reject', [TeachEnrollmentController::class, 'reject'])->name('enrollments.reject');
+            Route::post('/enrollments/{enrollment}/remove', [TeachEnrollmentController::class, 'remove'])->name('enrollments.remove');
+            Route::post('/enrollments/{enrollment}/reset-link', [TeachEnrollmentController::class, 'resetLink'])
+                ->middleware('throttle:instructor-reset-link')
+                ->name('enrollments.reset-link');
+
+            Route::get('/enrollments/{enrollment}/payments', [TeachPaymentController::class, 'index'])->name('enrollments.payments');
+            Route::post('/enrollments/{enrollment}/payments', [TeachPaymentController::class, 'store'])->name('enrollments.payments.store');
+            Route::put('/payments/{payment}', [TeachPaymentController::class, 'update'])->name('payments.update');
+            Route::post('/payments/{payment}/void', [TeachPaymentController::class, 'void'])->name('payments.void');
+        });
     });
 });

@@ -9,10 +9,8 @@ use App\Http\Requests\Teach\PaymentRequest;
 use App\Http\Requests\Teach\RecordPaymentRequest;
 use App\Models\Enrollment;
 use App\Models\Payment;
-use App\Support\EnrollmentPresenter;
-use App\Support\PaymentPresenter;
 use App\Support\Payments;
-use App\Support\TulabiClock;
+use App\Support\Teach\ClassMembers;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,23 +25,14 @@ class PaymentController extends Controller
 
     public function __construct(private readonly Payments $payments) {}
 
-    public function index(EnrollmentActionRequest $request, Enrollment $enrollment): Response
+    public function index(EnrollmentActionRequest $request, Enrollment $enrollment, ClassMembers $members): Response
     {
-        $enrollment->load(['user', 'teachingClass', 'payments' => fn ($query) => $query->latest('paid_at')->latest('id')]);
-
-        return Inertia::render('Teach/Payments', [
-            'enrollment' => EnrollmentPresenter::forInstructor($enrollment),
-            'totals' => PaymentPresenter::totals($enrollment),
-            'canPay' => $enrollment->isActiveMember() && $enrollment->remainingMillis() > 0,
-            'payments' => $enrollment->payments->map(fn (Payment $payment) => PaymentPresenter::payment($payment))->values(),
-            'methods' => Payment::MANUAL_METHODS,
-            'today' => TulabiClock::today(),
-        ]);
+        return Inertia::render('Teach/Payments', $members->payments($enrollment));
     }
 
     public function store(RecordPaymentRequest $request, Enrollment $enrollment): RedirectResponse
     {
-        $payment = $this->payments->record($enrollment, $request->validated(), $request->user('web'));
+        $payment = $this->payments->record($enrollment, $request->validated(), $request->user());
 
         return back()->with('status', __('payments.recorded', ['number' => $payment->receipt_number]));
     }
@@ -57,7 +46,7 @@ class PaymentController extends Controller
 
     public function void(PaymentRequest $request, Payment $payment): RedirectResponse
     {
-        if (! $this->payments->void($payment, (string) $request->validated('reason'), $request->user('web'))) {
+        if (! $this->payments->void($payment, (string) $request->validated('reason'), $request->user())) {
             return back()->withErrors(['payment' => __('payments.already_voided')]);
         }
 

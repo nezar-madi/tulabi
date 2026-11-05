@@ -44,7 +44,7 @@ class StudentClassController extends Controller
         return response()->json([
             'enrollment' => AppShape::of(EnrollmentPresenter::forStudent($enrollment)),
             'totals' => PaymentPresenter::totals($enrollment),
-            'payments' => $enrollment->payments->map(fn (Payment $payment) => self::payment($payment))->values(),
+            'payments' => $enrollment->payments->map(fn (Payment $payment) => PaymentPresenter::payment($payment))->values(),
         ]);
     }
 
@@ -74,25 +74,12 @@ class StudentClassController extends Controller
             ->latest('id')
             ->get()
             ->map(fn (Payment $payment) => [
-                ...self::payment($payment),
+                ...PaymentPresenter::payment($payment),
                 'class_title' => $payment->enrollment->teachingClass->title,
                 'instructor' => $payment->enrollment->teachingClass->instructor->display_name,
                 'enrollment_id' => $payment->enrollment_id,
             ]);
 
         return response()->json(['payments' => $payments]);
-    }
-
-    /**
-     * A payment with its receipt at the API's address (the app opens it with its token).
-     *
-     * @return array<string, mixed>
-     */
-    public static function payment(Payment $payment): array
-    {
-        return [
-            ...PaymentPresenter::payment($payment),
-            'receipt_url' => route('api.v1.receipts.show', $payment),
-        ];
     }
 }

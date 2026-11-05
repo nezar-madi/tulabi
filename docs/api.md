@@ -131,6 +131,43 @@ instructor, or the class was canceled).
 
 Amounts are text with up to three decimals (`"120"`, `"62.5"`), in Libyan dinars (`currency: "LYD"`, shown «د.ل»).
 
+## The instructor side (token of an active instructor; others 403)
+
+Everything is the instructor's own: another instructor's class is 404, their enrollment or payment 403.
+The data is the same as the website's pages (shared code in `App\Support\Teach`).
+
+**Home and lists**
+
+- `GET /teach/home` → `{ profile { display_name, slug, public_url, has_photo, has_bio }, counts { draft, published, ... }
+  (classes per status, always an object), upcoming [the next 5 running classes, full details + students_count],
+  students (accepted, in classes not canceled), money { collected (this month), remaining (still owed), currency }, pending_requests }`
+- `GET /teach/students?filter=active|past|all&q=&course=&page=` → `{ students: { data: [...], current_page, last_page, total, ... },
+  filter, q, course, courses [{id, title}], counts { active, past, all }, totals { remaining } }`. 15 per page.
+- `GET /teach/payments?from=&to=&course=&method=&status=valid|voided|all&q=&page=` → `{ payments: { data: [payment + enrollment_id,
+  student { name, phone }, class { id, title }], ...paging }, filters, courses, methods, totals { collected, count, voided, by_method },
+  payable [students who still owe: { id (enrollment), name, class, remaining }], today, monthStart }`. 25 per page.
+  Bad filters: 422.
+
+**Join requests and a class's students**
+
+- `GET /teach/requests` → `{ requests: [...] }`, oldest first. Each: `id, status, fee, note, decision_reason, requested_at,
+  accepted_at, student { name, phone, whatsapp }, class { id, title, seats }, accepted_count`.
+- `GET /teach/classes/{id}/students` → `{ class { id, title, status, seats, price, meeting_share_url }, enrollments: [row + totals] }`
+  (waiting first, then accepted, then the rest).
+- `POST /teach/enrollments/{id}/accept`, `/reject` (`{ reason? }`), `/remove` (`{ reason? }`) → `{ message, enrollment }` (the new row,
+  with totals). Already decided: 422 on `enrollment`. A canceled or ended class accepts nobody (422). Seats are not
+  enforced: show `accepted_count` against `class.seats` as a warning, as the website does.
+- `POST /teach/enrollments/{id}/reset-link` → `{ reset_link { name, url, whatsapp } }`: a one-time link (1 hour) to give an
+  accepted student who forgot their password; `whatsapp` is a ready wa.me link. 20 an hour.
+
+**Payments** (voided, never deleted; amount and date fixed once recorded)
+
+- `GET /teach/enrollments/{id}/payments` → `{ enrollment, totals { fee, paid, remaining }, canPay, payments, methods, today }`.
+- `POST /teach/enrollments/{id}/payments` — `{ amount (> 0, up to 3 decimals, not more than what is left), paid_at (Y-m-d, not in the
+  future), method (cash|transfer|other), notes? }` → `201 { message, payment, totals }`.
+- `PUT /teach/payments/{id}` — `{ method, notes? }` → `{ message, payment, totals }`. Other fields are ignored.
+- `POST /teach/payments/{id}/void` — `{ reason }` (3+ letters) → `{ message, payment (voided: true), totals }`. Twice: 422 on `payment`.
+
 ## Rules for the API code (server side)
 
 - New routes go in `routes/api.php` under `v1`, named `api.v1.*`, with a test in `tests/Feature/Api`.

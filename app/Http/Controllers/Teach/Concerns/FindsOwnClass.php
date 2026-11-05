@@ -11,7 +11,7 @@ trait FindsOwnClass
 {
     protected function instructor(Request $request): Instructor
     {
-        $user = $request->user('web');
+        $user = $request->user();
         abort_unless($user instanceof User && $user->isInstructor(), 403);
 
         return $user->instructor;
